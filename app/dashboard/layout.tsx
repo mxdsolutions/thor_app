@@ -9,16 +9,18 @@ import { signOut } from "@/app/actions/auth";
 import { AnimatePresence, motion } from "framer-motion";
 
 import {
-    ClockIcon,
-    Cog6ToothIcon,
     ArrowRightStartOnRectangleIcon,
     Squares2X2Icon,
-    BookOpenIcon,
     Bars2Icon,
     XMarkIcon,
     UsersIcon,
     BriefcaseIcon,
     DocumentTextIcon,
+    FunnelIcon,
+    RocketLaunchIcon,
+    BuildingOffice2Icon,
+    UserGroupIcon,
+    ClipboardDocumentListIcon,
 } from "@heroicons/react/24/outline";
 
 export default function DashboardLayout({
@@ -32,9 +34,16 @@ export default function DashboardLayout({
     const navItems = [
         { href: "/dashboard", label: "Overview", icon: Squares2X2Icon },
         { href: "/dashboard/jobs", label: "Jobs", icon: BriefcaseIcon },
-        { href: "/dashboard/projects", label: "Projects", icon: BriefcaseIcon },
+        { href: "/dashboard/projects", label: "Projects", icon: ClipboardDocumentListIcon },
         { href: "/dashboard/content", label: "Content", icon: DocumentTextIcon },
         { href: "/dashboard/users", label: "Users", icon: UsersIcon },
+    ];
+
+    const crmNavItems = [
+        { href: "/dashboard/leads", label: "Leads", icon: FunnelIcon },
+        { href: "/dashboard/opportunities", label: "Opportunities", icon: RocketLaunchIcon },
+        { href: "/dashboard/companies", label: "Companies", icon: BuildingOffice2Icon },
+        { href: "/dashboard/contacts", label: "Contacts", icon: UserGroupIcon },
     ];
 
     return (
@@ -54,7 +63,7 @@ export default function DashboardLayout({
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 space-y-0.5">
+                <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
                     {navItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
@@ -68,7 +77,32 @@ export default function DashboardLayout({
                                         : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                 )}
                             >
-                                {/* Active indicator removed */}
+                                <item.icon className={cn(
+                                    "w-[18px] h-[18px] transition-transform duration-200",
+                                    !isActive && "group-hover:scale-110"
+                                )} />
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+
+                    {/* CRM Section */}
+                    <div className="pt-4 pb-2 px-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">CRM</p>
+                    </div>
+                    {crmNavItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
+                                    isActive
+                                        ? "bg-secondary text-foreground"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                )}
+                            >
                                 <item.icon className={cn(
                                     "w-[18px] h-[18px] transition-transform duration-200",
                                     !isActive && "group-hover:scale-110"
@@ -137,7 +171,7 @@ export default function DashboardLayout({
                             </div>
 
                             {/* Nav */}
-                            <nav className="flex-1 px-3 space-y-0.5">
+                            <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
                                 {navItems.map((item) => {
                                     const isActive = pathname === item.href;
                                     return (
@@ -152,7 +186,33 @@ export default function DashboardLayout({
                                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                                             )}
                                         >
-                                            {/* Active indicator removed */}
+                                            <item.icon className={cn(
+                                                "w-[18px] h-[18px] transition-transform duration-200",
+                                                !isActive && "group-hover:scale-110"
+                                            )} />
+                                            {item.label}
+                                        </Link>
+                                    );
+                                })}
+
+                                {/* CRM Section */}
+                                <div className="pt-4 pb-2 px-3">
+                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">CRM</p>
+                                </div>
+                                {crmNavItems.map((item) => {
+                                    const isActive = pathname === item.href;
+                                    return (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className={cn(
+                                                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
+                                                isActive
+                                                    ? "bg-secondary text-foreground"
+                                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                            )}
+                                        >
                                             <item.icon className={cn(
                                                 "w-[18px] h-[18px] transition-transform duration-200",
                                                 !isActive && "group-hover:scale-110"

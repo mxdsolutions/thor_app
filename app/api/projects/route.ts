@@ -10,12 +10,12 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch projects with homeowner details
+    // Fetch projects with client details
     const { data, error } = await supabase
         .from("projects")
         .select(`
             *,
-            homeowner:users!projects_homeowner_id_fkey (
+            client:profiles!projects_client_id_fkey (
                 id,
                 full_name,
                 email

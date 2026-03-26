@@ -20,7 +20,7 @@ type AppUser = {
         first_name?: string;
         last_name?: string;
         full_name?: string;
-        user_type?: "tradie" | "homeowner" | "admin";
+        user_type?: "admin" | "member";
     };
 };
 
@@ -56,32 +56,20 @@ export function UserSideSheet({ user, open, onOpenChange }: UserSideSheetProps) 
 
     if (!user) return null;
 
-    const userType = user.user_metadata.user_type || "homeowner";
+    const userType = user.user_metadata.user_type || "member";
 
-    const tradieTabs = [
-        { id: "profile", label: "Profile" },
-        { id: "licenses", label: "Licenses" },
-        { id: "company", label: "Company" },
-        { id: "jobs", label: "Jobs" },
-        { id: "offers", label: "Offers" },
-        { id: "engagements", label: "Engagements" },
-        { id: "chat", label: "Chat" },
-    ];
-
-    const homeownerTabs = [
+    const memberTabs = [
         { id: "profile", label: "Profile" },
         { id: "projects", label: "Projects" },
-        { id: "engagements", label: "Engagements" },
-        { id: "chat", label: "Chat" },
+        { id: "jobs", label: "Jobs" },
+        { id: "activity", label: "Activity" },
     ];
 
     const adminTabs = [
         { id: "profile", label: "Profile" },
     ];
 
-    const tabs =
-        userType === "tradie" ? tradieTabs :
-            userType === "admin" ? adminTabs : homeownerTabs;
+    const tabs = userType === "admin" ? adminTabs : memberTabs;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>

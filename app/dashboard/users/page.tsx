@@ -33,11 +33,11 @@ type AppUser = {
         first_name?: string;
         last_name?: string;
         full_name?: string;
-        user_type?: "tradie" | "homeowner" | "admin";
+        user_type?: "admin" | "member";
     };
 };
 
-type UserTab = "all" | "tradie" | "homeowner" | "admin";
+type UserTab = "all" | "admin" | "member";
 
 function getInitials(user: AppUser) {
     const { first_name, last_name, full_name } = user.user_metadata;
@@ -154,9 +154,8 @@ export default function UsersPage() {
                         <div className="flex gap-6 -mb-px">
                             {[
                                 { id: "all", label: "All" },
-                                { id: "tradie", label: "Tradies" },
-                                { id: "homeowner", label: "Customers" },
                                 { id: "admin", label: "Admin" },
+                                { id: "member", label: "Members" },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}

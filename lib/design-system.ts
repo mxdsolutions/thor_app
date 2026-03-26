@@ -1,7 +1,7 @@
 import { type CSSProperties } from "react";
 
 /**
- * TRADIE Web Template Design System
+ * MXD Web Template Design System
  * ─────────────────────────
  * Central file for shared styles, typography, spacing, and component patterns.
  */

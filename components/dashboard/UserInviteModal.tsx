@@ -9,7 +9,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
     const [email, setEmail] = useState("");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
-    const [role, setRole] = useState<"tradie" | "homeowner" | "admin">("tradie");
+    const [role, setRole] = useState<"admin" | "member">("member");
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -18,7 +18,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
             setEmail("");
             setFirstName("");
             setLastName("");
-            setRole("tradie");
+            setRole("member");
             setTimeout(() => inputRef.current?.focus(), 100);
         }
     }, [open]);
@@ -103,8 +103,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                             onChange={(e) => setRole(e.target.value as any)}
                             className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            <option value="tradie">Tradie</option>
-                            <option value="homeowner">Homeowner</option>
+                            <option value="member">Member</option>
                             <option value="admin">Admin</option>
                         </select>
                     </div>

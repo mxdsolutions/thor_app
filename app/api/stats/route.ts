@@ -10,14 +10,14 @@ export async function GET() {
 
         // 1. Total Users
         const { count: totalUsers } = await supabase
-            .from("users")
+            .from("profiles")
             .select("*", { count: "exact", head: true });
 
         // 2. New Users (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const { count: newUsers } = await supabase
-            .from("users")
+            .from("profiles")
             .select("*", { count: "exact", head: true })
             .gte("created_at", thirtyDaysAgo.toISOString());
 
@@ -41,7 +41,28 @@ export async function GET() {
 
         const totalRevenue = completedJobs?.reduce((sum, job) => sum + (job.amount || 0), 0) || 0;
 
-        // 6. Recent activity (last 5 jobs)
+        // 6. CRM metrics
+        const { count: openLeads } = await supabase
+            .from("leads")
+            .select("*", { count: "exact", head: true })
+            .not("status", "in", '("converted","unqualified")');
+
+        const { data: pipelineData } = await supabase
+            .from("opportunities")
+            .select("value")
+            .not("stage", "in", '("closed_won","closed_lost")');
+
+        const pipelineValue = pipelineData?.reduce((sum, opp) => sum + (opp.value || 0), 0) || 0;
+
+        const { count: totalCompanies } = await supabase
+            .from("companies")
+            .select("*", { count: "exact", head: true });
+
+        const { count: totalContacts } = await supabase
+            .from("contacts")
+            .select("*", { count: "exact", head: true });
+
+        // 7. Recent activity (last 5 jobs)
         const { data: recentTransactions } = await supabase
             .from("jobs")
             .select(`
@@ -50,7 +71,7 @@ export async function GET() {
                 status,
                 updated_at,
                 project:projects(title),
-                tradie:users!jobs_tradie_id_fkey(full_name)
+                assigned_to:profiles!jobs_assigned_to_fkey(full_name)
             `)
             .order("updated_at", { ascending: false })
             .limit(5);
@@ -62,10 +83,14 @@ export async function GET() {
                 activeProjects: activeProjects || 0,
                 activeJobs: activeJobs || 0,
                 totalRevenue: totalRevenue,
+                openLeads: openLeads || 0,
+                pipelineValue: pipelineValue,
+                totalCompanies: totalCompanies || 0,
+                totalContacts: totalContacts || 0,
             },
             recentTransactions: recentTransactions?.map(t => ({
                 id: t.id,
-                user: t.tradie ? (t.tradie as any).full_name : "System",
+                user: t.assigned_to ? (t.assigned_to as any).full_name : "System",
                 action: `Job: ${t.project ? (t.project as any).title : "Untitled Project"}`,
                 amount: `$${((t.amount as number) || 0).toFixed(2)}`,
                 status: t.status || "Unknown",

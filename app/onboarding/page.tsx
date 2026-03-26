@@ -92,7 +92,7 @@ export default function OnboardingPage() {
 
             {/* Logo top-left */}
             <div className="absolute top-6 left-6 z-10">
-                <Logo />
+                <Logo variant="dark" />
             </div>
 
             <div className="flex-1 flex items-center justify-center p-6 relative z-10">

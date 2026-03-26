@@ -8,7 +8,7 @@ export async function inviteUser(
     email: string,
     firstName: string,
     lastName: string,
-    role: "tradie" | "homeowner" | "admin"
+    role: "admin" | "member"
 ) {
     const validated = forgotPasswordSchema.safeParse({ email });
     if (!validated.success) {

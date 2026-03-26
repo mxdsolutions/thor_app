@@ -17,63 +17,61 @@ import { cn } from "@/lib/utils";
 import {
     MagnifyingGlassIcon,
     PlusIcon,
-    ArrowUpRightIcon
+    ArrowUpRightIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 
-type Job = {
+type Company = {
     id: string;
-    description: string;
+    name: string;
+    industry: string | null;
+    phone: string | null;
+    email: string | null;
+    city: string | null;
+    state: string | null;
     status: string;
-    amount: number;
-    project?: {
-        title: string;
-    };
-    assigned_to?: {
-        full_name: string;
-    };
-    scheduled_date: string;
+    created_at: string;
 };
 
-export default function JobsPage() {
+export default function CompaniesPage() {
     const [search, setSearch] = useState("");
-    const [jobs, setJobs] = useState<Job[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchJobs = async () => {
+    const fetchCompanies = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/jobs");
-            if (!res.ok) throw new Error("Failed to fetch jobs");
+            const res = await fetch("/api/companies");
+            if (!res.ok) throw new Error("Failed to fetch companies");
             const data = await res.json();
-            setJobs(data.jobs || []);
+            setCompanies(data.companies || []);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load jobs");
+            toast.error("Failed to load companies");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchJobs();
+        fetchCompanies();
     }, []);
 
-    const filteredJobs = jobs.filter(job =>
-        job.description.toLowerCase().includes(search.toLowerCase()) ||
-        job.project?.title.toLowerCase().includes(search.toLowerCase()) ||
-        job.assigned_to?.full_name.toLowerCase().includes(search.toLowerCase())
+    const filteredCompanies = companies.filter(c =>
+        c.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.industry?.toLowerCase().includes(search.toLowerCase()) ||
+        c.email?.toLowerCase().includes(search.toLowerCase())
     );
 
     return (
         <DashboardPage>
             <DashboardHeader
-                title="Jobs"
-                subtitle="View and manage all service jobs."
+                title="Companies"
+                subtitle="Manage your company records and organizations."
             >
                 <Button className="rounded-full px-6 shrink-0">
                     <PlusIcon className="w-4 h-4 mr-2" />
-                    Add Job
+                    Add Company
                 </Button>
             </DashboardHeader>
 
@@ -81,7 +79,7 @@ export default function JobsPage() {
                 <div className="relative flex-1 max-w-sm">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search jobs, projects or members..."
+                        placeholder="Search companies..."
                         className="pl-9 rounded-xl border-border/50"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -89,15 +87,14 @@ export default function JobsPage() {
                 </div>
             </DashboardControls>
 
-            {/* Table */}
             <div className="w-full overflow-x-auto">
                 <table className={tableBase + " border-collapse min-w-full"}>
                     <thead className={tableHead}>
                         <tr>
-                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Description</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Project</th>
-                            <th className={tableHeadCell + " px-4"}>Assigned To</th>
-                            <th className={tableHeadCell + " px-4 text-right sm:text-left"}>Cost</th>
+                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Company</th>
+                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Industry</th>
+                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Location</th>
+                            <th className={tableHeadCell + " px-4"}>Phone</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
                             <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
                         </tr>
@@ -105,49 +102,43 @@ export default function JobsPage() {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading jobs...</td>
+                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading companies...</td>
                             </tr>
-                        ) : filteredJobs.length === 0 ? (
+                        ) : filteredCompanies.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No jobs found.</td>
+                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No companies found.</td>
                             </tr>
                         ) : (
-                            filteredJobs.map((job) => (
-                                <tr key={job.id} className={tableRow + " group cursor-pointer"}>
+                            filteredCompanies.map((company) => (
+                                <tr key={company.id} className={tableRow + " group cursor-pointer"}>
                                     <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                        <div className="flex flex-col min-w-0">
-                                            <span className="font-semibold text-sm truncate max-w-[200px]">{job.description}</span>
-                                            {job.scheduled_date && (
-                                                <span className="text-[10px] text-muted-foreground">
-                                                    {new Date(job.scheduled_date).toLocaleDateString()}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[150px]"}>
-                                        {job.project?.title || "No Project"}
-                                    </td>
-                                    <td className={tableCell + " px-4"}>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold border border-border/50">
-                                                {job.assigned_to?.full_name?.charAt(0) || "?"}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
+                                                {company.name.charAt(0).toUpperCase()}
                                             </div>
-                                            <span className="text-sm truncate">{job.assigned_to?.full_name || "Unassigned"}</span>
+                                            <div className="min-w-0">
+                                                <p className="font-semibold text-sm truncate">{company.name}</p>
+                                                {company.email && <p className="text-xs text-muted-foreground truncate">{company.email}</p>}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className={tableCell + " px-4 text-right sm:text-left"}>
-                                        <span className="font-bold text-sm">${job.amount.toFixed(2)}</span>
+                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
+                                        {company.industry || "—"}
+                                    </td>
+                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
+                                        {[company.city, company.state].filter(Boolean).join(", ") || "—"}
+                                    </td>
+                                    <td className={tableCellMuted + " px-4"}>
+                                        {company.phone || "—"}
                                     </td>
                                     <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                         <div className="flex items-center gap-2">
                                             <div className={cn(
                                                 "w-1.5 h-1.5 rounded-full",
-                                                job.status === "completed" ? "bg-emerald-500" : 
-                                                job.status === "in_progress" ? "bg-blue-500" : 
-                                                job.status === "cancelled" ? "bg-red-500" : "bg-amber-500"
+                                                company.status === "active" ? "bg-emerald-500" : "bg-amber-500"
                                             )} />
                                             <span className="text-xs font-medium text-muted-foreground capitalize">
-                                                {job.status.replace(/_/g, " ")}
+                                                {company.status}
                                             </span>
                                         </div>
                                     </td>

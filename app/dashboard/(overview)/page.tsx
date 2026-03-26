@@ -15,12 +15,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
     CurrencyDollarIcon,
-    BanknotesIcon,
     BriefcaseIcon,
     WrenchScrewdriverIcon,
     UsersIcon,
     UserPlusIcon,
-    ArrowUpRightIcon
+    ArrowUpRightIcon,
+    FunnelIcon,
+    RocketLaunchIcon,
+    BuildingOffice2Icon,
+    UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
 
@@ -35,6 +38,10 @@ type Stats = {
     activeProjects: number;
     activeJobs: number;
     totalRevenue: number;
+    openLeads: number;
+    pipelineValue: number;
+    totalCompanies: number;
+    totalContacts: number;
 };
 
 type Transaction = {
@@ -116,7 +123,25 @@ export default function DashboardOverview() {
             icon: UserPlusIcon,
             color: "text-amber-500",
             bg: "bg-amber-500/10"
-        }
+        },
+        {
+            label: "Open Leads",
+            value: stats?.openLeads.toString() || "0",
+            change: "+0",
+            trend: "up" as const,
+            icon: FunnelIcon,
+            color: "text-blue-500",
+            bg: "bg-blue-500/10"
+        },
+        {
+            label: "Pipeline Value",
+            value: stats ? `$${stats.pipelineValue.toLocaleString()}` : "$0",
+            change: "+0%",
+            trend: "up" as const,
+            icon: RocketLaunchIcon,
+            color: "text-orange-500",
+            bg: "bg-orange-500/10"
+        },
     ];
 
     return (
@@ -169,7 +194,7 @@ export default function DashboardOverview() {
                     <table className={tableBase + " border-collapse min-w-full"}>
                         <thead className={tableHead}>
                             <tr>
-                                <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Tradie</th>
+                                <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Member</th>
                                 <th className={tableHeadCell + " px-4"}>Activity</th>
                                 <th className={tableHeadCell + " px-4"}>Amount</th>
                                 <th className={tableHeadCell + " px-4"}>Status</th>

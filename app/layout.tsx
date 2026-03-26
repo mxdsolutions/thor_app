@@ -8,10 +8,10 @@ const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--f
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | TRADIE",
-    default: "TRADIE Admin",
+    template: "%s | MXD",
+    default: "MXD Admin",
   },
-  description: "TRADIE administration platform",
+  description: "MXD administration platform",
 };
 
 export default function RootLayout({

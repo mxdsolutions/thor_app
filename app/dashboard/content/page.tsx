@@ -26,11 +26,11 @@ import {
 import { ContentModal } from "@/components/dashboard/ContentModal";
 
 const contentItems = [
-    { id: "C1", name: "Welcome Guide", sku: "WG-001", category: "Article", targetAudience: "Tradie", status: "Active" },
+    { id: "C1", name: "Welcome Guide", sku: "WG-001", category: "Article", targetAudience: "Admin", status: "Active" },
     { id: "C2", name: "Safety Procedures", sku: "SP-002", category: "Document", targetAudience: "Both", status: "Draft" },
-    { id: "C3", name: "Pricing Tiers", sku: "PT-003", category: "Page", targetAudience: "Homeowner", status: "Active" },
+    { id: "C3", name: "Pricing Tiers", sku: "PT-003", category: "Page", targetAudience: "Member", status: "Active" },
     { id: "C4", name: "Terms of Service", sku: "TOS-004", category: "Policy", targetAudience: "Both", status: "Active" },
-    { id: "C5", name: "Help Center", sku: "HC-005", category: "Support", targetAudience: "Homeowner", status: "Active" },
+    { id: "C5", name: "Help Center", sku: "HC-005", category: "Support", targetAudience: "Member", status: "Active" },
 ];
 
 export default function ContentPage() {
@@ -109,7 +109,7 @@ export default function ContentPage() {
                                         <div className="space-y-3">
                                             <h3 className="text-sm font-semibold">Target Audience</h3>
                                             <div className="flex flex-wrap gap-2">
-                                                {["All", "Tradie", "Homeowner"].map(t => (
+                                                {["All", "Admin", "Member"].map(t => (
                                                     <button
                                                         key={t}
                                                         onClick={() => setTargetFilter(t)}

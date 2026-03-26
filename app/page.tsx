@@ -3,12 +3,12 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Wrench, FileCheck, Users } from "lucide-react";
-import { signIn } from "@/app/actions/auth";
+import { signIn, demoSignIn } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -16,6 +16,7 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
 
@@ -42,6 +43,22 @@ function AuthContent() {
       toast.error(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true);
+    try {
+      const result = await demoSignIn();
+      if (result?.error) {
+        toast.error(result.error);
+      } else if (result?.success) {
+        router.push("/dashboard");
+      }
+    } catch (err: any) {
+      toast.error("Demo login failed");
+    } finally {
+      setIsDemoLoading(false);
     }
   };
 
@@ -79,8 +96,8 @@ function AuthContent() {
       <div className="flex-1 flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <div className="inline-flex items-center justify-center mb-8 cursor-default bg-white rounded-xl p-2 shadow-sm">
-              <Image src="/logo-white-bg.png" alt="TRADIE" width={240} height={72} priority className="h-16 w-auto object-contain" />
+            <div className="inline-flex items-center justify-center mb-8 cursor-default">
+              <Logo size="large" />
             </div>
             <h2 className="text-3xl font-bold mb-2">
               Welcome back
@@ -114,7 +131,7 @@ function AuthContent() {
                   <button
                     type="button"
                     onClick={handleForgotPassword}
-                    className="text-sm text-primary hover:underline font-medium"
+                    className="text-sm text-foreground hover:underline font-medium"
                   >
                     Forgot password?
                   </button>
@@ -129,6 +146,21 @@ function AuthContent() {
             </form>
           </div>
 
+          <div className="relative flex items-center gap-4">
+            <div className="flex-1 h-px bg-border" />
+            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">or</span>
+            <div className="flex-1 h-px bg-border" />
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full h-11 text-base"
+            onClick={handleDemoLogin}
+            disabled={isDemoLoading || isLoading}
+          >
+            {isDemoLoading ? "Signing in..." : "Try Demo"}
+          </Button>
+
           <div className="text-center text-sm">
             <p className="text-muted-foreground">
               Access to this platform is currently by invite only.
@@ -137,40 +169,40 @@ function AuthContent() {
         </div>
       </div>
 
-      {/* Right Panel - TRADIE */}
-      <div className="hidden lg:flex flex-1 bg-secondary/30 relative items-center justify-center p-12 overflow-hidden bg-slate-50 dark:bg-slate-900 border-l border-border/50">
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom_right,hsl(var(--primary)/0.06),transparent_50%)] [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0))]" />
+      {/* Right Panel - MXD */}
+      <div className="hidden lg:flex flex-1 bg-black relative items-center justify-center p-12 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom_right,rgba(240,90,40,0.08),transparent_50%)]" />
 
         <div className="relative z-10 max-w-lg space-y-8">
           <div className="space-y-4">
-            <Badge variant="secondary" className="px-3 py-1 font-medium">
+            <Badge className="px-3 py-1 font-medium bg-white/10 text-white border-0 hover:bg-white/20">
               Admin
             </Badge>
-            <h3 className="text-4xl font-bold leading-tight text-slate-900 dark:text-white">
-              Manage jobs, tradies<br />and customers.
+            <h3 className="text-4xl font-bold leading-tight text-white">
+              Manage leads, projects<br />and contacts.
             </h3>
-            <p className="text-lg text-slate-600 dark:text-slate-300">
-              The TRADIE admin dashboard lets you oversee quotes, projects and users so your platform runs smoothly.
+            <p className="text-lg text-white/60">
+              The MXD admin dashboard lets you oversee your CRM, projects and users so your business runs smoothly.
             </p>
           </div>
 
           <div className="grid gap-4">
             {[
-              { icon: Wrench, label: "Jobs & quotes" },
-              { icon: FileCheck, label: "Projects & content" },
-              { icon: Users, label: "Tradies & customers" },
+              { icon: Wrench, label: "Leads & opportunities" },
+              { icon: FileCheck, label: "Projects & jobs" },
+              { icon: Users, label: "Companies & contacts" },
             ].map(({ icon: Icon, label }, i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center shrink-0">
                   <Icon className="w-5 h-5" />
                 </div>
-                <span className="font-medium text-slate-700 dark:text-slate-200">{label}</span>
+                <span className="font-medium text-white/80">{label}</span>
               </div>
             ))}
           </div>
 
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-slate-300/20 dark:bg-slate-600/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-slate-400/10 dark:bg-slate-500/10 rounded-full blur-3xl" />
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#F05A28]/10 rounded-full blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
         </div>
       </div>
     </div>

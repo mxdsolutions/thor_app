@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
         // Admin-only gate: if authenticated, verify user has admin role
         if (isAuthenticated && isDashboardOrOnboarding) {
             const { data: profile } = await supabase
-                .from('users')
+                .from('profiles')
                 .select('role')
                 .eq('id', data.claims.sub as string)
                 .single()

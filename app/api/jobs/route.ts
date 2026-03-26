@@ -10,7 +10,7 @@ export async function GET() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Fetch jobs with project and tradie details
+    // Fetch jobs with project and assignee details
     const { data, error } = await supabase
         .from("jobs")
         .select(`
@@ -19,7 +19,7 @@ export async function GET() {
                 id,
                 title
             ),
-            tradie:users!jobs_tradie_id_fkey (
+            assigned_to:profiles!jobs_assigned_to_fkey (
                 id,
                 full_name,
                 email

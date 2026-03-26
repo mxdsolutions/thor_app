@@ -164,6 +164,64 @@ export async function updatePassword(formData: FormData) {
   return { success: true };
 }
 
+export async function demoSignIn() {
+  const demoEmail = "demo@mxdsolutions.com.au";
+  const demoPassword = "demo123456";
+
+  try {
+    const supabase = await createClient();
+
+    // Try signing in first
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    });
+
+    if (!signInError) {
+      return { success: true };
+    }
+
+    // If sign-in fails, create the demo user via admin client
+    const { createAdminClient } = await import("@/lib/supabase/server");
+    const admin = await createAdminClient();
+
+    const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+      email: demoEmail,
+      password: demoPassword,
+      email_confirm: true,
+      user_metadata: {
+        full_name: "Demo User",
+        first_name: "Demo",
+        last_name: "User",
+        user_type: "admin",
+      },
+    });
+
+    if (createError) {
+      return { success: false, error: createError.message };
+    }
+
+    // Set the profile role to admin
+    if (newUser?.user) {
+      await admin.from("profiles").update({ role: "admin" }).eq("id", newUser.user.id);
+    }
+
+    // Now sign in
+    const { error } = await supabase.auth.signInWithPassword({
+      email: demoEmail,
+      password: demoPassword,
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err?.message || "Demo login failed" };
+  }
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
