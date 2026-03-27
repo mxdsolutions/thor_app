@@ -1,6 +1,7 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 
-const MICROSOFT_AUTH_URL = "https://login.microsoftonline.com/common/oauth2/v2.0";
+const TENANT_ID = process.env.MICROSOFT_TENANT_ID || "common";
+const MICROSOFT_AUTH_URL = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0`;
 const GRAPH_BASE_URL = "https://graph.microsoft.com/v1.0";
 const SCOPES = "openid profile email offline_access Mail.Read Mail.Send Mail.ReadWrite";
 
