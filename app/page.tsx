@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Wrench, FileCheck, Users } from "lucide-react";
+import { ArrowRightIcon, WrenchIcon, DocumentCheckIcon, UsersIcon } from "@heroicons/react/24/outline";
 import { signIn, demoSignIn } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
@@ -37,7 +37,8 @@ function AuthContent() {
       if (result?.error) {
         toast.error(result.error);
       } else if (result?.success) {
-        router.push("/dashboard");
+        router.refresh();
+        router.push("/dashboard/operations/overview");
       }
     } catch (err: any) {
       toast.error(err.message || "An unexpected error occurred");
@@ -53,7 +54,8 @@ function AuthContent() {
       if (result?.error) {
         toast.error(result.error);
       } else if (result?.success) {
-        router.push("/dashboard");
+        router.refresh();
+        router.push("/dashboard/operations/overview");
       }
     } catch (err: any) {
       toast.error("Demo login failed");
@@ -141,7 +143,7 @@ function AuthContent() {
 
               <Button className="w-full h-11 text-base group" type="submit" disabled={isLoading}>
                 {isLoading ? "Processing..." : "Sign In"}
-                {!isLoading && <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />}
+                {!isLoading && <ArrowRightIcon className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />}
               </Button>
             </form>
           </div>
@@ -188,9 +190,9 @@ function AuthContent() {
 
           <div className="grid gap-4">
             {[
-              { icon: Wrench, label: "Leads & opportunities" },
-              { icon: FileCheck, label: "Projects & jobs" },
-              { icon: Users, label: "Companies & contacts" },
+              { icon: WrenchIcon, label: "Leads & opportunities" },
+              { icon: DocumentCheckIcon, label: "Projects & jobs" },
+              { icon: UsersIcon, label: "Companies & contacts" },
             ].map(({ icon: Icon, label }, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-white/10 text-white flex items-center justify-center shrink-0">

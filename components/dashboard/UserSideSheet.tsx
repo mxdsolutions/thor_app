@@ -9,39 +9,12 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-
-type AppUser = {
-    id: string;
-    email: string;
-    created_at: string;
-    last_sign_in_at: string | null;
-    user_metadata: {
-        first_name?: string;
-        last_name?: string;
-        full_name?: string;
-        user_type?: "admin" | "member";
-    };
-};
+import { cn, getDisplayName, getInitials, type AppUser } from "@/lib/utils";
 
 interface UserSideSheetProps {
     user: AppUser | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-}
-
-function getDisplayName(user: AppUser) {
-    const { first_name, last_name, full_name } = user.user_metadata;
-    if (first_name && last_name) return `${first_name} ${last_name}`;
-    if (full_name) return full_name;
-    return user.email.split("@")[0];
-}
-
-function getInitials(user: AppUser) {
-    const { first_name, last_name, full_name } = user.user_metadata;
-    if (first_name && last_name) return `${first_name[0]}${last_name[0]}`.toUpperCase();
-    if (full_name) return full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-    return user.email.slice(0, 2).toUpperCase();
 }
 
 export function UserSideSheet({ user, open, onOpenChange }: UserSideSheetProps) {

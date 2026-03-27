@@ -13,7 +13,7 @@ export async function GET() {
     const admin = await createAdminClient();
     const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 100 });
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({ users: data.users });

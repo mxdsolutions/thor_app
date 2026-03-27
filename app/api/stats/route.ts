@@ -1,12 +1,17 @@
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 
 export async function GET() {
     try {
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // Authenticate the request
+        const authClient = await createClient();
+        const { data: { user }, error: authError } = await authClient.auth.getUser();
+        if (authError || !user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        // Use admin client for cross-table aggregation (RLS may block anon reads)
+        const supabase = await createAdminClient();
 
         // 1. Total Users
         const { count: totalUsers } = await supabase
@@ -97,8 +102,8 @@ export async function GET() {
                 date: t.updated_at ? new Date(t.updated_at).toLocaleDateString() : "Just now"
             })) || []
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Stats API Error:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

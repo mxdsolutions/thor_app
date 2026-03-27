@@ -165,8 +165,8 @@ export async function updatePassword(formData: FormData) {
 }
 
 export async function demoSignIn() {
-  const demoEmail = "demo@mxdsolutions.com.au";
-  const demoPassword = "demo123456";
+  const demoEmail = process.env.DEMO_USER_EMAIL || "demo@mxdsolutions.com.au";
+  const demoPassword = process.env.DEMO_USER_PASSWORD || "demo123456";
 
   try {
     const supabase = await createClient();

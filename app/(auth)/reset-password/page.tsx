@@ -44,7 +44,7 @@ export default function ResetPasswordPage() {
             if (result?.error) {
                 toast.error(result.error);
             } else if (result?.success) {
-                router.push("/dashboard");
+                router.push("/dashboard/operations/overview");
             }
         } catch (err: any) {
             toast.error("An error occurred updating the password.");

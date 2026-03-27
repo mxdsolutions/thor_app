@@ -19,59 +19,68 @@ import {
     PlusIcon,
     ArrowUpRightIcon,
 } from "@heroicons/react/24/outline";
+import { CreateContactModal } from "@/components/modals/CreateContactModal";
+import { ContactSideSheet } from "@/components/sheets/ContactSideSheet";
 import { toast } from "sonner";
 
-type Company = {
+type Contact = {
     id: string;
-    name: string;
-    industry: string | null;
-    phone: string | null;
+    first_name: string;
+    last_name: string;
     email: string | null;
-    city: string | null;
-    state: string | null;
+    phone: string | null;
+    job_title: string | null;
     status: string;
+    company?: {
+        id: string;
+        name: string;
+    } | null;
     created_at: string;
 };
 
-export default function CompaniesPage() {
+export default function ContactsPage() {
     const [search, setSearch] = useState("");
-    const [companies, setCompanies] = useState<Company[]>([]);
+    const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showCreate, setShowCreate] = useState(false);
+    const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-    const fetchCompanies = async () => {
+    const fetchContacts = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/companies");
-            if (!res.ok) throw new Error("Failed to fetch companies");
+            const res = await fetch("/api/contacts");
+            if (!res.ok) throw new Error("Failed to fetch contacts");
             const data = await res.json();
-            setCompanies(data.companies || []);
+            setContacts(data.contacts || []);
         } catch (err) {
             console.error(err);
-            toast.error("Failed to load companies");
+            toast.error("Failed to load contacts");
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchCompanies();
+        fetchContacts();
     }, []);
 
-    const filteredCompanies = companies.filter(c =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.industry?.toLowerCase().includes(search.toLowerCase()) ||
-        c.email?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filteredContacts = contacts.filter(c => {
+        const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
+        const q = search.toLowerCase();
+        return fullName.includes(q) ||
+            c.email?.toLowerCase().includes(q) ||
+            c.company?.name.toLowerCase().includes(q);
+    });
 
     return (
         <DashboardPage>
             <DashboardHeader
-                title="Companies"
-                subtitle="Manage your company records and organizations."
+                title="Contacts"
+                subtitle="Manage your contact directory."
             >
-                <Button className="rounded-full px-6 shrink-0">
+                <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
                     <PlusIcon className="w-4 h-4 mr-2" />
-                    Add Company
+                    Add Contact
                 </Button>
             </DashboardHeader>
 
@@ -79,7 +88,7 @@ export default function CompaniesPage() {
                 <div className="relative flex-1 max-w-sm">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search companies..."
+                        placeholder="Search contacts..."
                         className="pl-9 rounded-xl border-border/50"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
@@ -91,10 +100,10 @@ export default function CompaniesPage() {
                 <table className={tableBase + " border-collapse min-w-full"}>
                     <thead className={tableHead}>
                         <tr>
-                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Company</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Industry</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Location</th>
-                            <th className={tableHeadCell + " px-4"}>Phone</th>
+                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Name</th>
+                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Email</th>
+                            <th className={tableHeadCell + " px-4"}>Company</th>
+                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Job Title</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
                             <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
                         </tr>
@@ -102,43 +111,42 @@ export default function CompaniesPage() {
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading companies...</td>
+                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading contacts...</td>
                             </tr>
-                        ) : filteredCompanies.length === 0 ? (
+                        ) : filteredContacts.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No companies found.</td>
+                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No contacts found.</td>
                             </tr>
                         ) : (
-                            filteredCompanies.map((company) => (
-                                <tr key={company.id} className={tableRow + " group cursor-pointer"}>
+                            filteredContacts.map((contact) => (
+                                <tr key={contact.id} className={tableRow + " group cursor-pointer"} onClick={() => setSelectedContact(contact)}>
                                     <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
-                                                {company.name.charAt(0).toUpperCase()}
+                                            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
+                                                {contact.first_name[0]}{contact.last_name[0]}
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="font-semibold text-sm truncate">{company.name}</p>
-                                                {company.email && <p className="text-xs text-muted-foreground truncate">{company.email}</p>}
-                                            </div>
+                                            <span className="font-semibold text-sm truncate">
+                                                {contact.first_name} {contact.last_name}
+                                            </span>
                                         </div>
                                     </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {company.industry || "—"}
+                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[200px]"}>
+                                        {contact.email || "—"}
+                                    </td>
+                                    <td className={tableCell + " px-4"}>
+                                        <span className="text-sm truncate">{contact.company?.name || "—"}</span>
                                     </td>
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {[company.city, company.state].filter(Boolean).join(", ") || "—"}
-                                    </td>
-                                    <td className={tableCellMuted + " px-4"}>
-                                        {company.phone || "—"}
+                                        {contact.job_title || "—"}
                                     </td>
                                     <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                         <div className="flex items-center gap-2">
                                             <div className={cn(
                                                 "w-1.5 h-1.5 rounded-full",
-                                                company.status === "active" ? "bg-emerald-500" : "bg-amber-500"
+                                                contact.status === "active" ? "bg-emerald-500" : "bg-amber-500"
                                             )} />
                                             <span className="text-xs font-medium text-muted-foreground capitalize">
-                                                {company.status}
+                                                {contact.status}
                                             </span>
                                         </div>
                                     </td>
@@ -153,6 +161,17 @@ export default function CompaniesPage() {
                     </tbody>
                 </table>
             </div>
+            <CreateContactModal
+                open={showCreate}
+                onOpenChange={setShowCreate}
+                onCreated={() => fetchContacts()}
+            />
+
+            <ContactSideSheet
+                contact={selectedContact}
+                open={!!selectedContact}
+                onOpenChange={(open) => { if (!open) setSelectedContact(null); }}
+            />
         </DashboardPage>
     );
 }

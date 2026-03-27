@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, type AppUser, getInitials, getDisplayName, formatLastActive } from "@/lib/utils";
 import {
     MagnifyingGlassIcon,
     UserPlusIcon,
@@ -24,49 +24,7 @@ import { toast } from "sonner";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
 
-type AppUser = {
-    id: string;
-    email: string;
-    created_at: string;
-    last_sign_in_at: string | null;
-    user_metadata: {
-        first_name?: string;
-        last_name?: string;
-        full_name?: string;
-        user_type?: "admin" | "member";
-    };
-};
-
 type UserTab = "all" | "admin" | "member";
-
-function getInitials(user: AppUser) {
-    const { first_name, last_name, full_name } = user.user_metadata;
-    if (first_name && last_name) return `${first_name[0]}${last_name[0]}`.toUpperCase();
-    if (full_name) return full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-    return user.email.slice(0, 2).toUpperCase();
-}
-
-function getDisplayName(user: AppUser) {
-    const { first_name, last_name, full_name } = user.user_metadata;
-    if (first_name && last_name) return `${first_name} ${last_name}`;
-    if (full_name) return full_name;
-    return user.email.split("@")[0];
-}
-
-function formatLastActive(dateStr: string | null) {
-    if (!dateStr) return "Never";
-    const date = new Date(dateStr);
-    const diff = Date.now() - date.getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return "Just now";
-    if (mins < 60) return `${mins} min${mins !== 1 ? "s" : ""} ago`;
-    const hrs = Math.floor(mins / 60);
-    if (hrs < 24) return `${hrs} hour${hrs !== 1 ? "s" : ""} ago`;
-    const days = Math.floor(hrs / 24);
-    return `${days} day${days !== 1 ? "s" : ""} ago`;
-}
-
-
 
 export default function UsersPage() {
     const [search, setSearch] = useState("");

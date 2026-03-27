@@ -43,18 +43,17 @@ export async function middleware(request: NextRequest) {
         const { data, error } = await supabase.auth.getClaims()
         const isAuthenticated = !error && !!data?.claims?.sub
 
-        const isDashboardOrOnboarding =
-            request.nextUrl.pathname.startsWith('/dashboard') ||
-            request.nextUrl.pathname.startsWith('/onboarding')
+        const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')
+        const isOnboarding = request.nextUrl.pathname.startsWith('/onboarding')
 
-        if (!isAuthenticated && isDashboardOrOnboarding) {
+        if (!isAuthenticated && (isDashboard || isOnboarding)) {
             const url = request.nextUrl.clone()
             url.pathname = '/'
             return NextResponse.redirect(url)
         }
 
-        // Admin-only gate: if authenticated, verify user has admin role
-        if (isAuthenticated && isDashboardOrOnboarding) {
+        // Admin-only gate for dashboard: verify user has admin role
+        if (isAuthenticated && isDashboard) {
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('role')

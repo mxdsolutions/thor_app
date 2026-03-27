@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
@@ -21,7 +21,13 @@ import {
     BuildingOffice2Icon,
     UserGroupIcon,
     ClipboardDocumentListIcon,
+    CogIcon,
+    CubeIcon,
+    EnvelopeIcon,
+    LinkIcon,
 } from "@heroicons/react/24/outline";
+
+type Workspace = "crm" | "operations" | "settings";
 
 export default function DashboardLayout({
     children,
@@ -30,67 +36,122 @@ export default function DashboardLayout({
 }) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [activeWorkspace, setActiveWorkspace] = useState<Workspace>("operations");
+    const navRef = useRef<HTMLElement>(null);
 
-    const navItems = [
-        { href: "/dashboard", label: "Overview", icon: Squares2X2Icon },
-        { href: "/dashboard/jobs", label: "Jobs", icon: BriefcaseIcon },
-        { href: "/dashboard/projects", label: "Projects", icon: ClipboardDocumentListIcon },
-        { href: "/dashboard/content", label: "Content", icon: DocumentTextIcon },
-        { href: "/dashboard/users", label: "Users", icon: UsersIcon },
+    useEffect(() => {
+        navRef.current?.scrollTo(0, 0);
+    }, [activeWorkspace]);
+
+    const workspaces: { id: Workspace; label: string; icon: any }[] = [
+        { id: "crm", label: "CRM", icon: UserGroupIcon },
+        { id: "operations", label: "Operations", icon: BriefcaseIcon },
+        { id: "settings", label: "Settings", icon: CogIcon },
     ];
 
-    const crmNavItems = [
-        { href: "/dashboard/leads", label: "Leads", icon: FunnelIcon },
-        { href: "/dashboard/opportunities", label: "Opportunities", icon: RocketLaunchIcon },
-        { href: "/dashboard/companies", label: "Companies", icon: BuildingOffice2Icon },
-        { href: "/dashboard/contacts", label: "Contacts", icon: UserGroupIcon },
+    const operationsItems = [
+        { href: "/dashboard/operations/overview", label: "Overview", icon: Squares2X2Icon },
+        { href: "/dashboard/operations/projects", label: "Projects", icon: ClipboardDocumentListIcon },
+        { href: "/dashboard/operations/jobs", label: "Jobs", icon: BriefcaseIcon },
+        { href: "/dashboard/operations/products", label: "Products", icon: CubeIcon },
+        { href: "/dashboard/operations/content", label: "Content", icon: DocumentTextIcon },
+        { href: "/dashboard/operations/users", label: "Users", icon: UsersIcon },
     ];
+
+    const crmItems = [
+        { href: "/dashboard/crm/overview", label: "Overview", icon: Squares2X2Icon },
+        { href: "/dashboard/crm/leads", label: "Leads", icon: FunnelIcon },
+        { href: "/dashboard/crm/opportunities", label: "Opportunities", icon: RocketLaunchIcon },
+        { href: "/dashboard/crm/companies", label: "Companies", icon: BuildingOffice2Icon },
+        { href: "/dashboard/crm/contacts", label: "Contacts", icon: UserGroupIcon },
+        { href: "/dashboard/crm/emails", label: "Emails", icon: EnvelopeIcon },
+    ];
+
+    const settingsItems = [
+        { href: "/dashboard/settings/settings", label: "Settings", icon: CogIcon },
+        { href: "/dashboard/settings/users", label: "Users", icon: UsersIcon },
+        { href: "/dashboard/settings/integrations", label: "Integrations", icon: LinkIcon },
+    ];
+
+    const getActiveItems = () => {
+        switch (activeWorkspace) {
+            case "crm":
+                return crmItems;
+            case "settings":
+                return settingsItems;
+            default:
+                return operationsItems;
+        }
+    };
+
+    const getWorkspaceForPath = (): Workspace => {
+        if (pathname.startsWith("/dashboard/crm")) {
+            return "crm";
+        }
+        if (pathname.startsWith("/dashboard/settings")) {
+            return "settings";
+        }
+        return "operations";
+    };
+
+    const currentWorkspace = getWorkspaceForPath();
+    const activeItems = getActiveItems();
 
     return (
         <div className="min-h-screen bg-background flex">
-            {/* Desktop Sidebar */}
-            <aside className="w-64 bg-background hidden md:flex flex-col fixed inset-y-0 left-0 z-30 border-r border-border">
-                {/* Logo */}
-                <div className="h-16 flex items-center px-6">
-                    <Link href="/dashboard" className="flex items-center gap-2.5">
-                        <Logo />
+            {/* Desktop Workspace Bar */}
+            <div className="w-20 bg-black hidden md:flex flex-col fixed inset-y-0 left-0 z-40 border-r border-border">
+                {/* Logo area */}
+                <div className="h-16 flex items-center justify-center">
+                    <Link href="/dashboard/operations/overview" className="flex items-center justify-center">
+                        <Logo variant="dark" size="default" />
                     </Link>
                 </div>
 
+                {/* Workspace buttons */}
+                <nav className="flex-1 flex flex-col items-center gap-4 py-6">
+                    {workspaces.map((ws) => {
+                        const isActive = currentWorkspace === ws.id;
+                        return (
+                            <button
+                                key={ws.id}
+                                onClick={() => setActiveWorkspace(ws.id)}
+                                title={ws.label}
+                                className={cn(
+                                    "p-3 rounded-xl transition-all duration-200",
+                                    isActive
+                                        ? "bg-white/10 text-white"
+                                        : "text-white hover:bg-white/10"
+                                )}
+                            >
+                                <ws.icon className="w-5 h-5" />
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* Bottom section */}
+                <div className="pb-4 flex flex-col items-center gap-3">
+                    <Link href="/dashboard/settings/settings" title="Profile" className="p-3 rounded-xl hover:bg-white/10 transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
+                            <span className="text-xs font-bold text-violet-600">DJ</span>
+                        </div>
+                    </Link>
+                </div>
+            </div>
+
+            {/* Desktop Sidebar */}
+            <aside className="w-64 bg-background hidden md:flex flex-col fixed inset-y-0 left-20 z-30 border-r border-border">
                 {/* Section label */}
-                <div className="px-6 pt-4 pb-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Menu</p>
+                <div className="h-16 px-6 flex items-center border-b border-border">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                        {currentWorkspace.toUpperCase()}
+                    </p>
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
-                                    isActive
-                                        ? "bg-secondary text-foreground"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                )}
-                            >
-                                <item.icon className={cn(
-                                    "w-[18px] h-[18px] transition-transform duration-200",
-                                    !isActive && "group-hover:scale-110"
-                                )} />
-                                {item.label}
-                            </Link>
-                        );
-                    })}
-
-                    {/* CRM Section */}
-                    <div className="pt-4 pb-2 px-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">CRM</p>
-                    </div>
-                    {crmNavItems.map((item) => {
+                <nav ref={navRef} className="flex-1 px-3 space-y-0.5 overflow-y-auto py-4">
+                    {activeItems.map((item) => {
                         const isActive = pathname === item.href;
                         return (
                             <Link
@@ -115,7 +176,7 @@ export default function DashboardLayout({
 
                 {/* Bottom section */}
                 <div className="p-3 border-t border-border space-y-1">
-                    <Link href="/dashboard/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/40 transition-colors cursor-pointer">
+                    <Link href="/dashboard/settings/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/40 transition-colors cursor-pointer">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center ring-2 ring-border">
                             <span className="text-xs font-bold text-violet-600">DJ</span>
                         </div>
@@ -153,10 +214,8 @@ export default function DashboardLayout({
                             className="fixed inset-y-0 left-0 w-72 bg-background z-50 md:hidden flex flex-col shadow-2xl border-r border-border"
                         >
                             {/* Header with close */}
-                            <div className="h-14 flex items-center justify-between px-5">
-                                <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-                                    <Logo />
-                                </Link>
+                            <div className="h-14 flex items-center justify-between px-5 border-b border-border">
+                                <h2 className="text-sm font-semibold">{currentWorkspace.toUpperCase()}</h2>
                                 <button
                                     onClick={() => setMobileMenuOpen(false)}
                                     className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
@@ -165,41 +224,37 @@ export default function DashboardLayout({
                                 </button>
                             </div>
 
-                            {/* Section label */}
-                            <div className="px-5 pt-4 pb-2">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">Menu</p>
+                            {/* Workspace selector */}
+                            <div className="px-3 py-4 border-b border-border">
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Workspaces</p>
+                                <div className="space-y-2">
+                                    {workspaces.map((ws) => {
+                                        const isActive = currentWorkspace === ws.id;
+                                        return (
+                                            <button
+                                                key={ws.id}
+                                                onClick={() => {
+                                                    setActiveWorkspace(ws.id);
+                                                    setMobileMenuOpen(false);
+                                                }}
+                                                className={cn(
+                                                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                                                    isActive
+                                                        ? "bg-secondary text-foreground"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                                                )}
+                                            >
+                                                <ws.icon className="w-[18px] h-[18px]" />
+                                                {ws.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* Nav */}
-                            <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
-                                {navItems.map((item) => {
-                                    const isActive = pathname === item.href;
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className={cn(
-                                                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 relative",
-                                                isActive
-                                                    ? "bg-secondary text-foreground"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                            )}
-                                        >
-                                            <item.icon className={cn(
-                                                "w-[18px] h-[18px] transition-transform duration-200",
-                                                !isActive && "group-hover:scale-110"
-                                            )} />
-                                            {item.label}
-                                        </Link>
-                                    );
-                                })}
-
-                                {/* CRM Section */}
-                                <div className="pt-4 pb-2 px-3">
-                                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">CRM</p>
-                                </div>
-                                {crmNavItems.map((item) => {
+                            <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto py-4">
+                                {activeItems.map((item) => {
                                     const isActive = pathname === item.href;
                                     return (
                                         <Link
@@ -225,7 +280,7 @@ export default function DashboardLayout({
 
                             {/* Bottom */}
                             <div className="p-3 border-t border-border space-y-1">
-                                <Link href="/dashboard/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/40 transition-colors cursor-pointer">
+                                <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/40 transition-colors cursor-pointer">
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center ring-2 ring-border">
                                         <span className="text-xs font-bold text-violet-600">DJ</span>
                                     </div>
@@ -234,7 +289,7 @@ export default function DashboardLayout({
                                         <p className="text-[11px] text-muted-foreground truncate">dylan@example.com</p>
                                     </div>
                                 </Link>
-                                <button className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
+                                <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
                                     <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px]" />
                                     Sign out
                                 </button>
@@ -245,10 +300,10 @@ export default function DashboardLayout({
             </AnimatePresence>
 
             {/* Main content */}
-            <main className="flex-1 md:ml-64">
+            <main className="flex-1 md:ml-[21rem] min-w-0 overflow-hidden">
                 {/* Mobile header with hamburger */}
                 <header className="md:hidden h-14 border-b border-border bg-background flex items-center justify-between px-4 sticky top-0 z-20">
-                    <Link href="/dashboard" className="flex items-center gap-2">
+                    <Link href="/dashboard/operations/overview" className="flex items-center gap-2">
                         <Logo />
                     </Link>
                     <button
