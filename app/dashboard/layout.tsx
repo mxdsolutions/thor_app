@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { cn, timeAgo } from "@/lib/utils";
 import { signOut } from "@/app/actions/auth";
+import { createClient } from "@/lib/supabase/client";
 import { AnimatePresence, motion } from "framer-motion";
 import {
     Sheet,
@@ -55,10 +56,30 @@ export default function DashboardLayout({
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeWorkspace, setActiveWorkspace] = useState<Workspace>("operations");
     const navRef = useRef<HTMLElement>(null);
+    const [userProfile, setUserProfile] = useState<{ full_name: string | null; email: string | null } | null>(null);
 
     useEffect(() => {
         navRef.current?.scrollTo(0, 0);
     }, [activeWorkspace]);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data }) => {
+            if (!data.user) return;
+            supabase.from("profiles").select("full_name, email").eq("id", data.user.id).single().then(({ data: profile }) => {
+                if (profile) setUserProfile(profile);
+            });
+        });
+    }, []);
+
+    const userInitials = (() => {
+        const name = userProfile?.full_name;
+        if (!name) return "?";
+        const parts = name.trim().split(/\s+/);
+        return parts.map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+    })();
+    const userDisplayName = userProfile?.full_name || "User";
+    const userEmail = userProfile?.email || "";
 
     const workspaces: { id: Workspace; label: string; icon: any }[] = [
         { id: "crm", label: "CRM", icon: UserGroupIcon },
@@ -228,7 +249,7 @@ export default function DashboardLayout({
                     </Link>
                     <Link href="/dashboard/settings/settings" title="Profile" className="p-3 rounded-xl hover:bg-white/10 transition-colors">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                            <span className="text-xs font-bold text-violet-600">DJ</span>
+                            <span className="text-xs font-bold text-violet-600">{userInitials}</span>
                         </div>
                     </Link>
                     <button
@@ -367,11 +388,11 @@ export default function DashboardLayout({
                             <div className="p-3 border-t border-border space-y-1">
                                 <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-secondary/40 transition-colors cursor-pointer">
                                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center ring-2 ring-border">
-                                        <span className="text-xs font-bold text-violet-600">DJ</span>
+                                        <span className="text-xs font-bold text-violet-600">{userInitials}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">Dylan J.</p>
-                                        <p className="text-[11px] text-muted-foreground truncate">dylan@example.com</p>
+                                        <p className="text-sm font-medium truncate">{userDisplayName}</p>
+                                        <p className="text-[11px] text-muted-foreground truncate">{userEmail}</p>
                                     </div>
                                 </Link>
                                 <button onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
