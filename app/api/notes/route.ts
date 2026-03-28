@@ -18,9 +18,17 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Missing entity_type or entity_id" }, { status: 400 });
     }
 
+    // Use JOIN instead of sequential queries
     const { data, error } = await supabase
         .from("notes")
-        .select("*")
+        .select(`
+            *,
+            author:profiles!notes_created_by_fkey (
+                id,
+                full_name,
+                email
+            )
+        `)
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
         .order("created_at", { ascending: false });
@@ -29,20 +37,9 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    // Resolve author names from profiles
-    const userIds = [...new Set((data || []).map(n => n.created_by).filter(Boolean))];
-    let profileMap: Record<string, string> = {};
-    if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-            .from("profiles")
-            .select("id, full_name, email")
-            .in("id", userIds);
-        profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.full_name || p.email || "Unknown"]));
-    }
-
     const notes = (data || []).map(n => ({
         ...n,
-        author: n.created_by ? { id: n.created_by, full_name: profileMap[n.created_by] || "Unknown" } : null,
+        author: n.author || null,
     }));
 
     return NextResponse.json({ notes });
@@ -64,26 +61,27 @@ export async function POST(request: Request) {
 
     const { entity_type, entity_id, content, mentioned_user_ids } = validation.data;
 
-    const { data, error } = await supabase
-        .from("notes")
-        .insert({ entity_type, entity_id, content, created_by: user.id })
-        .select("*")
-        .single();
+    // Insert note and fetch author profile in parallel
+    const [noteResult, profileResult] = await Promise.all([
+        supabase
+            .from("notes")
+            .insert({ entity_type, entity_id, content, created_by: user.id })
+            .select("*")
+            .single(),
+        supabase
+            .from("profiles")
+            .select("id, full_name, email")
+            .eq("id", user.id)
+            .single(),
+    ]);
 
-    if (error) {
+    if (noteResult.error) {
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
-    // Resolve author name
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .eq("id", user.id)
-        .single();
-
+    const profile = profileResult.data;
     const authorName = profile?.full_name || profile?.email || "Someone";
 
-    // Create notifications for mentioned users
     if (mentioned_user_ids && mentioned_user_ids.length > 0) {
         const uniqueMentions = [...new Set(mentioned_user_ids)].filter(id => id !== user.id);
         if (uniqueMentions.length > 0) {
@@ -94,7 +92,7 @@ export async function POST(request: Request) {
                 body: content.length > 120 ? content.slice(0, 120) + "..." : content,
                 entity_type,
                 entity_id,
-                note_id: data.id,
+                note_id: noteResult.data.id,
                 created_by: user.id,
             }));
             await supabase.from("notifications").insert(notifications);
@@ -103,7 +101,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
         note: {
-            ...data,
+            ...noteResult.data,
             author: profile ? { id: profile.id, full_name: profile.full_name || profile.email || "Unknown" } : null,
         }
     }, { status: 201 });

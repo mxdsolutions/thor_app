@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardPage, DashboardHeader, DashboardMetrics } from "@/components/dashboard/DashboardPage";
@@ -21,6 +20,8 @@ import {
     ArrowUpRightIcon,
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
+import { useStats } from "@/lib/swr";
+import { MetricsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 
 const fadeInUp = {
     hidden: { y: 12, opacity: 0 },
@@ -46,29 +47,9 @@ type ActiveJob = {
 };
 
 export default function DashboardOverview() {
-    const [stats, setStats] = useState<Stats | null>(null);
-    const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const fetchStats = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/stats");
-            if (!res.ok) throw new Error("Failed to fetch statistics");
-            const data = await res.json();
-            setStats(data.stats);
-            setActiveJobs(data.activeJobs || []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load dashboard statistics");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchStats();
-    }, []);
+    const { data, isLoading: loading } = useStats();
+    const stats: Stats | null = data?.stats || null;
+    const activeJobs: ActiveJob[] = data?.activeJobs || [];
 
     const metrics = [
         {
@@ -108,9 +89,13 @@ export default function DashboardOverview() {
             />
 
             {/* Metrics Grid */}
-            <motion.div variants={fadeInUp}>
-                <DashboardMetrics metrics={metrics as any} />
-            </motion.div>
+            {loading ? (
+                <MetricsSkeleton count={3} />
+            ) : (
+                <motion.div variants={fadeInUp}>
+                    <DashboardMetrics metrics={metrics as any} />
+                </motion.div>
+            )}
 
             {/* Active Jobs Mini Table */}
             <motion.div variants={fadeInUp} className="space-y-4 pb-12">
@@ -134,9 +119,7 @@ export default function DashboardOverview() {
                         </thead>
                         <tbody>
                             {loading ? (
-                                <tr>
-                                    <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading active jobs...</td>
-                                </tr>
+                                <TableSkeleton rows={5} columns={6} />
                             ) : activeJobs.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No active jobs.</td>

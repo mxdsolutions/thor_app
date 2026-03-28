@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
 import {
     tableBase,
@@ -22,6 +22,8 @@ import {
 import { CreateCompanyModal } from "@/components/modals/CreateCompanyModal";
 import { CompanySideSheet } from "@/components/sheets/CompanySideSheet";
 import { toast } from "sonner";
+import { useCompanies } from "@/lib/swr";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Company = {
     id: string;
@@ -37,29 +39,12 @@ type Company = {
 
 export default function CompaniesPage() {
     const [search, setSearch] = useState("");
-    const [companies, setCompanies] = useState<Company[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading: loading, mutate } = useCompanies();
+    const companies: Company[] = data?.companies || [];
     const [showCreate, setShowCreate] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
-    const fetchCompanies = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/companies");
-            if (!res.ok) throw new Error("Failed to fetch companies");
-            const data = await res.json();
-            setCompanies(data.companies || []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load companies");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchCompanies();
-    }, []);
+    const fetchCompanies = () => mutate();
 
     const filteredCompanies = companies.filter(c =>
         c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -105,9 +90,7 @@ export default function CompaniesPage() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading companies...</td>
-                            </tr>
+                            <TableSkeleton rows={8} columns={6} />
                         ) : filteredCompanies.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No companies found.</td>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
@@ -56,27 +57,25 @@ export default function DashboardLayout({
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeWorkspace, setActiveWorkspace] = useState<Workspace>("operations");
     const navRef = useRef<HTMLElement>(null);
-    const [userProfile, setUserProfile] = useState<{ full_name: string | null; email: string | null } | null>(null);
-
     useEffect(() => {
         navRef.current?.scrollTo(0, 0);
     }, [activeWorkspace]);
 
-    useEffect(() => {
+    // Fetch user profile once via SWR (no waterfall)
+    const { data: profileData } = useSWR("user-profile", async () => {
         const supabase = createClient();
-        supabase.auth.getUser().then(({ data }) => {
-            if (!data.user) return;
-            supabase.from("profiles").select("full_name, email").eq("id", data.user.id).single().then(({ data: profile }) => {
-                if (profile) setUserProfile(profile);
-            });
-        });
-    }, []);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+        const { data: profile } = await supabase.from("profiles").select("full_name, email").eq("id", user.id).single();
+        return profile;
+    }, { revalidateOnFocus: false, dedupingInterval: 60000 });
+    const userProfile = profileData || null;
 
     const userInitials = (() => {
         const name = userProfile?.full_name;
         if (!name) return "?";
         const parts = name.trim().split(/\s+/);
-        return parts.map((p) => p[0]).join("").slice(0, 2).toUpperCase();
+        return parts.map((p: string) => p[0]).join("").slice(0, 2).toUpperCase();
     })();
     const userDisplayName = userProfile?.full_name || "User";
     const userEmail = userProfile?.email || "";
@@ -154,26 +153,20 @@ export default function DashboardLayout({
         created_at: string;
         creator?: { id: string; full_name: string | null; email: string | null } | null;
     };
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
     const [notifOpen, setNotifOpen] = useState(false);
     const [signOutOpen, setSignOutOpen] = useState(false);
 
-    const fetchNotifications = useCallback(async () => {
-        try {
-            const res = await fetch("/api/notifications");
-            if (!res.ok) return;
-            const data = await res.json();
-            setNotifications(data.notifications || []);
-            setUnreadCount(data.unread_count || 0);
-        } catch { /* silent */ }
-    }, []);
-
-    useEffect(() => {
-        fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30000);
-        return () => clearInterval(interval);
-    }, [fetchNotifications]);
+    const { data: notifData, mutate: mutateNotifs } = useSWR(
+        "/api/notifications",
+        async (url: string) => {
+            const res = await fetch(url);
+            if (!res.ok) return { notifications: [], unread_count: 0 };
+            return res.json();
+        },
+        { refreshInterval: 30000, revalidateOnFocus: false, dedupingInterval: 10000 }
+    );
+    const notifications: Notification[] = notifData?.notifications || [];
+    const unreadCount: number = notifData?.unread_count || 0;
 
     const markAllRead = async () => {
         try {
@@ -182,8 +175,7 @@ export default function DashboardLayout({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ mark_all: true }),
             });
-            setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-            setUnreadCount(0);
+            mutateNotifs();
         } catch { /* silent */ }
     };
 
@@ -194,8 +186,7 @@ export default function DashboardLayout({
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ notification_ids: [id] }),
             });
-            setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
-            setUnreadCount((prev) => Math.max(0, prev - 1));
+            mutateNotifs();
         } catch { /* silent */ }
     };
 
@@ -236,7 +227,7 @@ export default function DashboardLayout({
                 <div className="pb-4 flex flex-col items-center gap-3">
                     <button
                         title="Notifications"
-                        onClick={() => { setNotifOpen(true); fetchNotifications(); }}
+                        onClick={() => { setNotifOpen(true); mutateNotifs(); }}
                         className="p-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors relative"
                     >
                         <BellIcon className="w-5 h-5" />

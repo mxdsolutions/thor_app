@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { DashboardPage, DashboardHeader } from "@/components/dashboard/DashboardPage";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +22,8 @@ import {
     Legend,
 } from "recharts";
 import { toast } from "sonner";
+import { useStats } from "@/lib/swr";
+import { MetricsSkeleton, ChartSkeleton } from "@/components/ui/skeleton";
 
 const fadeInUp = {
     hidden: { y: 12, opacity: 0 },
@@ -38,27 +39,8 @@ type Stats = {
 };
 
 export default function CrmOverview() {
-    const [stats, setStats] = useState<Stats | null>(null);
-    const [loading, setLoading] = useState(true);
-
-    const fetchStats = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/stats");
-            if (!res.ok) throw new Error("Failed to fetch statistics");
-            const data = await res.json();
-            setStats(data.stats);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load CRM statistics");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchStats();
-    }, []);
+    const { data, isLoading: loading } = useStats();
+    const stats: Stats | null = data?.stats || null;
 
     const metrics = [
         {
@@ -99,23 +81,27 @@ export default function CrmOverview() {
             />
 
             {/* 4 Stat Cards - all on one line */}
-            <motion.div variants={fadeInUp}>
-                <div className={cn(`grid grid-cols-2 lg:grid-cols-4 ${cardGap} px-4 md:px-6 lg:px-10`)}>
-                    {metrics.map((metric, i) => (
-                        <Card key={i} className="border-border shadow-none overflow-hidden rounded-2xl">
-                            <CardContent className="p-4 md:p-5">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className={statLabelClass}>{metric.label}</span>
-                                    <div className={`p-2 rounded-xl ${metric.bg}`}>
-                                        <metric.icon className={`w-4 h-4 ${metric.color}`} />
+            {loading ? (
+                <MetricsSkeleton count={4} />
+            ) : (
+                <motion.div variants={fadeInUp}>
+                    <div className={cn(`grid grid-cols-2 lg:grid-cols-4 ${cardGap} px-4 md:px-6 lg:px-10`)}>
+                        {metrics.map((metric, i) => (
+                            <Card key={i} className="border-border shadow-none overflow-hidden rounded-2xl">
+                                <CardContent className="p-4 md:p-5">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <span className={statLabelClass}>{metric.label}</span>
+                                        <div className={`p-2 rounded-xl ${metric.bg}`}>
+                                            <metric.icon className={`w-4 h-4 ${metric.color}`} />
+                                        </div>
                                     </div>
-                                </div>
-                                <h3 className={statValueClass}>{metric.value}</h3>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            </motion.div>
+                                    <h3 className={statValueClass}>{metric.value}</h3>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
 
             {/* Monthly Performance Line Chart */}
             <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
@@ -127,8 +113,10 @@ export default function CrmOverview() {
                         </div>
                         <div className="p-6">
                             {loading ? (
-                                <div className="h-[300px] flex items-center justify-center text-sm text-muted-foreground">
-                                    Loading chart data...
+                                <div className="h-[300px] flex items-end gap-2 px-4">
+                                    {Array.from({ length: 12 }).map((_, i) => (
+                                        <div key={i} className="flex-1 bg-muted animate-pulse rounded-t" style={{ height: `${30 + Math.sin(i) * 30 + 20}%` }} />
+                                    ))}
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height={300}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
 import {
     tableBase,
@@ -22,6 +22,8 @@ import {
 import { CreateContactModal } from "@/components/modals/CreateContactModal";
 import { ContactSideSheet } from "@/components/sheets/ContactSideSheet";
 import { toast } from "sonner";
+import { useContacts } from "@/lib/swr";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Contact = {
     id: string;
@@ -40,29 +42,12 @@ type Contact = {
 
 export default function ContactsPage() {
     const [search, setSearch] = useState("");
-    const [contacts, setContacts] = useState<Contact[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading: loading, mutate } = useContacts();
+    const contacts: Contact[] = data?.contacts || [];
     const [showCreate, setShowCreate] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
-    const fetchContacts = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/contacts");
-            if (!res.ok) throw new Error("Failed to fetch contacts");
-            const data = await res.json();
-            setContacts(data.contacts || []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load contacts");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchContacts();
-    }, []);
+    const fetchContacts = () => mutate();
 
     const filteredContacts = contacts.filter(c => {
         const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
@@ -110,9 +95,7 @@ export default function ContactsPage() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading contacts...</td>
-                            </tr>
+                            <TableSkeleton rows={8} columns={6} />
                         ) : filteredContacts.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No contacts found.</td>

@@ -103,6 +103,41 @@ export const noteSchema = z.object({
     mentioned_user_ids: z.array(z.string().uuid()).optional(),
 });
 
+// --- Line Item Schemas (shared pattern for opportunity & job line items) ---
+
+export const lineItemSchema = z.object({
+    opportunity_id: z.string().uuid().optional(),
+    job_id: z.string().uuid().optional(),
+    product_id: z.string().uuid(),
+    quantity: z.number().min(0, "Quantity must be non-negative"),
+    unit_price: z.number().min(0, "Unit price must be non-negative"),
+});
+
+export const lineItemUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+    quantity: z.number().min(0).optional(),
+    unit_price: z.number().min(0).optional(),
+});
+
+// --- Job Schemas ---
+
+export const jobSchema = z.object({
+    description: z.string().min(1, "Job description is required"),
+    status: z.string().optional(),
+    amount: z.number().min(0).optional(),
+    project_id: z.string().uuid().optional().nullable(),
+    assigned_to: z.string().uuid().optional().nullable(),
+    scheduled_date: z.string().optional().nullable(),
+    opportunity_id: z.string().uuid().optional().nullable(),
+    company_id: z.string().uuid().optional().nullable(),
+    paid_status: z.enum(["not_paid", "partly_paid", "paid_in_full"]).optional(),
+    total_payment_received: z.number().min(0).optional(),
+});
+
+export const jobUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(jobSchema.partial());
+
 // --- Email Schemas ---
 
 export const sendEmailSchema = z.object({
@@ -115,6 +150,21 @@ export const sendEmailSchema = z.object({
 
 export const replyEmailSchema = z.object({
     comment: z.string().min(1, "Reply content is required"),
+});
+
+// --- Job From Opportunity Schema ---
+
+export const jobFromOpportunitySchema = z.object({
+    opportunity_id: z.string().uuid("Valid opportunity ID is required"),
+    description: z.string().min(1, "Description is required").max(1000),
+    company_id: z.string().uuid("Valid company ID is required"),
+    assigned_to: z.string().uuid().optional().nullable(),
+    line_items: z.array(z.object({
+        product_id: z.string().uuid(),
+        product_name: z.string().min(1).max(500),
+        quantity: z.number().min(0),
+        unit_price: z.number().min(0),
+    })).min(1, "At least one line item is required"),
 });
 
 // --- Type Exports ---
@@ -132,5 +182,9 @@ export type OpportunityUpdateInput = z.infer<typeof opportunityUpdateSchema>;
 export type ProductInput = z.infer<typeof productSchema>;
 export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
 export type NoteInput = z.infer<typeof noteSchema>;
+export type LineItemInput = z.infer<typeof lineItemSchema>;
+export type LineItemUpdateInput = z.infer<typeof lineItemUpdateSchema>;
+export type JobInput = z.infer<typeof jobSchema>;
+export type JobUpdateInput = z.infer<typeof jobUpdateSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;
 export type ReplyEmailInput = z.infer<typeof replyEmailSchema>;

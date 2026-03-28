@@ -10,10 +10,12 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const folder = searchParams.get("folder") || "inbox";
+    const allowedFolders = ["inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive"];
+    const folderParam = searchParams.get("folder") || "inbox";
+    const folder = allowedFolders.includes(folderParam) ? folderParam : "inbox";
     const search = searchParams.get("search") || "";
-    const top = searchParams.get("top") || "25";
-    const skip = searchParams.get("skip") || "0";
+    const top = String(Math.min(Math.max(parseInt(searchParams.get("top") || "25") || 25, 1), 100));
+    const skip = String(Math.max(parseInt(searchParams.get("skip") || "0") || 0, 0));
 
     try {
         let endpoint: string;

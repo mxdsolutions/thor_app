@@ -11,31 +11,33 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 
-type Opportunity = {
+type Assignee = { id: string; full_name: string | null; email: string | null };
+
+type Job = {
     id: string;
-    title: string;
-    stage: string;
-    value: number;
-    probability: number | null;
-    expected_close_date: string | null;
-    description?: string | null;
-    contact?: { id: string; first_name: string; last_name: string } | null;
+    description: string;
+    status: string;
+    amount: number;
+    paid_status: string;
+    total_payment_received: number;
+    scheduled_date: string | null;
+    project?: { id: string; title: string } | null;
+    assignees: Assignee[];
+    opportunity?: { id: string; title: string } | null;
     company?: { id: string; name: string } | null;
-    lead?: { id: string; title: string } | null;
-    assignee?: { id: string; full_name: string } | null;
     created_at: string;
 };
 
 type LineItem = {
     id: string;
-    opportunity_id: string;
+    job_id: string;
     product_id: string;
     quantity: number;
     unit_price: number;
@@ -49,35 +51,43 @@ type Product = {
     initial_value: number | null;
 };
 
-interface OpportunitySideSheetProps {
-    opportunity: Opportunity | null;
+interface JobSideSheetProps {
+    job: Job | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onUpdate?: () => void;
-    onStageChange?: (opportunity: Opportunity, newStage: string) => void;
 }
 
-const stageConfig: Record<string, { label: string; color: string }> = {
-    appt_booked: { label: "Appt Booked", color: "bg-blue-500" },
-    proposal_sent: { label: "Proposal Sent", color: "bg-amber-500" },
-    negotiation: { label: "Negotiation", color: "bg-indigo-500" },
-    closed_won: { label: "Closed Won", color: "bg-emerald-500" },
-    closed_lost: { label: "Closed Lost", color: "bg-rose-400" },
+const statusConfig: Record<string, { label: string; color: string }> = {
+    new: { label: "New", color: "bg-amber-500" },
+    in_progress: { label: "In Progress", color: "bg-blue-500" },
+    completed: { label: "Completed", color: "bg-emerald-500" },
+    cancelled: { label: "Cancelled", color: "bg-rose-400" },
 };
 
-export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate, onStageChange }: OpportunitySideSheetProps) {
+const paidStatusConfig: Record<string, { label: string; color: string }> = {
+    not_paid: { label: "Not Paid", color: "text-rose-500" },
+    partly_paid: { label: "Partly Paid", color: "text-amber-500" },
+    paid_in_full: { label: "Paid in Full", color: "text-emerald-500" },
+};
+
+export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheetProps) {
     const [activeTab, setActiveTab] = useState("details");
-    const [data, setData] = useState<Opportunity | null>(opportunity);
+    const [data, setData] = useState<Job | null>(job);
     const [users, setUsers] = useState<{ value: string; label: string }[]>([]);
+    const [jobProjects, setJobProjects] = useState<{ id: string; title: string; status: string }[]>([]);
+    const [opportunities, setOpportunities] = useState<{ value: string; label: string }[]>([]);
+    const [companies, setCompanies] = useState<{ value: string; label: string }[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
     const [products, setProducts] = useState<Product[]>([]);
     const [addingProduct, setAddingProduct] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState("");
     const [newQty, setNewQty] = useState(1);
     const [newUnitPrice, setNewUnitPrice] = useState(0);
+
     useEffect(() => {
-        setData(opportunity);
-    }, [opportunity]);
+        setData(job);
+    }, [job]);
 
     useEffect(() => {
         if (data?.id) setActiveTab("details");
@@ -88,40 +98,72 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
         supabase.from("profiles").select("id, full_name, email").then(({ data: profiles }) => {
             if (profiles) setUsers(profiles.map((p) => ({ value: p.id, label: p.full_name || p.email || p.id })));
         });
+        supabase.from("opportunities").select("id, title").then(({ data: opps }) => {
+            if (opps) setOpportunities(opps.map((o) => ({ value: o.id, label: o.title })));
+        });
+        supabase.from("companies").select("id, name").then(({ data: comps }) => {
+            if (comps) setCompanies(comps.map((c) => ({ value: c.id, label: c.name })));
+        });
         supabase.from("products").select("id, name, initial_value").eq("status", "active").then(({ data: prods }) => {
             if (prods) setProducts(prods);
         });
     }, []);
 
-    // Fetch line items when opportunity changes
-    const fetchLineItems = useCallback(async (opportunityId: string) => {
-        const res = await fetch(`/api/opportunity-line-items?opportunity_id=${opportunityId}`);
+    // Fetch line items when job changes
+    const fetchLineItems = useCallback(async (jobId: string) => {
+        const res = await fetch(`/api/job-line-items?job_id=${jobId}`);
         if (res.ok) {
             const { lineItems: items } = await res.json();
             setLineItems(items || []);
         }
     }, []);
 
+    const fetchJobProjects = useCallback(async (jobId: string) => {
+        const supabase = createClient();
+        const { data: projs } = await supabase
+            .from("projects")
+            .select("id, title, status")
+            .eq("job_id", jobId)
+            .order("created_at", { ascending: true });
+        setJobProjects(projs || []);
+    }, []);
+
     useEffect(() => {
-        if (data?.id) fetchLineItems(data.id);
-    }, [data?.id, fetchLineItems]);
+        if (data?.id) {
+            fetchLineItems(data.id);
+            fetchJobProjects(data.id);
+        }
+    }, [data?.id, fetchLineItems, fetchJobProjects]);
+
+    const handleSave = useCallback(async (column: string, value: string | number | null) => {
+        if (!data) return;
+        const supabase = createClient();
+        const { error } = await supabase
+            .from("jobs")
+            .update({ [column]: value, updated_at: new Date().toISOString() })
+            .eq("id", data.id);
+        if (!error) {
+            setData((prev) => prev ? { ...prev, [column]: value } : prev);
+            onUpdate?.();
+        }
+    }, [data, onUpdate]);
 
     const handleAddLineItem = async () => {
         if (!data || !selectedProductId) return;
-        const res = await fetch("/api/opportunity-line-items", {
+        const res = await fetch("/api/job-line-items", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                opportunity_id: data.id,
+                job_id: data.id,
                 product_id: selectedProductId,
                 quantity: newQty,
                 unit_price: newUnitPrice,
             }),
         });
         if (res.ok) {
-            const { lineItem, opportunityValue } = await res.json();
+            const { lineItem, jobAmount } = await res.json();
             setLineItems((prev) => [...prev, lineItem]);
-            setData((prev) => prev ? { ...prev, value: opportunityValue } : prev);
+            setData((prev) => prev ? { ...prev, amount: jobAmount } : prev);
             setAddingProduct(false);
             setSelectedProductId("");
             setNewQty(1);
@@ -133,15 +175,15 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
     };
 
     const handleUpdateLineItem = async (id: string, field: "quantity" | "unit_price", value: number) => {
-        const res = await fetch("/api/opportunity-line-items", {
+        const res = await fetch("/api/job-line-items", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ id, [field]: value }),
         });
         if (res.ok) {
-            const { lineItem, opportunityValue } = await res.json();
+            const { lineItem, jobAmount } = await res.json();
             setLineItems((prev) => prev.map((li) => li.id === id ? lineItem : li));
-            setData((prev) => prev ? { ...prev, value: opportunityValue } : prev);
+            setData((prev) => prev ? { ...prev, amount: jobAmount } : prev);
             onUpdate?.();
         } else {
             toast.error("Failed to update");
@@ -149,51 +191,29 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
     };
 
     const handleDeleteLineItem = async (id: string) => {
-        const res = await fetch(`/api/opportunity-line-items?id=${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/job-line-items?id=${id}`, { method: "DELETE" });
         if (res.ok) {
-            const { opportunityValue } = await res.json();
+            const { jobAmount } = await res.json();
             setLineItems((prev) => prev.filter((li) => li.id !== id));
-            setData((prev) => prev ? { ...prev, value: opportunityValue } : prev);
+            setData((prev) => prev ? { ...prev, amount: jobAmount } : prev);
             onUpdate?.();
         } else {
             toast.error("Failed to remove product");
         }
     };
 
-    const handleSave = useCallback(async (column: string, value: string | number | null) => {
-        if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("opportunities")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
-            const updated = { ...data, [column]: value };
-            setData(updated);
-            onUpdate?.();
-            if (column === "stage" && value === "closed_won") {
-                onStageChange?.(updated, "closed_won");
-            }
-        }
-    }, [data, onUpdate, onStageChange]);
-
     if (!data) return null;
 
-    const stage = stageConfig[data.stage] || stageConfig.appt_booked;
+    const status = statusConfig[data.status] || statusConfig.new;
     const lineItemsTotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unit_price, 0);
 
     const tabs = [
         { id: "details", label: "Details" },
         { id: "products", label: `Products (${lineItems.length})` },
+        { id: "projects", label: `Projects (${jobProjects.length})` },
         { id: "notes", label: "Notes" },
         { id: "activity", label: "Activity" },
     ];
-
-    const probabilityColor = (p: number) => {
-        if (p >= 70) return "bg-emerald-500";
-        if (p >= 40) return "bg-amber-400";
-        return "bg-rose-400";
-    };
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -201,20 +221,20 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
                 {/* Header */}
                 <div className="p-6 pb-4 border-b border-border">
                     <SheetHeader className="flex flex-row items-start gap-4 space-y-0 text-left">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-lg font-bold text-emerald-600">$</span>
+                        <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-lg font-bold text-blue-600">J</span>
                         </div>
                         <div className="flex-1 min-w-0 pt-0.5">
                             <div className="flex items-center gap-2.5">
-                                <SheetTitle className="text-lg font-bold truncate">{data.title}</SheetTitle>
+                                <SheetTitle className="text-lg font-bold truncate">{data.description}</SheetTitle>
                                 <Badge variant="outline" className="shrink-0 text-[10px] font-bold uppercase tracking-wider">
-                                    <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5", stage.color)} />
-                                    {stage.label}
+                                    <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5", status.color)} />
+                                    {status.label}
                                 </Badge>
                             </div>
                             <SheetDescription className="text-sm text-muted-foreground mt-1">
-                                ${data.value.toLocaleString()}
-                                {data.probability != null && ` · ${data.probability}% probability`}
+                                ${data.amount.toLocaleString()}
+                                {data.scheduled_date && ` · ${new Date(data.scheduled_date).toLocaleDateString("en-AU", { dateStyle: "medium" })}`}
                             </SheetDescription>
                         </div>
                     </SheetHeader>
@@ -247,141 +267,138 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
                     <div className="flex-1 overflow-y-auto p-6">
                         {activeTab === "details" && (
                             <div className="space-y-4">
-                                {/* Value hero card */}
-                                <div className="rounded-xl border border-border bg-card p-5">
-                                    <div className="flex items-baseline justify-between mb-3">
-                                        <span className="text-2xl font-bold tabular-nums text-foreground">
-                                            ${data.value.toLocaleString()}
-                                        </span>
-                                        {data.probability != null && (
-                                            <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                                                {data.probability}%
-                                            </span>
-                                        )}
-                                    </div>
-                                    {data.probability != null && (
-                                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div
-                                                className={cn("h-full rounded-full transition-all", probabilityColor(data.probability))}
-                                                style={{ width: `${data.probability}%` }}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="rounded-xl border border-border bg-card p-5">
-                                    <DetailFields
-                                        onSave={handleSave}
-                                        fields={[
-                                            {
-                                                label: "Title",
-                                                value: data.title,
-                                                dbColumn: "title",
-                                                type: "text",
-                                                rawValue: data.title,
-                                            },
-                                            {
-                                                label: "Stage",
-                                                value: stage.label,
-                                                dbColumn: "stage",
-                                                type: "select",
-                                                rawValue: data.stage,
-                                                options: Object.entries(stageConfig).map(([k, v]) => ({ value: k, label: v.label })),
-                                            },
-                                            {
-                                                label: "Value",
-                                                value: `$${data.value.toLocaleString()}`,
-                                                dbColumn: "value",
-                                                type: "number",
-                                                rawValue: data.value,
-                                            },
-                                            {
-                                                label: "Probability",
-                                                value: data.probability != null ? `${data.probability}%` : null,
-                                                dbColumn: "probability",
-                                                type: "number",
-                                                rawValue: data.probability,
-                                            },
-                                            {
-                                                label: "Expected Close",
-                                                value: data.expected_close_date ? new Date(data.expected_close_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null,
-                                                dbColumn: "expected_close_date",
-                                                type: "date",
-                                                rawValue: data.expected_close_date,
-                                            },
-                                            {
-                                                label: "Assigned To",
-                                                value: data.assignee?.full_name,
-                                                dbColumn: "assigned_to",
-                                                type: "select",
-                                                rawValue: data.assignee?.id ?? null,
-                                                options: users,
-                                            },
-                                            {
-                                                label: "Created",
-                                                value: new Date(data.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-                                            },
-                                        ]}
-                                    />
-                                </div>
-
-                                {/* Description */}
                                 <div className="rounded-xl border border-border bg-card p-5">
                                     <DetailFields
                                         onSave={handleSave}
                                         fields={[
                                             {
                                                 label: "Description",
-                                                value: data.description || null,
+                                                value: data.description,
                                                 dbColumn: "description",
                                                 type: "text",
                                                 rawValue: data.description,
+                                            },
+                                            {
+                                                label: "Status",
+                                                value: status.label,
+                                                dbColumn: "status",
+                                                type: "select",
+                                                rawValue: data.status,
+                                                options: Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label })),
+                                            },
+                                            {
+                                                label: "Scheduled Date",
+                                                value: data.scheduled_date ? new Date(data.scheduled_date).toLocaleDateString("en-AU", { dateStyle: "medium" }) : null,
+                                                dbColumn: "scheduled_date",
+                                                type: "date",
+                                                rawValue: data.scheduled_date,
+                                            },
+                                            {
+                                                label: "Paid Status",
+                                                value: paidStatusConfig[data.paid_status]?.label || "Not Paid",
+                                                dbColumn: "paid_status",
+                                                type: "select",
+                                                rawValue: data.paid_status,
+                                                options: Object.entries(paidStatusConfig).map(([k, v]) => ({ value: k, label: v.label })),
+                                            },
+                                            {
+                                                label: "Payment Received",
+                                                value: `$${(data.total_payment_received || 0).toLocaleString()}`,
+                                                dbColumn: "total_payment_received",
+                                                type: "number",
+                                                rawValue: data.total_payment_received || 0,
+                                            },
+                                            {
+                                                label: "Opportunity",
+                                                value: data.opportunity?.title,
+                                                dbColumn: "opportunity_id",
+                                                type: "select",
+                                                rawValue: data.opportunity?.id ?? null,
+                                                options: opportunities,
+                                            },
+                                            {
+                                                label: "Company",
+                                                value: data.company?.name,
+                                                dbColumn: "company_id",
+                                                type: "select",
+                                                rawValue: data.company?.id ?? null,
+                                                options: companies,
+                                            },
+                                            {
+                                                label: "Created",
+                                                value: new Date(data.created_at).toLocaleDateString("en-AU", { dateStyle: "medium" }),
                                             },
                                         ]}
                                     />
                                 </div>
 
-                                {data.lead && (
-                                    <LinkedEntityCard
-                                        label="Related Lead"
-                                        title={data.lead.title}
-                                        icon={
-                                            <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                            </svg>
-                                        }
-                                    />
-                                )}
-
-                                {data.contact && (
-                                    <LinkedEntityCard
-                                        label="Contact"
-                                        title={`${data.contact.first_name} ${data.contact.last_name}`}
-                                        icon={
-                                            <span className="text-[9px] font-bold text-muted-foreground">
-                                                {data.contact.first_name[0]}{data.contact.last_name[0]}
-                                            </span>
-                                        }
-                                    />
-                                )}
-
-                                {data.company && (
-                                    <LinkedEntityCard
-                                        label="Company"
-                                        title={data.company.name}
-                                        icon={
-                                            <span className="text-[10px] font-bold text-muted-foreground">
-                                                {data.company.name[0]}
-                                            </span>
-                                        }
-                                    />
-                                )}
+                                {/* Assignees */}
+                                <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assignees</p>
+                                    <div className="space-y-2">
+                                        {(data.assignees || []).map((a) => (
+                                            <div key={a.id} className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
+                                                        {(a.full_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <span className="text-sm font-medium">{a.full_name || a.email}</span>
+                                                </div>
+                                                <button
+                                                    onClick={async () => {
+                                                        const newIds = (data.assignees || []).filter(x => x.id !== a.id).map(x => x.id);
+                                                        const res = await fetch("/api/jobs", {
+                                                            method: "PATCH",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({ id: data.id, assignee_ids: newIds }),
+                                                        });
+                                                        if (res.ok) {
+                                                            setData(prev => prev ? { ...prev, assignees: prev.assignees.filter(x => x.id !== a.id) } : prev);
+                                                            onUpdate?.();
+                                                        }
+                                                    }}
+                                                    className="text-xs text-muted-foreground hover:text-rose-500 transition-colors"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <select
+                                        className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                        value=""
+                                        onChange={async (e) => {
+                                            const userId = e.target.value;
+                                            if (!userId) return;
+                                            const existing = (data.assignees || []).map(a => a.id);
+                                            if (existing.includes(userId)) return;
+                                            const newIds = [...existing, userId];
+                                            const res = await fetch("/api/jobs", {
+                                                method: "PATCH",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ id: data.id, assignee_ids: newIds }),
+                                            });
+                                            if (res.ok) {
+                                                const user = users.find(u => u.value === userId);
+                                                setData(prev => prev ? {
+                                                    ...prev,
+                                                    assignees: [...prev.assignees, { id: userId, full_name: user?.label || null, email: null }],
+                                                } : prev);
+                                                onUpdate?.();
+                                            }
+                                        }}
+                                    >
+                                        <option value="">Add assignee...</option>
+                                        {users.filter(u => !(data.assignees || []).some(a => a.id === u.value)).map(u => (
+                                            <option key={u.value} value={u.value}>{u.label}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         )}
 
                         {activeTab === "products" && (
                             <div className="space-y-4">
-                                {/* Line items table */}
                                 <div className="rounded-xl border border-border bg-card overflow-hidden">
                                     <table className="w-full text-sm">
                                         <thead>
@@ -487,7 +504,6 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
                                     </table>
                                 </div>
 
-                                {/* Add / confirm buttons */}
                                 {addingProduct ? (
                                     <div className="flex gap-2">
                                         <Button
@@ -521,12 +537,42 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
                             </div>
                         )}
 
+                        {activeTab === "projects" && (
+                            <div className="space-y-3">
+                                {jobProjects.length === 0 ? (
+                                    <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+                                        No projects linked to this job
+                                    </div>
+                                ) : (
+                                    jobProjects.map((proj) => (
+                                        <div key={proj.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
+                                                    {proj.title.charAt(0).toUpperCase()}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium">{proj.title}</p>
+                                                    <p className="text-[11px] text-muted-foreground capitalize">{proj.status.replace(/_/g, " ")}</p>
+                                                </div>
+                                            </div>
+                                            <div className={cn(
+                                                "w-2 h-2 rounded-full",
+                                                proj.status === "completed" ? "bg-emerald-500" :
+                                                proj.status === "in_progress" ? "bg-blue-500" :
+                                                proj.status === "cancelled" ? "bg-rose-400" : "bg-amber-500"
+                                            )} />
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        )}
+
                         {activeTab === "notes" && (
-                            <NotesPanel entityType="opportunity" entityId={data.id} />
+                            <NotesPanel entityType="job" entityId={data.id} />
                         )}
 
                         {activeTab === "activity" && (
-                            <ActivityTimeline entityType="opportunity" entityId={data.id} />
+                            <ActivityTimeline entityType="job" entityId={data.id} />
                         )}
                     </div>
                 </div>

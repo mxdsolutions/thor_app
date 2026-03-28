@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import {
 import { CreateLeadModal } from "@/components/modals/CreateLeadModal";
 import { LeadSideSheet } from "@/components/sheets/LeadSideSheet";
 import { toast } from "sonner";
+import { useLeads } from "@/lib/swr";
 
 type Lead = {
     id: string;
@@ -50,29 +51,12 @@ const priorityConfig: Record<string, { dot: string; label: string }> = {
 
 export default function LeadsPage() {
     const [search, setSearch] = useState("");
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading: loading, mutate } = useLeads();
+    const leads: Lead[] = data?.leads || [];
     const [showCreate, setShowCreate] = useState(false);
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
-    const fetchLeads = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/leads");
-            if (!res.ok) throw new Error("Failed to fetch leads");
-            const data = await res.json();
-            setLeads(data.leads || []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load leads");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchLeads();
-    }, []);
+    const fetchLeads = () => mutate();
 
     const filteredLeads = leads.filter(lead => {
         const q = search.toLowerCase();
@@ -113,7 +97,11 @@ export default function LeadsPage() {
                 loading={loading}
                 onCardClick={(lead) => setSelectedLead(lead)}
                 onItemMove={async (itemId, _from, to, label) => {
-                    setLeads(prev => prev.map(l => l.id === itemId ? { ...l, status: to } : l));
+                    // Optimistic update
+                    mutate(
+                        (current: any) => current ? { ...current, leads: current.leads.map((l: Lead) => l.id === itemId ? { ...l, status: to } : l) } : current,
+                        { revalidate: false }
+                    );
                     try {
                         const res = await fetch("/api/leads", {
                             method: "PATCH",
@@ -123,7 +111,7 @@ export default function LeadsPage() {
                         if (!res.ok) throw new Error();
                         toast.success(`Moved to ${label}`);
                     } catch {
-                        setLeads(prev => prev.map(l => l.id === itemId ? { ...l, status: _from } : l));
+                        mutate(); // Revert by refetching
                         toast.error("Failed to update status");
                     }
                 }}

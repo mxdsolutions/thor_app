@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
 import {
     tableBase,
@@ -20,6 +20,8 @@ import {
     ArrowUpRightIcon
 } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
+import { useProjects } from "@/lib/swr";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 type Project = {
     id: string;
@@ -36,27 +38,10 @@ type Project = {
 
 export default function ProjectsPage() {
     const [search, setSearch] = useState("");
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data, isLoading: loading, mutate } = useProjects();
+    const projects: Project[] = data?.projects || [];
 
-    const fetchProjects = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/projects");
-            if (!res.ok) throw new Error("Failed to fetch projects");
-            const data = await res.json();
-            setProjects(data.projects || []);
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to load projects");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchProjects();
-    }, []);
+    const fetchProjects = () => mutate();
 
     const filteredProjects = projects.filter(project =>
         project.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -103,9 +88,7 @@ export default function ProjectsPage() {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading projects...</td>
-                            </tr>
+                            <TableSkeleton rows={8} columns={6} />
                         ) : filteredProjects.length === 0 ? (
                             <tr>
                                 <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No projects found.</td>
@@ -124,7 +107,7 @@ export default function ProjectsPage() {
                                     </td>
                                     <td className={tableCell + " px-4"}>
                                         <Badge variant="outline" className="rounded-full px-2 py-0 text-[10px] font-medium border-border/50 capitalize">
-                                            {project.type.replace(/_/g, " ")}
+                                            {project.type?.replace(/_/g, " ") ?? "—"}
                                         </Badge>
                                     </td>
                                     <td className={tableCell + " px-4 text-right sm:text-left"}>
