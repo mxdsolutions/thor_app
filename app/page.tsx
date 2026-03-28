@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRightIcon, WrenchIcon, DocumentCheckIcon, UsersIcon } from "@heroicons/react/24/outline";
-import { signIn, demoSignIn } from "@/app/actions/auth";
+import { signIn } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 
@@ -16,7 +16,6 @@ function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(false);
 
@@ -44,23 +43,6 @@ function AuthContent() {
       toast.error(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setIsDemoLoading(true);
-    try {
-      const result = await demoSignIn();
-      if (result?.error) {
-        toast.error(result.error);
-      } else if (result?.success) {
-        router.refresh();
-        router.push("/dashboard/operations/overview");
-      }
-    } catch (err: any) {
-      toast.error("Demo login failed");
-    } finally {
-      setIsDemoLoading(false);
     }
   };
 
@@ -151,26 +133,6 @@ function AuthContent() {
             </form>
           </div>
 
-          <div className="relative flex items-center gap-4">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">or</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full h-11 text-base"
-            onClick={handleDemoLogin}
-            disabled={isDemoLoading || isLoading}
-          >
-            {isDemoLoading ? "Signing in..." : "Try Demo"}
-          </Button>
-
-          <div className="text-center text-sm">
-            <p className="text-muted-foreground">
-              Access to this platform is currently by invite only.
-            </p>
-          </div>
         </div>
       </div>
 
