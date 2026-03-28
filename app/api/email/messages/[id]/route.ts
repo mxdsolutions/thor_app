@@ -59,6 +59,15 @@ export async function GET(
             }
         }
 
+        // Mark as read if unread
+        if (!message.isRead) {
+            await graphFetch(supabase, user.id, `/me/messages/${id}`, {
+                method: "PATCH",
+                body: JSON.stringify({ isRead: true }),
+            }).catch(() => {}); // best-effort, don't fail the request
+            message.isRead = true;
+        }
+
         return NextResponse.json({ message, matchedContacts });
     } catch (err: any) {
         return NextResponse.json({ error: err.message }, { status: 500 });

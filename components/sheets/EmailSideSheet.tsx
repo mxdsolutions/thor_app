@@ -163,21 +163,23 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
 
                         {/* Tabs */}
                         <div className="flex flex-col flex-1 min-h-0 bg-secondary/20">
-                            <div className="flex gap-1 px-6 pt-3 border-b border-border bg-background">
-                                {tabs.map((tab) => (
-                                    <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id)}
-                                        className={cn(
-                                            "px-4 py-2 text-sm font-medium border-b-2 transition-colors -mb-px",
-                                            activeTab === tab.id
-                                                ? "border-foreground text-foreground"
-                                                : "border-transparent text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
+                            <div className="flex gap-1 px-6 py-3 border-b border-border bg-background">
+                                <div className="flex gap-1 p-1 rounded-full bg-secondary">
+                                    {tabs.map((tab) => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setActiveTab(tab.id)}
+                                            className={cn(
+                                                "px-4 py-1.5 text-sm font-medium rounded-full transition-colors",
+                                                activeTab === tab.id
+                                                    ? "bg-background text-foreground shadow-sm"
+                                                    : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Tab content */}

@@ -33,7 +33,7 @@ const contentItems = [
     { id: "C5", name: "Help Center", sku: "HC-005", category: "Support", targetAudience: "Member", status: "Active" },
 ];
 
-export default function ContentPage() {
+export default function ResourcesPage() {
     const [search, setSearch] = useState("");
     const [contentOpen, setContentOpen] = useState(false);
     const [filterOpen, setFilterOpen] = useState(false);
@@ -71,7 +71,7 @@ export default function ContentPage() {
 
             <DashboardPage>
                 <DashboardHeader
-                    title="Content"
+                    title="Resources"
                     subtitle="Manage articles, documents, and pages."
                 >
                     <Button

@@ -44,7 +44,13 @@ export default function ResetPasswordPage() {
             if (result?.error) {
                 toast.error(result.error);
             } else if (result?.success) {
-                router.push("/dashboard/operations/overview");
+                // Sign out the recovery session so the user can log in fresh
+                // with their new password — avoids the middleware admin check
+                // failing on recovery session tokens.
+                const supabase = createClient();
+                await supabase.auth.signOut();
+                toast.success("Password updated! Please sign in with your new password.");
+                router.push("/");
             }
         } catch (err: any) {
             toast.error("An error occurred updating the password.");

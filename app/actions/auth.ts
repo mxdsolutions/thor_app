@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -127,7 +127,7 @@ export async function resetPassword(formData: FormData) {
     const supabase = await createClient();
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${getURL()}auth/callback?next=/reset-password`,
+      redirectTo: `${getURL()}auth/callback`,
     });
 
     if (error) {
@@ -182,7 +182,6 @@ export async function demoSignIn() {
     }
 
     // If sign-in fails, create the demo user via admin client
-    const { createAdminClient } = await import("@/lib/supabase/server");
     const admin = await createAdminClient();
 
     const { data: newUser, error: createError } = await admin.auth.admin.createUser({

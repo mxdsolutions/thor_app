@@ -16,6 +16,28 @@ export type KanbanColumn = {
     accentBg?: string;
 };
 
+// Map Tailwind bg-* classes to hex values for dynamic inline styles
+const COLOR_MAP: Record<string, string> = {
+    "bg-blue-500": "#3b82f6",
+    "bg-amber-500": "#f59e0b",
+    "bg-emerald-500": "#10b981",
+    "bg-rose-400": "#fb7185",
+    "bg-violet-500": "#8b5cf6",
+    "bg-indigo-500": "#6366f1",
+    "bg-red-500": "#ef4444",
+    "bg-green-500": "#22c55e",
+    "bg-yellow-500": "#eab308",
+    "bg-purple-500": "#a855f7",
+    "bg-pink-500": "#ec4899",
+    "bg-cyan-500": "#06b6d4",
+    "bg-teal-500": "#14b8a6",
+    "bg-orange-500": "#f97316",
+};
+
+function getColumnColor(color: string): string {
+    return COLOR_MAP[color] || "#6b7280"; // fallback gray
+}
+
 interface KanbanProps<T extends KanbanItem> {
     items: T[];
     columns: KanbanColumn[];
@@ -110,14 +132,19 @@ export function Kanban<T extends KanbanItem>({
                         (item) => getItemStatus(item) === column.id
                     );
                     const isOver = dragOverColumn === column.id && dragSourceColumn.current !== column.id;
+                    const accentHex = getColumnColor(column.color);
 
                     return (
                         <div
                             key={column.id}
                             className={cn(
                                 "flex flex-col w-72 shrink-0 rounded-2xl bg-muted/40 overflow-hidden transition-all duration-200",
-                                isOver && "ring-2 ring-primary/20 bg-primary/[0.03]"
+                                isOver && "ring-2"
                             )}
+                            style={isOver ? {
+                                ["--tw-ring-color" as string]: `${accentHex}33`, // 20% opacity
+                                backgroundColor: `${accentHex}0A`, // ~4% opacity
+                            } : undefined}
                             onDragOver={(e) => handleDragOver(e, column.id)}
                             onDragLeave={(e) => handleDragLeave(e, column.id)}
                             onDrop={(e) => handleDrop(e, column.id)}
@@ -160,8 +187,11 @@ export function Kanban<T extends KanbanItem>({
                                         isOver && "py-6"
                                     )}>
                                         {isOver ? (
-                                            <div className="border-2 border-dashed border-primary/30 rounded-xl w-full p-6 flex items-center justify-center">
-                                                <p className="text-xs font-medium text-primary/60">Drop here</p>
+                                            <div
+                                                className="border-2 border-dashed rounded-xl w-full p-6 flex items-center justify-center"
+                                                style={{ borderColor: `${accentHex}4D`, color: `${accentHex}99` }}
+                                            >
+                                                <p className="text-xs font-medium">Drop here</p>
                                             </div>
                                         ) : (
                                             <>
@@ -201,8 +231,11 @@ export function Kanban<T extends KanbanItem>({
                                             </div>
                                         ))}
                                         {isOver && (
-                                            <div className="border-2 border-dashed border-primary/30 rounded-xl w-full p-6 flex items-center justify-center">
-                                                <p className="text-xs font-medium text-primary/60">Drop here</p>
+                                            <div
+                                                className="border-2 border-dashed rounded-xl w-full p-6 flex items-center justify-center"
+                                                style={{ borderColor: `${accentHex}4D`, color: `${accentHex}99` }}
+                                            >
+                                                <p className="text-xs font-medium">Drop here</p>
                                             </div>
                                         )}
                                     </>

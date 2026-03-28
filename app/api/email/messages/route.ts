@@ -16,13 +16,21 @@ export async function GET(request: NextRequest) {
     const skip = searchParams.get("skip") || "0";
 
     try {
-        let endpoint = `/me/mailFolders/${folder}/messages?$top=${top}&$skip=${skip}&$orderby=receivedDateTime desc&$select=id,subject,bodyPreview,from,toRecipients,receivedDateTime,isRead,hasAttachments`;
+        let endpoint: string;
+        let headers: Record<string, string> = {};
+
+        const select = "$select=id,subject,bodyPreview,from,toRecipients,receivedDateTime,isRead,hasAttachments";
 
         if (search) {
-            endpoint += `&$search="${encodeURIComponent(search)}"`;
+            // $search requires ConsistencyLevel header and cannot combine with $orderby
+            // Use /me/messages (not mailFolders) for broader search scope
+            endpoint = `/me/messages?$top=${top}&${select}&$search="${encodeURIComponent(search)}"`;
+            headers["ConsistencyLevel"] = "eventual";
+        } else {
+            endpoint = `/me/mailFolders/${folder}/messages?$top=${top}&$skip=${skip}&$orderby=receivedDateTime desc&${select}`;
         }
 
-        const res = await graphFetch(supabase, user.id, endpoint);
+        const res = await graphFetch(supabase, user.id, endpoint, { headers });
 
         if (!res.ok) {
             const err = await res.json();

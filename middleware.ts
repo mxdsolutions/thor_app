@@ -52,24 +52,6 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(url)
         }
 
-        // Admin-only gate for dashboard: verify user has admin role
-        if (isAuthenticated && isDashboard) {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', data.claims.sub as string)
-                .single()
-
-            if (!profile || profile.role !== 'admin') {
-                // Sign out the non-admin user and redirect to login
-                await supabase.auth.signOut()
-                const url = request.nextUrl.clone()
-                url.pathname = '/'
-                url.searchParams.set('error', 'admin_only')
-                return NextResponse.redirect(url)
-            }
-        }
-
         const isAuthRoute =
             request.nextUrl.pathname === '/' ||
             request.nextUrl.pathname.startsWith('/signup') ||

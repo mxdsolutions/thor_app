@@ -108,6 +108,8 @@ export default function EmailsPage() {
     const openEmail = (id: string) => {
         setSelectedEmailId(id);
         setSheetOpen(true);
+        // Optimistically mark as read in the list
+        setMessages((prev) => prev.map((msg) => msg.id === id ? { ...msg, isRead: true } : msg));
     };
 
     const timeAgo = (dateStr: string) => {

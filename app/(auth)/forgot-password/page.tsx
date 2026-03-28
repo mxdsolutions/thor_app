@@ -17,8 +17,14 @@ export default function ForgotPasswordPage() {
             // MUST use browser client so Supabase stores the PKCE code_verifier
             // locally before sending the email — server actions cannot do this.
             const supabase = createClient();
+
+            // Store intended destination in a cookie — Supabase's PKCE redirect
+            // chain strips custom query params from redirectTo, so the callback
+            // reads this cookie as a fallback.
+            document.cookie = "auth_redirect=/reset-password; path=/; max-age=600; SameSite=Lax";
+
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+                redirectTo: `${window.location.origin}/auth/callback`,
             });
             if (error) {
                 toast.error(error.message);

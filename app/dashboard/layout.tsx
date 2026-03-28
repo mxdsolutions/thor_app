@@ -13,6 +13,15 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogFooter,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 import {
     ArrowRightStartOnRectangleIcon,
@@ -59,10 +68,10 @@ export default function DashboardLayout({
 
     const operationsItems = [
         { href: "/dashboard/operations/overview", label: "Overview", icon: Squares2X2Icon },
-        { href: "/dashboard/operations/projects", label: "Projects", icon: ClipboardDocumentListIcon },
         { href: "/dashboard/operations/jobs", label: "Jobs", icon: BriefcaseIcon },
+        { href: "/dashboard/operations/projects", label: "Projects", icon: ClipboardDocumentListIcon },
         { href: "/dashboard/operations/products", label: "Products", icon: CubeIcon },
-        { href: "/dashboard/operations/content", label: "Content", icon: DocumentTextIcon },
+        { href: "/dashboard/operations/resources", label: "Resources", icon: DocumentTextIcon },
     ];
 
     const crmItems = [
@@ -71,7 +80,6 @@ export default function DashboardLayout({
         { href: "/dashboard/crm/opportunities", label: "Opportunities", icon: RocketLaunchIcon },
         { href: "/dashboard/crm/companies", label: "Companies", icon: BuildingOffice2Icon },
         { href: "/dashboard/crm/contacts", label: "Contacts", icon: UserGroupIcon },
-        { href: "/dashboard/crm/emails", label: "Emails", icon: EnvelopeIcon },
     ];
 
     const settingsItems = [
@@ -128,6 +136,7 @@ export default function DashboardLayout({
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [notifOpen, setNotifOpen] = useState(false);
+    const [signOutOpen, setSignOutOpen] = useState(false);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -222,6 +231,13 @@ export default function DashboardLayout({
                             <span className="text-xs font-bold text-violet-600">DJ</span>
                         </div>
                     </Link>
+                    <button
+                        title="Sign out"
+                        onClick={() => setSignOutOpen(true)}
+                        className="p-3 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+                    >
+                        <ArrowRightStartOnRectangleIcon className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 
@@ -259,13 +275,6 @@ export default function DashboardLayout({
                     })}
                 </nav>
 
-                {/* Bottom section */}
-                <div className="p-3 border-t border-border">
-                    <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
-                        <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px]" />
-                        Sign out
-                    </button>
-                </div>
             </aside>
 
             {/* Mobile Sidebar Overlay */}
@@ -365,7 +374,7 @@ export default function DashboardLayout({
                                         <p className="text-[11px] text-muted-foreground truncate">dylan@example.com</p>
                                     </div>
                                 </Link>
-                                <button onClick={() => signOut()} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
+                                <button onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors w-full">
                                     <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px]" />
                                     Sign out
                                 </button>
@@ -452,6 +461,26 @@ export default function DashboardLayout({
                     </div>
                 </SheetContent>
             </Sheet>
+
+            {/* Sign out confirmation dialog */}
+            <Dialog open={signOutOpen} onOpenChange={setSignOutOpen}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Sign out</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to sign out? You will need to sign in again to access the dashboard.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                        <Button variant="outline" className="rounded-xl" onClick={() => setSignOutOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" className="rounded-xl" onClick={() => signOut()}>
+                            Sign out
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
