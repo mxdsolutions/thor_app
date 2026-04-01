@@ -1,24 +1,17 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { validationError, serverError, missingParamError } from "@/app/api/_lib/errors";
 import { noteSchema } from "@/lib/validation";
 
-export async function GET(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const GET = withAuth(async (request, { supabase }) => {
     const { searchParams } = new URL(request.url);
     const entityType = searchParams.get("entity_type");
     const entityId = searchParams.get("entity_id");
 
     if (!entityType || !entityId) {
-        return NextResponse.json({ error: "Missing entity_type or entity_id" }, { status: 400 });
+        return missingParamError("entity_type and entity_id");
     }
 
-    // Use JOIN instead of sequential queries
     const { data, error } = await supabase
         .from("notes")
         .select(`
@@ -33,9 +26,7 @@ export async function GET(request: Request) {
         .eq("entity_id", entityId)
         .order("created_at", { ascending: false });
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     const notes = (data || []).map(n => ({
         ...n,
@@ -43,29 +34,19 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({ notes });
-}
+});
 
-export async function POST(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     const body = await request.json();
     const validation = noteSchema.safeParse(body);
-    if (!validation.success) {
-        return NextResponse.json({ error: "Validation failed", details: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
+    if (!validation.success) return validationError(validation.error);
 
     const { entity_type, entity_id, content, mentioned_user_ids } = validation.data;
 
-    // Insert note and fetch author profile in parallel
     const [noteResult, profileResult] = await Promise.all([
         supabase
             .from("notes")
-            .insert({ entity_type, entity_id, content, created_by: user.id })
+            .insert({ entity_type, entity_id, content, created_by: user.id, tenant_id: tenantId })
             .select("*")
             .single(),
         supabase
@@ -75,9 +56,7 @@ export async function POST(request: Request) {
             .single(),
     ]);
 
-    if (noteResult.error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (noteResult.error) return serverError();
 
     const profile = profileResult.data;
     const authorName = profile?.full_name || profile?.email || "Someone";
@@ -94,6 +73,7 @@ export async function POST(request: Request) {
                 entity_id,
                 note_id: noteResult.data.id,
                 created_by: user.id,
+                tenant_id: tenantId,
             }));
             await supabase.from("notifications").insert(notifications);
         }
@@ -105,4 +85,4 @@ export async function POST(request: Request) {
             author: profile ? { id: profile.id, full_name: profile.full_name || profile.email || "Unknown" } : null,
         }
     }, { status: 201 });
-}
+});

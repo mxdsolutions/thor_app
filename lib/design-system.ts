@@ -21,7 +21,7 @@ export const cardGap = "gap-3";
 
 export const tableBase = "w-full text-sm text-left";
 
-export const tableHead = "bg-secondary/50";
+export const tableHead = "bg-secondary";
 
 export const tableHeadCell = "py-4 text-left text-[11px] font-bold text-muted-foreground uppercase tracking-wider";
 

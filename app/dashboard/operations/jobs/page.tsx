@@ -2,7 +2,8 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
+import { DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
+import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import {
     tableBase,
     tableHead,
@@ -112,129 +113,133 @@ function JobsPageContent() {
     }).map(job => ({ ...job, title: job.description }));
 
     return (
-        <DashboardPage>
-            <DashboardHeader
-                title="Jobs"
-                subtitle="View and manage all service jobs."
-            >
-                <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
-                    <PlusIcon className="w-4 h-4 mr-2" />
-                    Add Job
-                </Button>
-            </DashboardHeader>
+        <>
+            <ScrollableTableLayout
+                header={
+                    <>
+                        <DashboardHeader
+                            title="Jobs"
+                            subtitle="View and manage all service jobs."
+                        >
+                            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Job
+                            </Button>
+                        </DashboardHeader>
 
-            <DashboardControls>
-                <div className="relative flex-1 max-w-sm">
-                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        placeholder="Search jobs, companies or members..."
-                        className="pl-9 rounded-xl border-border/50"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-                <div className="flex gap-1 p-1 rounded-full bg-secondary">
-                    <button
-                        onClick={() => setView("kanban")}
-                        className={cn(
-                            "p-1.5 rounded-full transition-colors",
-                            view === "kanban" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                        title="Kanban view"
-                    >
-                        <Squares2X2Icon className="w-4 h-4" />
-                    </button>
-                    <button
-                        onClick={() => setView("table")}
-                        className={cn(
-                            "p-1.5 rounded-full transition-colors",
-                            view === "table" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                        title="Table view"
-                    >
-                        <ListBulletIcon className="w-4 h-4" />
-                    </button>
-                </div>
-            </DashboardControls>
-
-            {view === "kanban" ? (
-                <Kanban
-                    items={filteredJobs}
-                    columns={statusColumns}
-                    getItemStatus={(job) => job.status}
-                    loading={loading}
-                    onCardClick={(job) => { setSelectedJob(job); setSheetOpen(true); }}
-                    onItemMove={async (itemId, _from, to, label) => {
-                        mutate(
-                            (current: any) => current ? { ...current, jobs: current.jobs.map((j: Job) => j.id === itemId ? { ...j, status: to } : j) } : current,
-                            { revalidate: false }
-                        );
-                        try {
-                            const res = await fetch("/api/jobs", {
-                                method: "PATCH",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: itemId, status: to }),
-                            });
-                            if (!res.ok) throw new Error();
-                            toast.success(`Moved to ${label}`);
-                        } catch {
-                            mutate();
-                            toast.error("Failed to update status");
-                        }
-                    }}
-                    renderCard={(job) => (
-                        <div className="space-y-2.5">
-                            {/* Job name */}
-                            <p className="font-semibold text-[13px] leading-snug line-clamp-2 text-foreground">
-                                {job.description}
-                            </p>
-
-                            {/* Value · Company */}
-                            <div className="flex items-center gap-0 text-[12px]">
-                                <span className="font-bold tabular-nums text-foreground">
-                                    ${job.amount.toLocaleString()}
-                                </span>
-                                {job.company && (
-                                    <>
-                                        <span className="text-muted-foreground mx-1.5">·</span>
-                                        <span className="text-muted-foreground truncate">
-                                            {job.company.name}
-                                        </span>
-                                    </>
-                                )}
+                        <DashboardControls>
+                            <div className="relative flex-1 max-w-sm">
+                                <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search jobs, companies or members..."
+                                    className="pl-9 rounded-xl border-border/50"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
                             </div>
+                            <div className="flex gap-1 p-1 rounded-full bg-secondary">
+                                <button
+                                    onClick={() => setView("kanban")}
+                                    className={cn(
+                                        "p-1.5 rounded-full transition-colors",
+                                        view === "kanban" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    title="Kanban view"
+                                >
+                                    <Squares2X2Icon className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => setView("table")}
+                                    className={cn(
+                                        "p-1.5 rounded-full transition-colors",
+                                        view === "table" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                    )}
+                                    title="Table view"
+                                >
+                                    <ListBulletIcon className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </DashboardControls>
+                    </>
+                }
+            >
+                {view === "kanban" ? (
+                    <Kanban
+                        items={filteredJobs}
+                        columns={statusColumns}
+                        getItemStatus={(job) => job.status}
+                        loading={loading}
+                        onCardClick={(job) => { setSelectedJob(job); setSheetOpen(true); }}
+                        onItemMove={async (itemId, _from, to, label) => {
+                            mutate(
+                                (current: any) => current ? { ...current, jobs: current.jobs.map((j: Job) => j.id === itemId ? { ...j, status: to } : j) } : current,
+                                { revalidate: false }
+                            );
+                            try {
+                                const res = await fetch("/api/jobs", {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ id: itemId, status: to }),
+                                });
+                                if (!res.ok) throw new Error();
+                                toast.success(`Moved to ${label}`);
+                            } catch {
+                                mutate();
+                                toast.error("Failed to update status");
+                            }
+                        }}
+                        renderCard={(job) => (
+                            <div className="space-y-2.5">
+                                {/* Job name */}
+                                <p className="font-semibold text-[13px] leading-snug line-clamp-2 text-foreground">
+                                    {job.description}
+                                </p>
 
-                            {/* Paid status */}
-                            <span className={cn("text-[11px] font-medium", paidStatusColor[job.paid_status] || "text-muted-foreground")}>
-                                {paidStatusLabel[job.paid_status] || job.paid_status}
-                            </span>
-
-                            {/* Assignee avatars in bottom left */}
-                            {job.assignees.length > 0 && (
-                                <div className="flex items-center -space-x-1.5 pt-1">
-                                    {job.assignees.slice(0, 4).map((a) => (
-                                        <div
-                                            key={a.id}
-                                            title={a.full_name || a.email || ""}
-                                            className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold ring-2 ring-background"
-                                        >
-                                            {getInitials(a.full_name)}
-                                        </div>
-                                    ))}
-                                    {job.assignees.length > 4 && (
-                                        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium text-muted-foreground ring-2 ring-background">
-                                            +{job.assignees.length - 4}
-                                        </div>
+                                {/* Value · Company */}
+                                <div className="flex items-center gap-0 text-[12px]">
+                                    <span className="font-bold tabular-nums text-foreground">
+                                        ${job.amount.toLocaleString()}
+                                    </span>
+                                    {job.company && (
+                                        <>
+                                            <span className="text-muted-foreground mx-1.5">·</span>
+                                            <span className="text-muted-foreground truncate">
+                                                {job.company.name}
+                                            </span>
+                                        </>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                    )}
-                />
-            ) : (
-                <div className="w-full overflow-x-auto">
+
+                                {/* Paid status */}
+                                <span className={cn("text-[11px] font-medium", paidStatusColor[job.paid_status] || "text-muted-foreground")}>
+                                    {paidStatusLabel[job.paid_status] || job.paid_status}
+                                </span>
+
+                                {/* Assignee avatars in bottom left */}
+                                {job.assignees.length > 0 && (
+                                    <div className="flex items-center -space-x-1.5 pt-1">
+                                        {job.assignees.slice(0, 4).map((a) => (
+                                            <div
+                                                key={a.id}
+                                                title={a.full_name || a.email || ""}
+                                                className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold ring-2 ring-background"
+                                            >
+                                                {getInitials(a.full_name)}
+                                            </div>
+                                        ))}
+                                        {job.assignees.length > 4 && (
+                                            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium text-muted-foreground ring-2 ring-background">
+                                                +{job.assignees.length - 4}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    />
+                ) : (
                     <table className={tableBase + " border-collapse min-w-full"}>
-                        <thead className={tableHead}>
+                        <thead className={tableHead + " sticky top-0 z-10"}>
                             <tr>
                                 <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Description</th>
                                 <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Company</th>
@@ -318,8 +323,8 @@ function JobsPageContent() {
                             )}
                         </tbody>
                     </table>
-                </div>
-            )}
+                )}
+            </ScrollableTableLayout>
 
             <CreateJobModal
                 open={showCreate}
@@ -333,6 +338,6 @@ function JobsPageContent() {
                 onOpenChange={setSheetOpen}
                 onUpdate={fetchJobs}
             />
-        </DashboardPage>
+        </>
     );
 }

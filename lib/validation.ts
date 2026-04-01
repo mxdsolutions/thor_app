@@ -52,16 +52,20 @@ export const contactSchema = z.object({
     status: z.string().optional(),
 });
 
+export const contactUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(contactSchema.partial());
+
 export const leadSchema = z.object({
     title: z.string().min(1, "Lead title is required"),
     company_id: z.string().uuid().optional().nullable(),
     contact_id: z.string().uuid().optional().nullable(),
-    estimated_value: z.number().optional().nullable(),
     source: z.string().optional(),
     priority: z.string().optional(),
     status: z.string().optional(),
     assigned_to: z.string().uuid().optional().nullable(),
     description: z.string().optional(),
+    opportunity_id: z.string().uuid().optional().nullable(),
 });
 
 export const leadUpdateSchema = z.object({
@@ -84,17 +88,17 @@ export const opportunityUpdateSchema = z.object({
     id: z.string().uuid("Valid ID is required"),
 }).merge(opportunitySchema.partial());
 
-export const productSchema = z.object({
-    name: z.string().min(1, "Product name is required"),
+export const serviceSchema = z.object({
+    name: z.string().min(1, "Service name is required"),
     description: z.string().optional(),
     initial_value: z.number().optional().nullable(),
     monthly_value: z.number().optional().nullable(),
     yearly_value: z.number().optional().nullable(),
 });
 
-export const productUpdateSchema = z.object({
+export const serviceUpdateSchema = z.object({
     id: z.string().uuid("Valid ID is required"),
-}).merge(productSchema.partial());
+}).merge(serviceSchema.partial());
 
 export const noteSchema = z.object({
     entity_type: z.string().min(1, "Entity type is required"),
@@ -167,6 +171,105 @@ export const jobFromOpportunitySchema = z.object({
     })).min(1, "At least one line item is required"),
 });
 
+// --- Quote Schemas ---
+
+export const quoteSchema = z.object({
+    title: z.string().max(500).optional().nullable(),
+    description: z.string().max(2000).optional().nullable(),
+    company_id: z.string().uuid().optional().nullable(),
+    contact_id: z.string().uuid().optional().nullable(),
+    job_id: z.string().uuid().optional().nullable(),
+    status: z.enum(["draft", "sent", "accepted", "rejected", "expired"]).optional(),
+    total_amount: z.number().min(0).optional(),
+    valid_until: z.string().optional().nullable(),
+    notes: z.string().max(5000).optional().nullable(),
+    material_margin: z.number().min(0).max(100).optional(),
+    labour_margin: z.number().min(0).max(100).optional(),
+});
+
+export const quoteUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(quoteSchema.partial());
+
+export const createQuoteWithItemsSchema = z.object({
+    title: z.string().max(500).optional().nullable(),
+    description: z.string().max(2000).optional().nullable(),
+    company_id: z.string().uuid().optional().nullable(),
+    contact_id: z.string().uuid().optional().nullable(),
+    valid_until: z.string().optional().nullable(),
+    material_margin: z.number().min(0).max(100),
+    labour_margin: z.number().min(0).max(100),
+    gst_inclusive: z.boolean().optional(),
+    line_items: z.array(z.object({
+        pricing_matrix_id: z.string().optional().nullable(),
+        description: z.string().min(1).max(500),
+        trade: z.string().optional().nullable(),
+        uom: z.string().optional().nullable(),
+        quantity: z.number().min(0),
+        material_cost: z.number().min(0),
+        labour_cost: z.number().min(0),
+    })).min(1, "At least one line item is required"),
+});
+
+// --- Report Schemas ---
+
+export const reportSchema = z.object({
+    title: z.string().min(1, "Title is required").max(500),
+    type: z.string().min(1, "Report type is required"),
+    status: z.enum(["draft", "in_progress", "complete", "submitted"]).optional(),
+    job_id: z.string().uuid().optional().nullable(),
+    project_id: z.string().uuid().optional().nullable(),
+    company_id: z.string().uuid().optional().nullable(),
+    data: z.record(z.string(), z.unknown()).optional(),
+    notes: z.string().max(5000).optional().nullable(),
+});
+
+export const reportUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(reportSchema.partial());
+
+// --- License Schemas ---
+
+export const licenseSchema = z.object({
+    name: z.string().min(1, "License name is required"),
+    license_number: z.string().min(1, "License number is required"),
+    issuing_authority: z.string().optional(),
+    expiry_date: z.string().optional().nullable(),
+    status: z.enum(["active", "expired", "suspended"]).optional(),
+});
+
+export const licenseUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(licenseSchema.partial());
+
+// --- Invoice Schemas ---
+
+export const invoiceSchema = z.object({
+    invoice_number: z.string().optional().nullable(),
+    reference: z.string().optional().nullable(),
+    company_id: z.string().uuid().optional().nullable(),
+    contact_id: z.string().uuid().optional().nullable(),
+    job_id: z.string().uuid().optional().nullable(),
+    quote_id: z.string().uuid().optional().nullable(),
+    status: z.enum(["draft", "submitted", "authorised", "paid", "voided"]).optional(),
+    type: z.enum(["ACCREC", "ACCPAY"]).optional(),
+    currency_code: z.string().optional(),
+    issue_date: z.string().optional().nullable(),
+    due_date: z.string().optional().nullable(),
+    notes: z.string().max(5000).optional().nullable(),
+    gst_inclusive: z.boolean().optional(),
+    line_items: z.array(z.object({
+        description: z.string().min(1).max(500),
+        quantity: z.number().min(0),
+        unit_price: z.number().min(0),
+        account_code: z.string().optional().nullable(),
+    })).optional(),
+});
+
+export const invoiceUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(invoiceSchema.partial());
+
 // --- Type Exports ---
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -175,12 +278,13 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
 export type CompanyInput = z.infer<typeof companySchema>;
 export type ContactInput = z.infer<typeof contactSchema>;
+export type ContactUpdateInput = z.infer<typeof contactUpdateSchema>;
 export type LeadInput = z.infer<typeof leadSchema>;
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>;
 export type OpportunityInput = z.infer<typeof opportunitySchema>;
 export type OpportunityUpdateInput = z.infer<typeof opportunityUpdateSchema>;
-export type ProductInput = z.infer<typeof productSchema>;
-export type ProductUpdateInput = z.infer<typeof productUpdateSchema>;
+export type ServiceInput = z.infer<typeof serviceSchema>;
+export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 export type NoteInput = z.infer<typeof noteSchema>;
 export type LineItemInput = z.infer<typeof lineItemSchema>;
 export type LineItemUpdateInput = z.infer<typeof lineItemUpdateSchema>;
@@ -188,3 +292,12 @@ export type JobInput = z.infer<typeof jobSchema>;
 export type JobUpdateInput = z.infer<typeof jobUpdateSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;
 export type ReplyEmailInput = z.infer<typeof replyEmailSchema>;
+export type QuoteInput = z.infer<typeof quoteSchema>;
+export type QuoteUpdateInput = z.infer<typeof quoteUpdateSchema>;
+export type CreateQuoteWithItemsInput = z.infer<typeof createQuoteWithItemsSchema>;
+export type ReportInput = z.infer<typeof reportSchema>;
+export type ReportUpdateInput = z.infer<typeof reportUpdateSchema>;
+export type LicenseInput = z.infer<typeof licenseSchema>;
+export type LicenseUpdateInput = z.infer<typeof licenseUpdateSchema>;
+export type InvoiceInput = z.infer<typeof invoiceSchema>;
+export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;

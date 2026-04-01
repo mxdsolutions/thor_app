@@ -21,7 +21,6 @@ type Lead = {
     source: string | null;
     status: string;
     priority: string;
-    estimated_value: number | null;
     contact?: {
         id: string;
         first_name: string;
@@ -152,11 +151,6 @@ export default function LeadsPage() {
                             {/* Footer: Value + Meta */}
                             <div className="flex items-center justify-between pt-1 border-t border-border/40">
                                 <div className="flex items-center gap-2">
-                                    {lead.estimated_value != null && (
-                                        <span className="text-xs font-bold tabular-nums text-foreground">
-                                            ${lead.estimated_value.toLocaleString()}
-                                        </span>
-                                    )}
                                     {lead.source && (
                                         <span className="text-[10px] text-muted-foreground/70 capitalize">
                                             {lead.source}

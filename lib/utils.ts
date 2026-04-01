@@ -24,11 +24,13 @@ export type AppUser = {
   email: string;
   created_at: string;
   last_sign_in_at: string | null;
+  tenant_role?: string;
   user_metadata: {
     first_name?: string;
     last_name?: string;
     full_name?: string;
-    user_type?: "admin" | "member";
+    user_type?: string;
+    position?: string;
   };
 };
 

@@ -1,30 +1,20 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { validationError, serverError } from "@/app/api/_lib/errors";
 import { jobFromOpportunitySchema } from "@/lib/validation";
 
-export async function POST(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     const body = await request.json();
     const validation = jobFromOpportunitySchema.safeParse(body);
-    if (!validation.success) {
-        return NextResponse.json({ error: "Validation failed", details: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
+    if (!validation.success) return validationError(validation.error);
 
     const { opportunity_id, description, company_id, assigned_to, line_items } = validation.data;
 
-    // Calculate total amount from line items
     const totalAmount = line_items.reduce(
         (sum, li) => sum + li.quantity * li.unit_price,
         0
     );
 
-    // 1. Create the job
     const { data: job, error: jobError } = await supabase
         .from("jobs")
         .insert({
@@ -35,20 +25,19 @@ export async function POST(request: Request) {
             assigned_to: assigned_to || null,
             status: "new",
             created_by: user.id,
+            tenant_id: tenantId,
         })
         .select()
         .single();
 
-    if (jobError || !job) {
-        return NextResponse.json({ error: "Failed to create job" }, { status: 500 });
-    }
+    if (jobError || !job) return serverError();
 
-    // 2. Create job line items and projects in parallel
     const jobLineItems = line_items.map(li => ({
         job_id: job.id,
         product_id: li.product_id,
         quantity: li.quantity,
         unit_price: li.unit_price,
+        tenant_id: tenantId,
     }));
 
     const projects = line_items.map(li => ({
@@ -57,6 +46,7 @@ export async function POST(request: Request) {
         job_id: job.id,
         status: "pending",
         created_by: user.id,
+        tenant_id: tenantId,
     }));
 
     await Promise.all([
@@ -69,4 +59,4 @@ export async function POST(request: Request) {
     ]);
 
     return NextResponse.json({ job }, { status: 201 });
-}
+});

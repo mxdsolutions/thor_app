@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
+import { DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
+import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import {
     tableBase,
     tableHead,
@@ -53,32 +54,36 @@ export default function CompaniesPage() {
     );
 
     return (
-        <DashboardPage>
-            <DashboardHeader
-                title="Companies"
-                subtitle="Manage your company records and organizations."
+        <>
+            <ScrollableTableLayout
+                header={
+                    <>
+                        <DashboardHeader
+                            title="Companies"
+                            subtitle="Manage your company records and organizations."
+                        >
+                            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Company
+                            </Button>
+                        </DashboardHeader>
+
+                        <DashboardControls>
+                            <div className="relative flex-1 max-w-sm">
+                                <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search companies..."
+                                    className="pl-9 rounded-xl border-border/50"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+                        </DashboardControls>
+                    </>
+                }
             >
-                <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
-                    <PlusIcon className="w-4 h-4 mr-2" />
-                    Add Company
-                </Button>
-            </DashboardHeader>
-
-            <DashboardControls>
-                <div className="relative flex-1 max-w-sm">
-                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        placeholder="Search companies..."
-                        className="pl-9 rounded-xl border-border/50"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-            </DashboardControls>
-
-            <div className="w-full overflow-x-auto">
                 <table className={tableBase + " border-collapse min-w-full"}>
-                    <thead className={tableHead}>
+                    <thead className={tableHead + " sticky top-0 z-10"}>
                         <tr>
                             <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Company</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Industry</th>
@@ -139,7 +144,8 @@ export default function CompaniesPage() {
                         )}
                     </tbody>
                 </table>
-            </div>
+            </ScrollableTableLayout>
+
             <CreateCompanyModal
                 open={showCreate}
                 onOpenChange={setShowCreate}
@@ -151,6 +157,6 @@ export default function CompaniesPage() {
                 open={!!selectedCompany}
                 onOpenChange={(open) => { if (!open) setSelectedCompany(null); }}
             />
-        </DashboardPage>
+        </>
     );
 }

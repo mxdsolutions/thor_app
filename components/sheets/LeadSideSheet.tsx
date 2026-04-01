@@ -14,6 +14,8 @@ import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
+import { CreateOpportunityFromLeadModal } from "@/components/modals/CreateOpportunityFromLeadModal";
+import { Button } from "@/components/ui/button";
 
 type Lead = {
     id: string;
@@ -21,11 +23,12 @@ type Lead = {
     source: string | null;
     status: string;
     priority: string;
-    estimated_value: number | null;
     description?: string | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
     company?: { id: string; name: string } | null;
     assignee?: { id: string; full_name: string } | null;
+    opportunity?: { id: string; title: string } | null;
+    opportunity_id?: string | null;
     created_at: string;
 };
 
@@ -54,6 +57,7 @@ export function LeadSideSheet({ lead, open, onOpenChange, onUpdate }: LeadSideSh
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<Lead | null>(lead);
     const [users, setUsers] = useState<{ value: string; label: string }[]>([]);
+    const [showCreateOpp, setShowCreateOpp] = useState(false);
 
     useEffect(() => {
         setData(lead);
@@ -113,8 +117,17 @@ export function LeadSideSheet({ lead, open, onOpenChange, onUpdate }: LeadSideSh
                                 </Badge>
                             </div>
                             <SheetDescription className="text-sm text-muted-foreground mt-1">
-                                {data.company?.name || "No company"} {data.estimated_value ? `· $${data.estimated_value.toLocaleString()}` : ""}
+                                {data.company?.name || "No company"}
                             </SheetDescription>
+                            {!data.opportunity_id && !data.opportunity && (
+                                <Button
+                                    size="sm"
+                                    className="rounded-full mt-2 h-7 text-xs px-3"
+                                    onClick={() => setShowCreateOpp(true)}
+                                >
+                                    Create Opportunity
+                                </Button>
+                            )}
                         </div>
                     </SheetHeader>
                 </div>
@@ -177,13 +190,6 @@ export function LeadSideSheet({ lead, open, onOpenChange, onUpdate }: LeadSideSh
                                                 type: "select",
                                                 rawValue: data.priority,
                                                 options: Object.entries(priorityConfig).map(([k, v]) => ({ value: k, label: v.label })),
-                                            },
-                                            {
-                                                label: "Estimated Value",
-                                                value: data.estimated_value ? `$${data.estimated_value.toLocaleString()}` : null,
-                                                dbColumn: "estimated_value",
-                                                type: "number",
-                                                rawValue: data.estimated_value,
                                             },
                                             {
                                                 label: "Source",
@@ -268,6 +274,15 @@ export function LeadSideSheet({ lead, open, onOpenChange, onUpdate }: LeadSideSh
                     </div>
                 </div>
             </SheetContent>
+
+            <CreateOpportunityFromLeadModal
+                open={showCreateOpp}
+                onOpenChange={setShowCreateOpp}
+                leadId={data.id}
+                companyId={data.company?.id ?? null}
+                companyName={data.company?.name ?? null}
+                onCreated={() => onUpdate?.()}
+            />
         </Sheet>
     );
 }

@@ -1,23 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { serverError, missingParamError } from "@/app/api/_lib/errors";
 
-export async function GET(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const GET = withAuth(async (request, { supabase }) => {
     const { searchParams } = new URL(request.url);
     const entityType = searchParams.get("entity_type");
     const entityId = searchParams.get("entity_id");
 
     if (!entityType || !entityId) {
-        return NextResponse.json({ error: "Missing entity_type or entity_id" }, { status: 400 });
+        return missingParamError("entity_type and entity_id");
     }
 
-    // Use JOIN instead of sequential queries
     const { data, error } = await supabase
         .from("activity_logs")
         .select(`
@@ -33,9 +26,7 @@ export async function GET(request: Request) {
         .order("created_at", { ascending: false })
         .limit(50);
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     const activities = (data || []).map(a => ({
         ...a,
@@ -43,4 +34,4 @@ export async function GET(request: Request) {
     }));
 
     return NextResponse.json({ activities });
-}
+});

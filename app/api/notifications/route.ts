@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { serverError } from "@/app/api/_lib/errors";
 
-export async function GET() {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const GET = withAuth(async (_request, { supabase, user }) => {
     const { data, error } = await supabase
         .from("notifications")
         .select("*, creator:created_by(id, full_name, email)")
@@ -16,11 +10,8 @@ export async function GET() {
         .order("created_at", { ascending: false })
         .limit(50);
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
-    // Count unread
     const { count } = await supabase
         .from("notifications")
         .select("*", { count: "exact", head: true })
@@ -28,4 +19,4 @@ export async function GET() {
         .eq("read", false);
 
     return NextResponse.json({ notifications: data || [], unread_count: count || 0 });
-}
+});

@@ -219,17 +219,19 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                         </div>
                     </form>
                 </DialogContent>
-            </Dialog>
+        </Dialog>
 
-            <CreateCompanyModal
-                open={showCreateCompany}
-                onOpenChange={setShowCreateCompany}
-                onCreated={(company) => {
-                    setCompanies(prev => [company, ...prev]);
-                    setCompanyId(company.id);
-                    setCompanySearch("");
-                }}
-            />
+            {showCreateCompany && (
+                <CreateCompanyModal
+                    open={showCreateCompany}
+                    onOpenChange={setShowCreateCompany}
+                    onCreated={(company) => {
+                        setCompanies(prev => [company, ...prev]);
+                        setCompanyId(company.id);
+                        setCompanySearch("");
+                    }}
+                />
+            )}
         </>
     );
 }

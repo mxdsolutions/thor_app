@@ -16,12 +16,21 @@ interface CreateLeadModalProps {
 
 type CompanyOption = { id: string; name: string };
 
+const sourceOptions = [
+    "Referral",
+    "Website",
+    "Cold Call",
+    "Social Media",
+    "Email Campaign",
+    "Trade Show",
+    "Partner",
+    "Other",
+];
+
 export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadModalProps) {
     const [saving, setSaving] = useState(false);
-    const [title, setTitle] = useState("");
-    const [estimatedValue, setEstimatedValue] = useState("");
     const [source, setSource] = useState("");
-    const [priority, setPriority] = useState("medium");
+    const [description, setDescription] = useState("");
     const [companyId, setCompanyId] = useState("");
     const [companies, setCompanies] = useState<CompanyOption[]>([]);
     const [companySearch, setCompanySearch] = useState("");
@@ -42,18 +51,18 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
         c.name.toLowerCase().includes(companySearch.toLowerCase())
     );
 
+    const selectedCompanyName = selectedCompany?.name || "";
+
     const reset = () => {
-        setTitle("");
-        setEstimatedValue("");
         setSource("");
-        setPriority("medium");
+        setDescription("");
         setCompanyId("");
         setCompanySearch("");
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim()) return;
+        if (!companyId) return;
 
         setSaving(true);
         try {
@@ -61,11 +70,10 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    title: title.trim(),
-                    estimated_value: estimatedValue ? parseFloat(estimatedValue) : null,
-                    source: source.trim() || null,
-                    priority,
-                    company_id: companyId || null,
+                    title: selectedCompanyName,
+                    source: source || null,
+                    description: description.trim() || null,
+                    company_id: companyId,
                     status: "new",
                 }),
             });
@@ -82,12 +90,6 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
         }
     };
 
-    const priorities = [
-        { value: "low", label: "Low", dot: "bg-slate-300" },
-        { value: "medium", label: "Med", dot: "bg-amber-400" },
-        { value: "high", label: "High", dot: "bg-rose-500" },
-    ];
-
     return (
         <>
             <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,22 +99,12 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
                         <DialogDescription>Capture a new sales lead.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Lead Title *</label>
-                            <Input
-                                autoFocus
-                                placeholder="Website redesign project"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                className="rounded-xl"
-                            />
-                        </div>
-
                         {/* Company selector */}
                         <div className="space-y-1.5">
                             <label className="text-xs font-medium text-muted-foreground">Company *</label>
                             <div className="relative">
                                 <Input
+                                    autoFocus
                                     placeholder="Search or create company..."
                                     value={selectedCompany ? selectedCompany.name : companySearch}
                                     onChange={(e) => {
@@ -165,53 +157,36 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">Estimated Value</label>
-                                <Input
-                                    placeholder="10,000"
-                                    value={estimatedValue}
-                                    onChange={(e) => setEstimatedValue(e.target.value.replace(/[^0-9.]/g, ""))}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-medium text-muted-foreground">Source</label>
-                                <Input
-                                    placeholder="Referral, Website..."
-                                    value={source}
-                                    onChange={(e) => setSource(e.target.value)}
-                                    className="rounded-xl"
-                                />
-                            </div>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-medium text-muted-foreground">Source</label>
+                            <select
+                                value={source}
+                                onChange={(e) => setSource(e.target.value)}
+                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                                <option value="">Select source...</option>
+                                {sourceOptions.map(s => (
+                                    <option key={s} value={s}>{s}</option>
+                                ))}
+                            </select>
                         </div>
 
-                        {/* Priority */}
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Priority</label>
-                            <div className="flex gap-2">
-                                {priorities.map(p => (
-                                    <button
-                                        key={p.value}
-                                        type="button"
-                                        onClick={() => setPriority(p.value)}
-                                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${priority === p.value
-                                            ? "border-foreground bg-foreground text-background"
-                                            : "border-border bg-secondary text-muted-foreground hover:text-foreground"
-                                            }`}
-                                    >
-                                        <div className={`w-1.5 h-1.5 rounded-full ${priority === p.value ? "bg-background" : p.dot}`} />
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
+                            <label className="text-xs font-medium text-muted-foreground">Notes</label>
+                            <textarea
+                                placeholder="Any additional context..."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                rows={3}
+                                className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                            />
                         </div>
 
                         <div className="flex justify-end gap-2 pt-2">
                             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={!title.trim() || saving}>
+                            <Button type="submit" disabled={!companyId || saving}>
                                 {saving ? "Creating..." : "Create Lead"}
                             </Button>
                         </div>
@@ -219,15 +194,17 @@ export function CreateLeadModal({ open, onOpenChange, onCreated }: CreateLeadMod
                 </DialogContent>
             </Dialog>
 
-            <CreateCompanyModal
-                open={showCreateCompany}
-                onOpenChange={setShowCreateCompany}
-                onCreated={(company) => {
-                    setCompanies(prev => [company, ...prev]);
-                    setCompanyId(company.id);
-                    setCompanySearch("");
-                }}
-            />
+            {showCreateCompany && (
+                <CreateCompanyModal
+                    open={showCreateCompany}
+                    onOpenChange={setShowCreateCompany}
+                    onCreated={(company) => {
+                        setCompanies(prev => [company, ...prev]);
+                        setCompanyId(company.id);
+                        setCompanySearch("");
+                    }}
+                />
+            )}
         </>
     );
 }

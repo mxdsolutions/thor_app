@@ -1,16 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { serverError } from "@/app/api/_lib/errors";
 
-export async function GET() {
-    const supabase = await createClient();
-    
-    // Verify authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Fetch projects with client details
+export const GET = withAuth(async (_request, { supabase }) => {
     const { data, error } = await supabase
         .from("projects")
         .select(`
@@ -23,9 +15,7 @@ export async function GET() {
         `)
         .order("created_at", { ascending: false });
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     return NextResponse.json({ projects: data });
-}
+});

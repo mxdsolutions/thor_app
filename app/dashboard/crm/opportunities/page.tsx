@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +67,15 @@ function formatCloseDate(dateStr: string) {
 }
 
 export default function OpportunitiesPage() {
+    return (
+        <Suspense>
+            <OpportunitiesPageContent />
+        </Suspense>
+    );
+}
+
+function OpportunitiesPageContent() {
+    const searchParams = useSearchParams();
     const [search, setSearch] = useState("");
     const { data, isLoading: loading, mutate } = useOpportunities();
     const opportunities: Opportunity[] = data?.opportunities || [];
@@ -74,9 +83,23 @@ export default function OpportunitiesPage() {
     const [selectedOpp, setSelectedOpp] = useState<Opportunity | null>(null);
     const [closedWonOpp, setClosedWonOpp] = useState<Opportunity | null>(null);
     const [showCreateJob, setShowCreateJob] = useState(false);
+    const [pendingOpenId, setPendingOpenId] = useState<string | null>(null);
     const router = useRouter();
 
     const fetchOpportunities = () => mutate();
+
+    // Handle deep-link open from URL params
+    useEffect(() => {
+        if (!data?.opportunities) return;
+        const openId = pendingOpenId || searchParams.get("open");
+        if (openId) {
+            const opp = opportunities.find((o: Opportunity) => o.id === openId);
+            if (opp) {
+                setSelectedOpp(opp);
+            }
+            setPendingOpenId(null);
+        }
+    }, [data, searchParams, pendingOpenId, opportunities]);
 
     const filteredOpportunities = opportunities.filter(opp => {
         const q = search.toLowerCase();

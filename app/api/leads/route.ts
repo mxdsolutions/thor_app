@@ -1,22 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { withAuth } from "@/app/api/_lib/handler";
+import { parsePagination } from "@/app/api/_lib/pagination";
+import { validationError, serverError } from "@/app/api/_lib/errors";
 import { leadSchema, leadUpdateSchema } from "@/lib/validation";
 
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 200;
-
-export async function GET(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const limit = Math.min(Number(searchParams.get("limit")) || DEFAULT_LIMIT, MAX_LIMIT);
-    const offset = Math.max(Number(searchParams.get("offset")) || 0, 0);
-    const search = searchParams.get("search")?.trim().slice(0, 100);
+export const GET = withAuth(async (request, { supabase }) => {
+    const { limit, offset, search } = parsePagination(request);
 
     let query = supabase
         .from("leads")
@@ -34,6 +23,10 @@ export async function GET(request: Request) {
             assignee:profiles!leads_assigned_to_fkey (
                 id,
                 full_name
+            ),
+            opportunity:opportunities!leads_opportunity_id_fkey (
+                id,
+                title
             )
         `, { count: "exact" })
         .order("created_at", { ascending: false })
@@ -44,54 +37,31 @@ export async function GET(request: Request) {
     }
 
     const { data, error, count } = await query;
-
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     return NextResponse.json({ leads: data, total: count || 0 });
-}
+});
 
-export async function POST(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     const body = await request.json();
     const validation = leadSchema.safeParse(body);
-    if (!validation.success) {
-        return NextResponse.json({ error: "Validation failed", details: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
+    if (!validation.success) return validationError(validation.error);
 
     const { data, error } = await supabase
         .from("leads")
-        .insert({ ...validation.data, created_by: user.id })
+        .insert({ ...validation.data, created_by: user.id, tenant_id: tenantId })
         .select()
         .single();
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     return NextResponse.json({ lead: data }, { status: 201 });
-}
+});
 
-export async function PATCH(request: Request) {
-    const supabase = await createClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export const PATCH = withAuth(async (request, { supabase }) => {
     const body = await request.json();
     const validation = leadUpdateSchema.safeParse(body);
-    if (!validation.success) {
-        return NextResponse.json({ error: "Validation failed", details: validation.error.flatten().fieldErrors }, { status: 400 });
-    }
+    if (!validation.success) return validationError(validation.error);
 
     const { id, ...updates } = validation.data;
 
@@ -102,9 +72,7 @@ export async function PATCH(request: Request) {
         .select()
         .single();
 
-    if (error) {
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-    }
+    if (error) return serverError();
 
     return NextResponse.json({ lead: data });
-}
+});

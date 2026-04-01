@@ -67,13 +67,13 @@
     border-color: transparent !important;
     background-image:
       linear-gradient(white, white),
-      linear-gradient(135deg, hsl(16 87% 55%) 0%, hsl(25 100% 75%) 50%, hsl(16 87% 55%) 100%);
+      linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 60%, white) 50%, var(--color-primary) 100%);
     background-origin: border-box;
     background-clip: padding-box, border-box;
     box-shadow:
-      0 0 8px rgba(229, 103, 23, 0.5),
-      0 0 20px rgba(229, 103, 23, 0.25),
-      0 0 40px rgba(229, 103, 23, 0.1) !important;
+      0 0 8px color-mix(in srgb, var(--color-primary) 50%, transparent),
+      0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent),
+      0 0 40px color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
   }
 }
 

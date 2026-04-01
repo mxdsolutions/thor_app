@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { DashboardPage, DashboardHeader, DashboardControls } from "@/components/dashboard/DashboardPage";
+import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -157,31 +158,48 @@ export default function EmailsPage() {
     }
 
     return (
-        <DashboardPage>
-            <DashboardHeader title="Emails" subtitle="View and manage your Outlook inbox.">
-                <Button size="sm" className="rounded-full" onClick={() => setShowCompose(true)}>
-                    <PlusIcon className="w-4 h-4 mr-1.5" />
-                    Compose
-                </Button>
-            </DashboardHeader>
+        <>
+            <ScrollableTableLayout
+                header={
+                    <>
+                        <DashboardHeader title="Emails" subtitle="View and manage your Outlook inbox.">
+                            <Button size="sm" className="rounded-full" onClick={() => setShowCompose(true)}>
+                                <PlusIcon className="w-4 h-4 mr-1.5" />
+                                Compose
+                            </Button>
+                        </DashboardHeader>
 
-            <DashboardControls>
-                <div className="relative flex-1 max-w-sm">
-                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search emails..."
-                        className="pl-9 rounded-full"
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                    />
-                </div>
-                <Button variant="outline" size="sm" className="rounded-full" onClick={() => fetchEmails(0, search)}>
-                    Refresh
-                </Button>
-            </DashboardControls>
-
-            <div className="px-4 md:px-6 lg:px-10">
+                        <DashboardControls>
+                            <div className="relative flex-1 max-w-sm">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search emails..."
+                                    className="pl-9 rounded-full"
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                            </div>
+                            <Button variant="outline" size="sm" className="rounded-full" onClick={() => fetchEmails(0, search)}>
+                                Refresh
+                            </Button>
+                        </DashboardControls>
+                    </>
+                }
+                footer={hasMore ? (
+                    <div className="flex justify-center py-3 border-t border-border/50 bg-background">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={() => fetchEmails(nextSkip, search)}
+                            disabled={loadingMore}
+                        >
+                            {loadingMore ? "Loading..." : "Load more"}
+                        </Button>
+                    </div>
+                ) : undefined}
+            >
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <p className="text-sm text-muted-foreground">Loading emails...</p>
@@ -194,97 +212,79 @@ export default function EmailsPage() {
                         </p>
                     </div>
                 ) : (
-                    <>
-                        <div className={tableBase}>
-                            <table className="w-full">
-                                <thead>
-                                    <tr className={tableHead}>
-                                        <th className={cn(tableHeadCell, "w-8")} />
-                                        <th className={cn(tableHeadCell, "min-w-[180px]")}>From</th>
-                                        <th className={tableHeadCell}>Subject</th>
-                                        <th className={cn(tableHeadCell, "w-28 text-right")}>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {messages.map((msg) => {
-                                        const senderEmail = msg.from?.emailAddress?.address?.toLowerCase() || "";
-                                        const senderName = msg.from?.emailAddress?.name || senderEmail;
-                                        const contact = matchedContacts[senderEmail];
-                                        const initials = senderName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+                    <table className={tableBase + " border-collapse min-w-full"}>
+                        <thead className={tableHead + " sticky top-0 z-10"}>
+                            <tr>
+                                <th className={cn(tableHeadCell, "w-8 pl-4 md:pl-6 lg:pl-10")} />
+                                <th className={cn(tableHeadCell, "min-w-[180px] px-4")}>From</th>
+                                <th className={cn(tableHeadCell, "px-4")}>Subject</th>
+                                <th className={cn(tableHeadCell, "w-28 text-right pr-4 md:pr-6 lg:pr-10")}>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {messages.map((msg) => {
+                                const senderEmail = msg.from?.emailAddress?.address?.toLowerCase() || "";
+                                const senderName = msg.from?.emailAddress?.name || senderEmail;
+                                const contact = matchedContacts[senderEmail];
+                                const initials = senderName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
-                                        return (
-                                            <tr
-                                                key={msg.id}
-                                                className={cn(tableRow, "cursor-pointer")}
-                                                onClick={() => openEmail(msg.id)}
-                                            >
-                                                <td className={tableCell}>
-                                                    {!msg.isRead && (
-                                                        <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                                return (
+                                    <tr
+                                        key={msg.id}
+                                        className={cn(tableRow, "cursor-pointer")}
+                                        onClick={() => openEmail(msg.id)}
+                                    >
+                                        <td className={tableCell + " pl-4 md:pl-6 lg:pl-10"}>
+                                            {!msg.isRead && (
+                                                <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                                            )}
+                                        </td>
+                                        <td className={tableCell + " px-4"}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
+                                                    {initials}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className={cn("text-sm truncate", !msg.isRead && "font-semibold")}>
+                                                        {senderName}
+                                                    </p>
+                                                    {contact && (
+                                                        <p className="text-[11px] text-blue-600 truncate">
+                                                            {contact.first_name} {contact.last_name}
+                                                        </p>
                                                     )}
-                                                </td>
-                                                <td className={tableCell}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold shrink-0">
-                                                            {initials}
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className={cn("text-sm truncate", !msg.isRead && "font-semibold")}>
-                                                                {senderName}
-                                                            </p>
-                                                            {contact && (
-                                                                <p className="text-[11px] text-blue-600 truncate">
-                                                                    {contact.first_name} {contact.last_name}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className={tableCell}>
-                                                    <div className="min-w-0">
-                                                        <p className={cn("text-sm truncate", !msg.isRead && "font-semibold")}>
-                                                            {msg.subject || "(No subject)"}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground truncate max-w-md">
-                                                            {msg.bodyPreview}
-                                                        </p>
-                                                    </div>
-                                                </td>
-                                                <td className={cn(tableCell, "text-right")}>
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {msg.hasAttachments && (
-                                                            <Badge variant="outline" className="text-[9px] px-1.5 py-0">
-                                                                📎
-                                                            </Badge>
-                                                        )}
-                                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                                            {timeAgo(msg.receivedDateTime)}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {hasMore && (
-                            <div className="flex justify-center pt-6">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="rounded-full"
-                                    onClick={() => fetchEmails(nextSkip, search)}
-                                    disabled={loadingMore}
-                                >
-                                    {loadingMore ? "Loading..." : "Load more"}
-                                </Button>
-                            </div>
-                        )}
-                    </>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className={tableCell + " px-4"}>
+                                            <div className="min-w-0">
+                                                <p className={cn("text-sm truncate", !msg.isRead && "font-semibold")}>
+                                                    {msg.subject || "(No subject)"}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground truncate max-w-md">
+                                                    {msg.bodyPreview}
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td className={cn(tableCell, "text-right pr-4 md:pr-6 lg:pr-10")}>
+                                            <div className="flex items-center justify-end gap-2">
+                                                {msg.hasAttachments && (
+                                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0">
+                                                        📎
+                                                    </Badge>
+                                                )}
+                                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                    {timeAgo(msg.receivedDateTime)}
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 )}
-            </div>
+            </ScrollableTableLayout>
 
             <ComposeEmailModal
                 open={showCompose}
@@ -298,6 +298,6 @@ export default function EmailsPage() {
                 onOpenChange={setSheetOpen}
                 matchedContacts={matchedContacts}
             />
-        </DashboardPage>
+        </>
     );
 }

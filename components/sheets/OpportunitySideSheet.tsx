@@ -1,21 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
+import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
+import { LineItemsTable } from "@/features/line-items/LineItemsTable";
 import { createClient } from "@/lib/supabase/client";
 
 type Opportunity = {
@@ -43,7 +35,7 @@ type LineItem = {
     created_at: string;
 };
 
-type Product = {
+type Service = {
     id: string;
     name: string;
     initial_value: number | null;
@@ -70,18 +62,10 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
     const [data, setData] = useState<Opportunity | null>(opportunity);
     const [users, setUsers] = useState<{ value: string; label: string }[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
-    const [products, setProducts] = useState<Product[]>([]);
-    const [addingProduct, setAddingProduct] = useState(false);
-    const [selectedProductId, setSelectedProductId] = useState("");
-    const [newQty, setNewQty] = useState(1);
-    const [newUnitPrice, setNewUnitPrice] = useState(0);
-    useEffect(() => {
-        setData(opportunity);
-    }, [opportunity]);
+    const [services, setServices] = useState<Service[]>([]);
 
-    useEffect(() => {
-        if (data?.id) setActiveTab("details");
-    }, [data?.id]);
+    useEffect(() => { setData(opportunity); }, [opportunity]);
+    useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);
 
     useEffect(() => {
         const supabase = createClient();
@@ -89,11 +73,10 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
             if (profiles) setUsers(profiles.map((p) => ({ value: p.id, label: p.full_name || p.email || p.id })));
         });
         supabase.from("products").select("id, name, initial_value").eq("status", "active").then(({ data: prods }) => {
-            if (prods) setProducts(prods);
+            if (prods) setServices(prods);
         });
     }, []);
 
-    // Fetch line items when opportunity changes
     const fetchLineItems = useCallback(async (opportunityId: string) => {
         const res = await fetch(`/api/opportunity-line-items?opportunity_id=${opportunityId}`);
         if (res.ok) {
@@ -106,29 +89,20 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
         if (data?.id) fetchLineItems(data.id);
     }, [data?.id, fetchLineItems]);
 
-    const handleAddLineItem = async () => {
-        if (!data || !selectedProductId) return;
+    const handleAddLineItem = async (productId: string, quantity: number, unitPrice: number) => {
+        if (!data) return;
         const res = await fetch("/api/opportunity-line-items", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                opportunity_id: data.id,
-                product_id: selectedProductId,
-                quantity: newQty,
-                unit_price: newUnitPrice,
-            }),
+            body: JSON.stringify({ opportunity_id: data.id, product_id: productId, quantity, unit_price: unitPrice }),
         });
         if (res.ok) {
             const { lineItem, opportunityValue } = await res.json();
             setLineItems((prev) => [...prev, lineItem]);
             setData((prev) => prev ? { ...prev, value: opportunityValue } : prev);
-            setAddingProduct(false);
-            setSelectedProductId("");
-            setNewQty(1);
-            setNewUnitPrice(0);
             onUpdate?.();
         } else {
-            toast.error("Failed to add product");
+            toast.error("Failed to add service");
         }
     };
 
@@ -156,7 +130,7 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
             setData((prev) => prev ? { ...prev, value: opportunityValue } : prev);
             onUpdate?.();
         } else {
-            toast.error("Failed to remove product");
+            toast.error("Failed to remove service");
         }
     };
 
@@ -180,14 +154,6 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
     if (!data) return null;
 
     const stage = stageConfig[data.stage] || stageConfig.appt_booked;
-    const lineItemsTotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unit_price, 0);
-
-    const tabs = [
-        { id: "details", label: "Details" },
-        { id: "products", label: `Products (${lineItems.length})` },
-        { id: "notes", label: "Notes" },
-        { id: "activity", label: "Activity" },
-    ];
 
     const probabilityColor = (p: number) => {
         if (p >= 70) return "bg-emerald-500";
@@ -195,379 +161,122 @@ export function OpportunitySideSheet({ opportunity, open, onOpenChange, onUpdate
         return "bg-rose-400";
     };
 
-    return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0 border-l border-border bg-background">
-                {/* Header */}
-                <div className="p-6 pb-4 border-b border-border">
-                    <SheetHeader className="flex flex-row items-start gap-4 space-y-0 text-left">
-                        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-lg font-bold text-emerald-600">$</span>
-                        </div>
-                        <div className="flex-1 min-w-0 pt-0.5">
-                            <div className="flex items-center gap-2.5">
-                                <SheetTitle className="text-lg font-bold truncate">{data.title}</SheetTitle>
-                                <Badge variant="outline" className="shrink-0 text-[10px] font-bold uppercase tracking-wider">
-                                    <span className={cn("w-1.5 h-1.5 rounded-full mr-1.5", stage.color)} />
-                                    {stage.label}
-                                </Badge>
-                            </div>
-                            <SheetDescription className="text-sm text-muted-foreground mt-1">
-                                ${data.value.toLocaleString()}
-                                {data.probability != null && ` · ${data.probability}% probability`}
-                            </SheetDescription>
-                        </div>
-                    </SheetHeader>
-                </div>
-
-                {/* Tabs + Content */}
-                <div className="flex flex-col flex-1 min-h-0 bg-secondary/20">
-                    <div className="px-6 border-b border-border/50 bg-background">
-                        <div className="flex gap-6 -mb-px pt-2">
-                            {tabs.map((tab) => (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
-                                    className={cn(
-                                        "pb-3 text-sm font-medium transition-colors relative focus:outline-none",
-                                        activeTab === tab.id
-                                            ? "text-foreground"
-                                            : "text-muted-foreground hover:text-foreground"
-                                    )}
-                                >
-                                    {tab.label}
-                                    {activeTab === tab.id && (
-                                        <span className="absolute left-0 right-0 bottom-0 h-0.5 bg-foreground rounded-t-full" />
-                                    )}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-6">
-                        {activeTab === "details" && (
-                            <div className="space-y-4">
-                                {/* Value hero card */}
-                                <div className="rounded-xl border border-border bg-card p-5">
-                                    <div className="flex items-baseline justify-between mb-3">
-                                        <span className="text-2xl font-bold tabular-nums text-foreground">
-                                            ${data.value.toLocaleString()}
-                                        </span>
-                                        {data.probability != null && (
-                                            <span className="text-sm font-semibold tabular-nums text-muted-foreground">
-                                                {data.probability}%
-                                            </span>
-                                        )}
-                                    </div>
-                                    {data.probability != null && (
-                                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                            <div
-                                                className={cn("h-full rounded-full transition-all", probabilityColor(data.probability))}
-                                                style={{ width: `${data.probability}%` }}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="rounded-xl border border-border bg-card p-5">
-                                    <DetailFields
-                                        onSave={handleSave}
-                                        fields={[
-                                            {
-                                                label: "Title",
-                                                value: data.title,
-                                                dbColumn: "title",
-                                                type: "text",
-                                                rawValue: data.title,
-                                            },
-                                            {
-                                                label: "Stage",
-                                                value: stage.label,
-                                                dbColumn: "stage",
-                                                type: "select",
-                                                rawValue: data.stage,
-                                                options: Object.entries(stageConfig).map(([k, v]) => ({ value: k, label: v.label })),
-                                            },
-                                            {
-                                                label: "Value",
-                                                value: `$${data.value.toLocaleString()}`,
-                                                dbColumn: "value",
-                                                type: "number",
-                                                rawValue: data.value,
-                                            },
-                                            {
-                                                label: "Probability",
-                                                value: data.probability != null ? `${data.probability}%` : null,
-                                                dbColumn: "probability",
-                                                type: "number",
-                                                rawValue: data.probability,
-                                            },
-                                            {
-                                                label: "Expected Close",
-                                                value: data.expected_close_date ? new Date(data.expected_close_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null,
-                                                dbColumn: "expected_close_date",
-                                                type: "date",
-                                                rawValue: data.expected_close_date,
-                                            },
-                                            {
-                                                label: "Assigned To",
-                                                value: data.assignee?.full_name,
-                                                dbColumn: "assigned_to",
-                                                type: "select",
-                                                rawValue: data.assignee?.id ?? null,
-                                                options: users,
-                                            },
-                                            {
-                                                label: "Created",
-                                                value: new Date(data.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-                                            },
-                                        ]}
-                                    />
-                                </div>
-
-                                {/* Description */}
-                                <div className="rounded-xl border border-border bg-card p-5">
-                                    <DetailFields
-                                        onSave={handleSave}
-                                        fields={[
-                                            {
-                                                label: "Description",
-                                                value: data.description || null,
-                                                dbColumn: "description",
-                                                type: "text",
-                                                rawValue: data.description,
-                                            },
-                                        ]}
-                                    />
-                                </div>
-
-                                {data.lead && (
-                                    <LinkedEntityCard
-                                        label="Related Lead"
-                                        title={data.lead.title}
-                                        icon={
-                                            <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                                            </svg>
-                                        }
-                                    />
-                                )}
-
-                                {data.contact && (
-                                    <LinkedEntityCard
-                                        label="Contact"
-                                        title={`${data.contact.first_name} ${data.contact.last_name}`}
-                                        icon={
-                                            <span className="text-[9px] font-bold text-muted-foreground">
-                                                {data.contact.first_name[0]}{data.contact.last_name[0]}
-                                            </span>
-                                        }
-                                    />
-                                )}
-
-                                {data.company && (
-                                    <LinkedEntityCard
-                                        label="Company"
-                                        title={data.company.name}
-                                        icon={
-                                            <span className="text-[10px] font-bold text-muted-foreground">
-                                                {data.company.name[0]}
-                                            </span>
-                                        }
-                                    />
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === "products" && (
-                            <div className="space-y-4">
-                                {/* Line items table */}
-                                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="border-b border-border bg-secondary/30">
-                                                <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Product</th>
-                                                <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider w-20">Qty</th>
-                                                <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider w-28">Unit Price</th>
-                                                <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground uppercase tracking-wider w-28">Total</th>
-                                                <th className="w-10" />
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {lineItems.length === 0 && !addingProduct && (
-                                                <tr>
-                                                    <td colSpan={5} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                                                        No products added yet
-                                                    </td>
-                                                </tr>
-                                            )}
-                                            {lineItems.map((li) => (
-                                                <tr key={li.id} className="border-b border-border/50 last:border-0">
-                                                    <td className="px-4 py-3 font-medium">{li.product?.name || "Unknown"}</td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <InlineNumberInput
-                                                            value={li.quantity}
-                                                            onSave={(v) => handleUpdateLineItem(li.id, "quantity", v)}
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        <InlineNumberInput
-                                                            value={li.unit_price}
-                                                            onSave={(v) => handleUpdateLineItem(li.id, "unit_price", v)}
-                                                            prefix="$"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-medium tabular-nums">
-                                                        ${(li.quantity * li.unit_price).toLocaleString()}
-                                                    </td>
-                                                    <td className="px-2 py-3">
-                                                        <button
-                                                            onClick={() => handleDeleteLineItem(li.id)}
-                                                            className="p-1 rounded-md text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
-                                                        >
-                                                            <TrashIcon className="w-4 h-4" />
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {addingProduct && (
-                                                <tr className="border-b border-border/50">
-                                                    <td className="px-4 py-3">
-                                                        <select
-                                                            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                                            value={selectedProductId}
-                                                            onChange={(e) => {
-                                                                setSelectedProductId(e.target.value);
-                                                                const prod = products.find((p) => p.id === e.target.value);
-                                                                if (prod?.initial_value) setNewUnitPrice(prod.initial_value);
-                                                            }}
-                                                            autoFocus
-                                                        >
-                                                            <option value="">Select product...</option>
-                                                            {products.map((p) => (
-                                                                <option key={p.id} value={p.id}>{p.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            value={newQty}
-                                                            onChange={(e) => setNewQty(Number(e.target.value))}
-                                                            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3">
-                                                        <input
-                                                            type="number"
-                                                            min={0}
-                                                            step={0.01}
-                                                            value={newUnitPrice}
-                                                            onChange={(e) => setNewUnitPrice(Number(e.target.value))}
-                                                            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring"
-                                                        />
-                                                    </td>
-                                                    <td className="px-4 py-3 text-right font-medium tabular-nums text-muted-foreground">
-                                                        ${(newQty * newUnitPrice).toLocaleString()}
-                                                    </td>
-                                                    <td />
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        {(lineItems.length > 0 || addingProduct) && (
-                                            <tfoot>
-                                                <tr className="border-t border-border bg-secondary/20">
-                                                    <td colSpan={3} className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Total</td>
-                                                    <td className="px-4 py-3 text-right font-bold tabular-nums">${lineItemsTotal.toLocaleString()}</td>
-                                                    <td />
-                                                </tr>
-                                            </tfoot>
-                                        )}
-                                    </table>
-                                </div>
-
-                                {/* Add / confirm buttons */}
-                                {addingProduct ? (
-                                    <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            className="rounded-full"
-                                            disabled={!selectedProductId}
-                                            onClick={handleAddLineItem}
-                                        >
-                                            Add
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="rounded-full"
-                                            onClick={() => { setAddingProduct(false); setSelectedProductId(""); setNewQty(1); setNewUnitPrice(0); }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="rounded-full"
-                                        onClick={() => setAddingProduct(true)}
-                                    >
-                                        <PlusIcon className="w-4 h-4 mr-1.5" />
-                                        Add Product
-                                    </Button>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === "notes" && (
-                            <NotesPanel entityType="opportunity" entityId={data.id} />
-                        )}
-
-                        {activeTab === "activity" && (
-                            <ActivityTimeline entityType="opportunity" entityId={data.id} />
-                        )}
-                    </div>
-                </div>
-            </SheetContent>
-        </Sheet>
-    );
-}
-
-function InlineNumberInput({ value, onSave, prefix }: { value: number; onSave: (v: number) => void; prefix?: string }) {
-    const [editing, setEditing] = useState(false);
-    const [draft, setDraft] = useState(String(value));
-
-    if (editing) {
-        return (
-            <input
-                type="number"
-                min={0}
-                step={prefix ? 0.01 : 1}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => {
-                    setEditing(false);
-                    const parsed = Number(draft);
-                    if (!isNaN(parsed) && parsed !== value) onSave(parsed);
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                    if (e.key === "Escape") { setEditing(false); setDraft(String(value)); }
-                }}
-                className="w-full rounded-md border border-input bg-background px-2 py-0.5 text-sm text-right focus:outline-none focus:ring-2 focus:ring-ring"
-                autoFocus
-            />
-        );
-    }
+    const tabs = [
+        { id: "details", label: "Details" },
+        { id: "services", label: `Services (${lineItems.length})` },
+        { id: "notes", label: "Notes" },
+        { id: "activity", label: "Activity" },
+    ];
 
     return (
-        <button
-            onClick={() => { setDraft(String(value)); setEditing(true); }}
-            className="text-sm tabular-nums hover:underline cursor-pointer text-right w-full"
+        <SideSheetLayout
+            open={open}
+            onOpenChange={onOpenChange}
+            icon={<span className="text-lg font-bold text-emerald-600">$</span>}
+            iconBg="bg-emerald-500/10"
+            title={data.title}
+            subtitle={`$${data.value.toLocaleString()}${data.probability != null ? ` · ${data.probability}% probability` : ""}`}
+            badge={{ label: stage.label, dotColor: stage.color }}
+            tabs={tabs}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
         >
-            {prefix}{value.toLocaleString()}
-        </button>
+            {activeTab === "details" && (
+                <div className="space-y-4">
+                    {/* Value hero card */}
+                    <div className="rounded-xl border border-border bg-card p-5">
+                        <div className="flex items-baseline justify-between mb-3">
+                            <span className="text-2xl font-bold tabular-nums text-foreground">
+                                ${data.value.toLocaleString()}
+                            </span>
+                            {data.probability != null && (
+                                <span className="text-sm font-semibold tabular-nums text-muted-foreground">
+                                    {data.probability}%
+                                </span>
+                            )}
+                        </div>
+                        {data.probability != null && (
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                    className={cn("h-full rounded-full transition-all", probabilityColor(data.probability))}
+                                    style={{ width: `${data.probability}%` }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="rounded-xl border border-border bg-card p-5">
+                        <DetailFields
+                            onSave={handleSave}
+                            fields={[
+                                { label: "Title", value: data.title, dbColumn: "title", type: "text", rawValue: data.title },
+                                { label: "Stage", value: stage.label, dbColumn: "stage", type: "select", rawValue: data.stage, options: Object.entries(stageConfig).map(([k, v]) => ({ value: k, label: v.label })) },
+                                { label: "Value", value: `$${data.value.toLocaleString()}`, dbColumn: "value", type: "number", rawValue: data.value },
+                                { label: "Probability", value: data.probability != null ? `${data.probability}%` : null, dbColumn: "probability", type: "number", rawValue: data.probability },
+                                { label: "Expected Close", value: data.expected_close_date ? new Date(data.expected_close_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null, dbColumn: "expected_close_date", type: "date", rawValue: data.expected_close_date },
+                                { label: "Assigned To", value: data.assignee?.full_name, dbColumn: "assigned_to", type: "select", rawValue: data.assignee?.id ?? null, options: users },
+                                { label: "Created", value: new Date(data.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) },
+                            ]}
+                        />
+                    </div>
+
+                    <div className="rounded-xl border border-border bg-card p-5">
+                        <DetailFields
+                            onSave={handleSave}
+                            fields={[
+                                { label: "Description", value: data.description || null, dbColumn: "description", type: "text", rawValue: data.description },
+                            ]}
+                        />
+                    </div>
+
+                    {data.lead && (
+                        <LinkedEntityCard
+                            label="Related Lead"
+                            title={data.lead.title}
+                            icon={
+                                <svg className="w-3.5 h-3.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                                </svg>
+                            }
+                        />
+                    )}
+
+                    {data.contact && (
+                        <LinkedEntityCard
+                            label="Contact"
+                            title={`${data.contact.first_name} ${data.contact.last_name}`}
+                            icon={<span className="text-[9px] font-bold text-muted-foreground">{data.contact.first_name[0]}{data.contact.last_name[0]}</span>}
+                        />
+                    )}
+
+                    {data.company && (
+                        <LinkedEntityCard
+                            label="Company"
+                            title={data.company.name}
+                            icon={<span className="text-[10px] font-bold text-muted-foreground">{data.company.name[0]}</span>}
+                        />
+                    )}
+                </div>
+            )}
+
+            {activeTab === "services" && (
+                <LineItemsTable
+                    mode="live"
+                    items={lineItems}
+                    services={services}
+                    onAdd={handleAddLineItem}
+                    onUpdate={handleUpdateLineItem}
+                    onDelete={handleDeleteLineItem}
+                />
+            )}
+
+            {activeTab === "notes" && (
+                <NotesPanel entityType="opportunity" entityId={data.id} />
+            )}
+
+            {activeTab === "activity" && (
+                <ActivityTimeline entityType="opportunity" entityId={data.id} />
+            )}
+        </SideSheetLayout>
     );
 }
