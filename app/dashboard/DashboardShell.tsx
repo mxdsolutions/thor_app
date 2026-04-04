@@ -15,6 +15,7 @@ import {
     BellIcon,
     ShieldCheckIcon,
     UserCircleIcon,
+    ChevronUpDownIcon,
 } from "@heroicons/react/24/outline";
 
 import {
@@ -197,22 +198,18 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                                 </button>
                             </div>
 
-                            <div className="px-3 py-4 border-b border-border">
-                                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">Workspaces</p>
-                                <div className="space-y-2">
-                                    {workspaces.map((ws) => (
-                                        <button
-                                            key={ws.id}
-                                            onClick={() => { switchWorkspace(ws.id); setMobileMenuOpen(false); }}
-                                            className={cn(
-                                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
-                                                currentWorkspace === ws.id ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                            )}
-                                        >
-                                            <ws.icon className="w-[18px] h-[18px]" />
-                                            {ws.label}
-                                        </button>
-                                    ))}
+                            <div className="px-3 py-3 border-b border-border">
+                                <div className="relative">
+                                    <select
+                                        value={activeWorkspace}
+                                        onChange={(e) => setActiveWorkspace(e.target.value as Workspace)}
+                                        className="w-full appearance-none bg-secondary/60 text-sm font-semibold rounded-xl px-3 py-2.5 pr-9 border border-border/50 focus:outline-none focus:ring-2 focus:ring-ring"
+                                    >
+                                        {workspaces.map((ws) => (
+                                            <option key={ws.id} value={ws.id}>{ws.label}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronUpDownIcon className="w-4 h-4 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 </div>
                             </div>
 
