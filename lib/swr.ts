@@ -152,10 +152,6 @@ export function useTenantModules() {
 
 // --- Job-scoped Hooks ---
 
-export function useJob(id: string | null) {
-    return useSWR(id ? `/api/jobs/${id}` : null, fetcher, defaultConfig);
-}
-
 export function useJobQuotes(jobId: string | null) {
     return useSWR(jobId ? `/api/quotes?job_id=${jobId}` : null, fetcher, defaultConfig);
 }

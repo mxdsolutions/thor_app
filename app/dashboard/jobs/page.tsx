@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ROUTES } from "@/lib/routes";
+import { useSearchParams } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
@@ -114,7 +113,7 @@ function JobsPageContent() {
     }, [jobsHook.data]);
 
     usePageTitle("Jobs");
-    const router = useRouter();
+
 
     return (
         <>
@@ -293,7 +292,7 @@ function JobsPageContent() {
                                             </div>
                                         </td>
                                         <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); router.push(`${ROUTES.OPS_JOB_DETAIL}/${job.id}`); }}>
+                                            <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground" onClick={(e) => { e.stopPropagation(); setSelectedJob(job); }}>
                                                 <ArrowUpRightIcon className="w-4 h-4" />
                                             </Button>
                                         </td>

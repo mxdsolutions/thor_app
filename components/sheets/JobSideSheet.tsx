@@ -9,8 +9,6 @@ import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { LineItemsTable } from "@/features/line-items/LineItemsTable";
 import { createClient } from "@/lib/supabase/client";
 import { useProfiles, useStatusConfig, useJobQuotes, useJobInvoices, useJobReports } from "@/lib/swr";
-import { useRouter } from "next/navigation";
-import { ROUTES } from "@/lib/routes";
 import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
 import { toast } from "sonner";
 
@@ -72,7 +70,6 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
     const { data: quotesData } = useJobQuotes(activeTab === "quotes" ? job?.id ?? null : null);
     const { data: invoicesData } = useJobInvoices(activeTab === "invoices" ? job?.id ?? null : null);
     const { data: reportsData } = useJobReports(activeTab === "reports" ? job?.id ?? null : null);
-    const router = useRouter();
     const { data: profilesData } = useProfiles();
     const users: { value: string; label: string }[] = useMemo(() =>
         (profilesData?.users || []).map((u: { id: string; email?: string; user_metadata?: { full_name?: string } }) => ({
@@ -187,11 +184,11 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
 
     const tabs = [
         { id: "details", label: "Details" },
-        { id: "services", label: `Services (${lineItems.length})` },
         { id: "scopes", label: `Scopes (${jobProjects.length})` },
         { id: "quotes", label: `Quotes${quotesData?.items?.length ? ` (${quotesData.items.length})` : ""}` },
-        { id: "invoices", label: `Invoices${invoicesData?.items?.length ? ` (${invoicesData.items.length})` : ""}` },
         { id: "reports", label: `Reports${reportsData?.items?.length ? ` (${reportsData.items.length})` : ""}` },
+        { id: "invoices", label: `Invoices${invoicesData?.items?.length ? ` (${invoicesData.items.length})` : ""}` },
+        { id: "services", label: `Services (${lineItems.length})` },
         { id: "notes", label: "Notes" },
         { id: "activity", label: "Activity" },
     ];
@@ -209,15 +206,6 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
             activeTab={activeTab}
             onTabChange={setActiveTab}
         >
-            <div className="px-4 pb-2">
-                <button
-                    onClick={() => { onOpenChange(false); router.push(`${ROUTES.OPS_JOB_DETAIL}/${data.id}`); }}
-                    className="text-xs text-primary hover:underline"
-                >
-                    Open full job view →
-                </button>
-            </div>
-
             {activeTab === "details" && (
                 <div className="space-y-4">
                     <div className="rounded-xl border border-border bg-card p-5">

@@ -10,7 +10,6 @@ export const ROUTES = {
 
     // Operations
     OPS_JOBS: "/dashboard/jobs",
-    OPS_JOB_DETAIL: "/dashboard/jobs", // + /[id]
     OPS_SCOPES: "/dashboard/scopes",
     OPS_SERVICES: "/dashboard/services",
     OPS_REPORTS: "/dashboard/reports",
