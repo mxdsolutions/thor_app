@@ -27,7 +27,7 @@ interface ScrollableTableLayoutProps {
  */
 export function ScrollableTableLayout({ header, children, footer }: ScrollableTableLayoutProps) {
     return (
-        <div className="flex flex-col h-[calc(100vh-1.5rem-2rem)] lg:h-[calc(100vh-2rem-2rem)]">
+        <div className="flex flex-col h-full">
             <div className="shrink-0">
                 {header}
             </div>

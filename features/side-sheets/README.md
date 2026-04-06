@@ -1,6 +1,6 @@
 # Side Sheets Feature Module
 
-Shared layout for entity detail side sheets (jobs, opportunities, leads, etc.).
+Shared layout for entity detail side sheets (jobs, leads, etc.).
 
 ## Components
 
@@ -21,4 +21,4 @@ Shared layout for entity detail side sheets (jobs, opportunities, leads, etc.).
 ## Consumers
 
 - `components/sheets/JobSideSheet.tsx`
-- `components/sheets/OpportunitySideSheet.tsx`
+- `components/sheets/LeadSideSheet.tsx`

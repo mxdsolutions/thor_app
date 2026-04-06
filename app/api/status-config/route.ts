@@ -8,7 +8,7 @@ export const GET = withAuth(async (request: NextRequest, { supabase, tenantId })
 
     if (!entityType || !DEFAULTS_BY_ENTITY[entityType]) {
         return NextResponse.json(
-            { error: "Invalid entity_type. Must be one of: lead, opportunity, job" },
+            { error: "Invalid entity_type. Must be one of: lead, job" },
             { status: 400 },
         );
     }

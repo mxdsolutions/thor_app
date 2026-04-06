@@ -23,7 +23,6 @@ export default async function DashboardLayout({
                 getTenantBranding(tenantId),
                 getTenantMembership(user.id, tenantId),
             ]);
-
             if (branding && membership) {
                 tenantData = {
                     id: branding.id,
@@ -49,12 +48,13 @@ export default async function DashboardLayout({
 
     return (
         <>
-            <TenantBrandingStyle />
-            {tenantData ? (
+            {tenantData && (
                 <TenantProvider tenant={tenantData}>
+                    <TenantBrandingStyle />
                     <DashboardShell showPlatformAdminLink={showPlatformAdminLink}>{children}</DashboardShell>
                 </TenantProvider>
-            ) : (
+            )}
+            {!tenantData && (
                 <DashboardShell showPlatformAdminLink={showPlatformAdminLink}>{children}</DashboardShell>
             )}
         </>

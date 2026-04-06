@@ -185,12 +185,16 @@ export async function middleware(request: NextRequest) {
             tenantId = resolveTenantFromJWT(data.claims as Record<string, unknown>)
         }
 
-        // Inject tenant context headers
+        // Inject tenant context headers (set on request so server components can read them)
         if (tenantId) {
-            response.headers.set('x-tenant-id', tenantId)
+            request.headers.set('x-tenant-id', tenantId)
             if (tenantSlug) {
-                response.headers.set('x-tenant-slug', tenantSlug)
+                request.headers.set('x-tenant-slug', tenantSlug)
             }
+            // Recreate response with updated request headers
+            response = NextResponse.next({
+                request: { headers: request.headers },
+            })
         }
 
         // --- Auth Routing ---

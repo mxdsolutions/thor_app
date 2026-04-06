@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
-import { useCompanyOptions, useOpportunities, useProfiles, useStatusConfig } from "@/lib/swr";
+import { useCompanyOptions, useLeads, useProfiles, useStatusConfig } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, getDefaultStatusId } from "@/lib/status-config";
 
 interface CreateJobModalProps {
@@ -16,16 +16,16 @@ interface CreateJobModalProps {
 }
 
 type Company = { id: string; name: string };
-type Opportunity = { id: string; title: string; company_id: string | null };
+type Lead = { id: string; title: string; company_id: string | null };
 type User = { id: string; full_name: string | null; email: string | null };
 
-/** Modal for creating a new service job with company, opportunity, and assignee selection. */
+/** Modal for creating a new service job with company, lead, and assignee selection. */
 export function CreateJobModal({ open, onOpenChange, onCreated }: CreateJobModalProps) {
     const [saving, setSaving] = useState(false);
     const [description, setDescription] = useState("");
     const [amount, setAmount] = useState("");
     const [companyId, setCompanyId] = useState("");
-    const [opportunityId, setOpportunityId] = useState("");
+    const [leadId, setLeadId] = useState("");
     const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
 
     const { data: statusData } = useStatusConfig("job");
@@ -33,25 +33,28 @@ export function CreateJobModal({ open, onOpenChange, onCreated }: CreateJobModal
     const { data: companyData } = useCompanyOptions(open);
     const companies: Company[] = companyData?.items || [];
 
-    const { data: opportunityData } = useOpportunities();
-    const opportunities: Opportunity[] = opportunityData?.items || [];
+    const { data: leadData } = useLeads();
+    const leads: Lead[] = leadData?.items || [];
 
     const { data: userData } = useProfiles();
     const users: User[] = userData?.users || [];
 
-    const filteredOpportunities = opportunities.filter(o => !companyId || o.company_id === companyId);
+    const filteredLeads = leads.filter(o => !companyId || o.company_id === companyId);
 
     const reset = () => {
         setDescription("");
         setAmount("");
         setCompanyId("");
-        setOpportunityId("");
+        setLeadId("");
         setAssigneeIds([]);
     };
 
+    useEffect(() => { if (!open) reset(); }, [open]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!description.trim() || !companyId) return;
+        if (!description.trim()) { toast.error("Job description is required"); return; }
+        if (!companyId) { toast.error("Company is required"); return; }
 
         setSaving(true);
         try {
@@ -62,7 +65,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated }: CreateJobModal
                     description: description.trim(),
                     amount: amount ? parseFloat(amount) : 0,
                     company_id: companyId,
-                    opportunity_id: opportunityId || null,
+                    lead_id: leadId || null,
                     assignee_ids: assigneeIds,
                     status: defaultStatus,
                 }),
@@ -94,7 +97,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated }: CreateJobModal
                             value={companyId}
                             onChange={(e) => {
                                 setCompanyId(e.target.value);
-                                setOpportunityId("");
+                                setLeadId("");
                             }}
                             className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             required
@@ -107,15 +110,15 @@ export function CreateJobModal({ open, onOpenChange, onCreated }: CreateJobModal
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Opportunity</label>
+                        <label className="text-xs font-medium text-muted-foreground">Lead</label>
                         <select
-                            value={opportunityId}
-                            onChange={(e) => setOpportunityId(e.target.value)}
+                            value={leadId}
+                            onChange={(e) => setLeadId(e.target.value)}
                             className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             disabled={!companyId}
                         >
-                            <option value="">{companyId ? "Select opportunity (optional)..." : "Select a company first"}</option>
-                            {filteredOpportunities.map((o) => (
+                            <option value="">{companyId ? "Select lead (optional)..." : "Select a company first"}</option>
+                            {filteredLeads.map((o) => (
                                 <option key={o.id} value={o.id}>{o.title}</option>
                             ))}
                         </select>

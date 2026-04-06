@@ -1,22 +1,19 @@
-import { getTenantId, getTenantBranding } from "@/lib/tenant";
+"use client";
 
-export async function TenantBrandingStyle() {
-    let tenantId: string;
-    try {
-        tenantId = await getTenantId();
-    } catch {
-        return null;
-    }
+import { useTenantOptional } from "@/lib/tenant-context";
 
-    const tenant = await getTenantBranding(tenantId);
-    if (!tenant?.primary_color || tenant.primary_color === 'hsl(16 87% 55%)') {
-        // Default color, no override needed
+const DEFAULT_PRIMARY = "hsl(16 87% 55%)";
+
+export function TenantBrandingStyle() {
+    const tenant = useTenantOptional();
+
+    if (!tenant?.primary_color || tenant.primary_color === DEFAULT_PRIMARY) {
         return null;
     }
 
     return (
         <style dangerouslySetInnerHTML={{ __html: `
-            @theme {
+            :root {
                 --color-primary: ${tenant.primary_color};
                 --color-ring: ${tenant.primary_color};
             }

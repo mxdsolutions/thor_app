@@ -7,8 +7,7 @@ import { leadSchema, leadUpdateSchema } from "@/lib/validation";
 export const GET = withAuth(async (request, { supabase }) => {
     const { limit, offset, search } = parsePagination(request);
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get("status");
-    const priority = searchParams.get("priority");
+    const stage = searchParams.get("stage");
 
     let query = supabase
         .from("leads")
@@ -23,24 +22,19 @@ export const GET = withAuth(async (request, { supabase }) => {
                 id,
                 name
             ),
-            assignee:profiles!leads_assigned_to_fkey (
+            assignee:profiles!opportunities_assigned_to_fkey (
                 id,
                 full_name
-            ),
-            opportunity:opportunities!leads_opportunity_id_fkey (
-                id,
-                title
             )
         `, { count: "exact" })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
     if (search) {
-        query = query.or(`title.ilike.%${search}%`);
+        query = query.or(`title.ilike.%${search}%,reference_id.ilike.%${search}%`);
     }
 
-    if (status) query = query.eq("status", status);
-    if (priority) query = query.eq("priority", priority);
+    if (stage) query = query.eq("stage", stage);
 
     const { data, error, count } = await query;
     if (error) return serverError();
@@ -53,13 +47,49 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     const validation = leadSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
 
+    const insertData = { ...validation.data, created_by: user.id, tenant_id: tenantId };
+
+    // Auto-generate reference_id if not provided
+    if (!insertData.reference_id) {
+        const { data: tenant } = await supabase
+            .from("tenants")
+            .select("reference_prefix")
+            .eq("id", tenantId)
+            .single();
+
+        if (tenant?.reference_prefix) {
+            const prefix = tenant.reference_prefix;
+            const { data: maxRow } = await supabase
+                .from("leads")
+                .select("reference_id")
+                .eq("tenant_id", tenantId)
+                .like("reference_id", `${prefix}-%`)
+                .order("reference_id", { ascending: false })
+                .limit(1)
+                .single();
+
+            let nextNum = 1;
+            if (maxRow?.reference_id) {
+                const numPart = maxRow.reference_id.split("-").pop();
+                const parsed = parseInt(numPart || "0", 10);
+                if (!isNaN(parsed)) nextNum = parsed + 1;
+            }
+            insertData.reference_id = `${prefix}-${String(nextNum).padStart(4, "0")}`;
+        }
+    }
+
     const { data, error } = await supabase
         .from("leads")
-        .insert({ ...validation.data, created_by: user.id, tenant_id: tenantId })
+        .insert(insertData)
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) {
+        if (error.code === "23505") {
+            return NextResponse.json({ error: "Duplicate reference ID" }, { status: 409 });
+        }
+        return serverError();
+    }
 
     return NextResponse.json({ item: data }, { status: 201 });
 });

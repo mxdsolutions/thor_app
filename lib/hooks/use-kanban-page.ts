@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import type { KeyedMutator } from "swr";
 
 type UseKanbanPageOptions<T> = {
     /** The SWR hook result (data, isLoading, mutate) */
-    swr: { data: { items: T[]; total: number } | undefined; isLoading: boolean; mutate: any };
+    swr: { data: { items: T[]; total: number } | undefined; isLoading: boolean; mutate: KeyedMutator<{ items: T[]; total: number }> };
     /** The API endpoint to PATCH status changes to */
     endpoint: string;
     /** The field name for the status/stage column (e.g., "status" or "stage") */

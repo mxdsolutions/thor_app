@@ -23,6 +23,9 @@ export const GET = withAuth(async (request, { supabase }) => {
         query = query.eq("type", type);
     }
 
+    const jobId = searchParams.get("job_id");
+    if (jobId) query = query.eq("job_id", jobId);
+
     const { data, error, count } = await query;
     if (error) return serverError();
 

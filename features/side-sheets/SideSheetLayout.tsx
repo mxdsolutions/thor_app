@@ -49,7 +49,7 @@ export function SideSheetLayout({
 }: SideSheetLayoutProps) {
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl flex flex-col p-0 border-l border-border bg-background">
+            <SheetContent className="w-full sm:max-w-[900px] flex flex-col p-0 border-l border-border bg-background">
                 {/* Header */}
                 <div className="p-6 pb-4 border-b border-border">
                     <SheetHeader className="flex flex-row items-start gap-4 space-y-0 text-left">

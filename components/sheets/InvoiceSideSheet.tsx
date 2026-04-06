@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PaperAirplaneIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 import { toast } from "sonner";
+import { INVOICE_STATUS_CONFIG } from "@/lib/status-config";
 
 type Invoice = {
     id: string;
@@ -39,13 +40,7 @@ interface InvoiceSideSheetProps {
     onUpdate?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-    draft: { label: "Draft", color: "bg-gray-400" },
-    submitted: { label: "Submitted", color: "bg-blue-500" },
-    authorised: { label: "Authorised", color: "bg-indigo-500" },
-    paid: { label: "Paid", color: "bg-emerald-500" },
-    voided: { label: "Voided", color: "bg-red-500" },
-};
+const statusConfig = INVOICE_STATUS_CONFIG;
 
 /** Side sheet for viewing/editing invoice details, line items, and payment tracking. */
 export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: InvoiceSideSheetProps) {

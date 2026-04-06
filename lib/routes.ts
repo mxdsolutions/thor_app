@@ -1,30 +1,32 @@
 export const ROUTES = {
+    // Overview (top-level)
+    OVERVIEW: "/dashboard/overview",
+
     // CRM
-    CRM_OVERVIEW: "/dashboard/crm/overview",
-    CRM_LEADS: "/dashboard/crm/leads",
-    CRM_OPPORTUNITIES: "/dashboard/crm/opportunities",
-    CRM_COMPANIES: "/dashboard/crm/companies",
-    CRM_CONTACTS: "/dashboard/crm/contacts",
-    CRM_EMAILS: "/dashboard/crm/emails",
+    CRM_LEADS: "/dashboard/leads",
+    CRM_COMPANIES: "/dashboard/companies",
+    CRM_CONTACTS: "/dashboard/contacts",
+    CRM_EMAILS: "/dashboard/emails",
 
     // Operations
-    OPS_OVERVIEW: "/dashboard/operations/overview",
-    OPS_JOBS: "/dashboard/operations/jobs",
-    OPS_PROJECTS: "/dashboard/operations/projects",
-    OPS_SERVICES: "/dashboard/operations/services",
-    OPS_REPORTS: "/dashboard/operations/reports",
+    OPS_JOBS: "/dashboard/jobs",
+    OPS_JOB_DETAIL: "/dashboard/jobs", // + /[id]
+    OPS_SCOPES: "/dashboard/scopes",
+    OPS_SERVICES: "/dashboard/services",
+    OPS_REPORTS: "/dashboard/reports",
+    OPS_SCHEDULE: "/dashboard/schedule",
 
     // Finance
-    FINANCE_QUOTES: "/dashboard/finance/quotes",
-    FINANCE_INVOICES: "/dashboard/finance/invoices",
-    FINANCE_PRICING: "/dashboard/finance/pricing",
+    FINANCE_QUOTES: "/dashboard/quotes",
+    FINANCE_INVOICES: "/dashboard/invoices",
+    FINANCE_PRICING: "/dashboard/pricing",
 
     // Settings
     SETTINGS_USERS: "/dashboard/settings/users",
-    SETTINGS_INTEGRATIONS: "/dashboard/settings/integrations",
+    SETTINGS_USERS_ROLES: "/dashboard/settings/users/roles",
     SETTINGS_COMPANY: "/dashboard/settings/company",
-    SETTINGS_ROLES: "/dashboard/settings/roles",
-    SETTINGS_SUBSCRIPTION: "/dashboard/settings/subscription",
+    SETTINGS_COMPANY_SUBSCRIPTION: "/dashboard/settings/company/subscription",
+    SETTINGS_COMPANY_INTEGRATIONS: "/dashboard/settings/company/integrations",
     SETTINGS_PROFILE: "/dashboard/settings/settings",
 
     // Platform Admin

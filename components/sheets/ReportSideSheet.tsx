@@ -10,6 +10,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
 import { DocumentTextIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { toast } from "sonner";
+import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "@/lib/status-config";
 import type { ReportTemplate, TemplateSchema } from "@/lib/report-templates/types";
 
 type Report = {
@@ -34,23 +36,8 @@ interface ReportSideSheetProps {
     onUpdate?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-    draft: { label: "Draft", color: "bg-gray-400" },
-    in_progress: { label: "In Progress", color: "bg-blue-500" },
-    complete: { label: "Complete", color: "bg-emerald-500" },
-    submitted: { label: "Submitted", color: "bg-purple-500" },
-};
-
-const TYPE_LABELS: Record<string, string> = {
-    assessment: "Assessment",
-    defect: "Defect",
-    inspection: "Inspection",
-    make_safe: "Make Safe",
-    specialist: "Specialist",
-    variation: "Variation",
-    roof: "Roof",
-    other: "Other",
-};
+const statusConfig = REPORT_STATUS_CONFIG;
+const TYPE_LABELS = REPORT_TYPE_LABELS;
 
 export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: ReportSideSheetProps) {
     const router = useRouter();
@@ -102,7 +89,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             const url = URL.createObjectURL(blob);
             window.open(url, "_blank");
         } catch {
-            // Silent fail — could add toast here
+            toast.error("Failed to generate PDF");
         } finally {
             setDownloading(false);
         }
@@ -243,7 +230,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
 
                     {data.project && (
                         <LinkedEntityCard
-                            label="Project"
+                            label="Scope"
                             title={data.project.title}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">P</span>

@@ -14,14 +14,6 @@ export const forgotPasswordSchema = z.object({
     email: z.string().email("Invalid email address"),
 });
 
-export const updatePasswordSchema = z.object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"]
-});
-
 export const onboardingSchema = z.object({
     first_name: z.string().min(1, "First name is required"),
     last_name: z.string().min(1, "Last name is required"),
@@ -58,35 +50,19 @@ export const contactUpdateSchema = z.object({
 
 export const leadSchema = z.object({
     title: z.string().min(1, "Lead title is required"),
-    company_id: z.string().uuid().optional().nullable(),
+    value: z.number().min(0, "Value must be non-negative"),
+    probability: z.number().min(0).max(100).optional().nullable(),
+    expected_close: z.string().optional().nullable(),
     contact_id: z.string().uuid().optional().nullable(),
-    source: z.string().optional(),
-    priority: z.string().optional(),
-    status: z.string().optional(),
+    company_id: z.string().uuid().optional().nullable(),
+    stage: z.string().optional(),
     assigned_to: z.string().uuid().optional().nullable(),
-    description: z.string().optional(),
-    opportunity_id: z.string().uuid().optional().nullable(),
+    reference_id: z.string().max(50).optional().nullable(),
 });
 
 export const leadUpdateSchema = z.object({
     id: z.string().uuid("Valid ID is required"),
 }).merge(leadSchema.partial());
-
-export const opportunitySchema = z.object({
-    title: z.string().min(1, "Opportunity title is required"),
-    value: z.number().min(0, "Value must be non-negative"),
-    probability: z.number().min(0).max(100).optional().nullable(),
-    expected_close: z.string().optional().nullable(),
-    lead_id: z.string().uuid().optional().nullable(),
-    contact_id: z.string().uuid().optional().nullable(),
-    company_id: z.string().uuid().optional().nullable(),
-    stage: z.string().optional(),
-    assigned_to: z.string().uuid().optional().nullable(),
-});
-
-export const opportunityUpdateSchema = z.object({
-    id: z.string().uuid("Valid ID is required"),
-}).merge(opportunitySchema.partial());
 
 export const serviceSchema = z.object({
     name: z.string().min(1, "Service name is required"),
@@ -107,10 +83,10 @@ export const noteSchema = z.object({
     mentioned_user_ids: z.array(z.string().uuid()).optional(),
 });
 
-// --- Line Item Schemas (shared pattern for opportunity & job line items) ---
+// --- Line Item Schemas (shared pattern for lead & job line items) ---
 
 export const lineItemSchema = z.object({
-    opportunity_id: z.string().uuid().optional(),
+    lead_id: z.string().uuid().optional(),
     job_id: z.string().uuid().optional(),
     product_id: z.string().uuid(),
     quantity: z.number().min(0, "Quantity must be non-negative"),
@@ -132,10 +108,11 @@ export const jobSchema = z.object({
     project_id: z.string().uuid().optional().nullable(),
     assigned_to: z.string().uuid().optional().nullable(),
     scheduled_date: z.string().optional().nullable(),
-    opportunity_id: z.string().uuid().optional().nullable(),
+    lead_id: z.string().uuid().optional().nullable(),
     company_id: z.string().uuid().optional().nullable(),
     paid_status: z.enum(["not_paid", "partly_paid", "paid_in_full"]).optional(),
     total_payment_received: z.number().min(0).optional(),
+    reference_id: z.string().max(50).optional().nullable(),
 });
 
 export const jobUpdateSchema = z.object({
@@ -156,10 +133,10 @@ export const replyEmailSchema = z.object({
     comment: z.string().min(1, "Reply content is required"),
 });
 
-// --- Job From Opportunity Schema ---
+// --- Job From Lead Schema ---
 
-export const jobFromOpportunitySchema = z.object({
-    opportunity_id: z.string().uuid("Valid opportunity ID is required"),
+export const jobFromLeadSchema = z.object({
+    lead_id: z.string().uuid("Valid lead ID is required"),
     description: z.string().min(1, "Description is required").max(1000),
     company_id: z.string().uuid("Valid company ID is required"),
     assigned_to: z.string().uuid().optional().nullable(),
@@ -327,7 +304,7 @@ export type ReportTemplateUpdateInput = z.infer<typeof reportTemplateUpdateSchem
 
 // --- Tenant Config Schemas ---
 
-export const statusItemSchema = z.object({
+const statusItemSchema = z.object({
     id: z.string().min(1).max(50).regex(/^[a-z0-9_]+$/, "Status ID must be lowercase letters, numbers, and underscores"),
     label: z.string().min(1).max(100),
     color: z.string().min(1).max(50),
@@ -337,7 +314,7 @@ export const statusItemSchema = z.object({
 
 export const statusConfigUpdateSchema = z.object({
     tenant_id: z.string().uuid(),
-    entity_type: z.enum(["lead", "opportunity", "job"]),
+    entity_type: z.enum(["lead", "job"]),
     statuses: z.array(statusItemSchema)
         .min(1, "At least one status is required")
         .refine(
@@ -354,7 +331,6 @@ export const moduleConfigUpdateSchema = z.object({
     })).min(1, "At least one module is required"),
 });
 
-export type StatusItemInput = z.infer<typeof statusItemSchema>;
 export type StatusConfigUpdateInput = z.infer<typeof statusConfigUpdateSchema>;
 export type ModuleConfigUpdateInput = z.infer<typeof moduleConfigUpdateSchema>;
 
@@ -403,8 +379,6 @@ export type ContactInput = z.infer<typeof contactSchema>;
 export type ContactUpdateInput = z.infer<typeof contactUpdateSchema>;
 export type LeadInput = z.infer<typeof leadSchema>;
 export type LeadUpdateInput = z.infer<typeof leadUpdateSchema>;
-export type OpportunityInput = z.infer<typeof opportunitySchema>;
-export type OpportunityUpdateInput = z.infer<typeof opportunityUpdateSchema>;
 export type ServiceInput = z.infer<typeof serviceSchema>;
 export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 export type NoteInput = z.infer<typeof noteSchema>;
@@ -423,3 +397,36 @@ export type LicenseInput = z.infer<typeof licenseSchema>;
 export type LicenseUpdateInput = z.infer<typeof licenseUpdateSchema>;
 export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;
+
+// ── Tasks ──────────────────────────────────────────
+export const taskSchema = z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().optional(),
+    status: z.enum(["pending", "in_progress", "completed", "cancelled"]).default("pending"),
+    priority: z.number().int().min(1).max(4).default(3),
+    due_date: z.string().nullable().optional(),
+    assigned_to: z.string().uuid().nullable().optional(),
+    job_id: z.string().uuid().nullable().optional(),
+});
+export type TaskInput = z.infer<typeof taskSchema>;
+
+export const taskUpdateSchema = taskSchema.partial();
+export type TaskUpdateInput = z.infer<typeof taskUpdateSchema>;
+
+export const scheduleEntrySchema = z.object({
+    job_id: z.string().uuid("Job is required"),
+    date: z.string().min(1, "Date is required"),
+    start_time: z.string().nullable().optional(),
+    end_time: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+});
+export type ScheduleEntryInput = z.infer<typeof scheduleEntrySchema>;
+
+export const scheduleEntryUpdateSchema = z.object({
+    id: z.string().uuid(),
+    date: z.string().optional(),
+    start_time: z.string().nullable().optional(),
+    end_time: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
+});
+export type ScheduleEntryUpdateInput = z.infer<typeof scheduleEntryUpdateSchema>;

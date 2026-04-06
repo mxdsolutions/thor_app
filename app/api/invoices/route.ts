@@ -23,6 +23,8 @@ export const GET = withAuth(async (request, { supabase }) => {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     if (status) query = query.eq("status", status);
+    const jobId = searchParams.get("job_id");
+    if (jobId) query = query.eq("job_id", jobId);
 
     const { data, error, count } = await query;
     if (error) return serverError();
@@ -82,24 +84,30 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         );
     }
 
-    // Push to Xero if connected (fire and forget)
+    // Push to Xero if connected
+    let xeroWarning: string | undefined;
     if (data.company_id) {
-        pushInvoiceToXero(
-            supabase,
-            tenantId,
-            data.id,
-            { status: data.status, type: data.type, issue_date: data.issue_date, due_date: data.due_date, reference: data.reference, currency_code: data.currency_code },
-            data.company_id,
-            processedItems.map((li) => ({
-                description: li.description,
-                quantity: li.quantity,
-                unit_price: li.unit_price,
-                account_code: li.account_code,
-            }))
-        ).catch(console.error);
+        try {
+            await pushInvoiceToXero(
+                supabase,
+                tenantId,
+                data.id,
+                { status: data.status, type: data.type, issue_date: data.issue_date, due_date: data.due_date, reference: data.reference, currency_code: data.currency_code },
+                data.company_id,
+                processedItems.map((li) => ({
+                    description: li.description,
+                    quantity: li.quantity,
+                    unit_price: li.unit_price,
+                    account_code: li.account_code,
+                }))
+            );
+        } catch (err) {
+            console.error("Xero sync failed:", err);
+            xeroWarning = "Invoice created but failed to sync to Xero";
+        }
     }
 
-    return NextResponse.json({ item: data }, { status: 201 });
+    return NextResponse.json({ item: data, warning: xeroWarning }, { status: 201 });
 });
 
 export const PATCH = withAuth(async (request, { supabase, tenantId }) => {

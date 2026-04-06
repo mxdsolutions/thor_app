@@ -11,6 +11,7 @@ interface CreateInvoiceModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onCreated?: (invoice: Record<string, unknown>) => void;
+    defaultValues?: { company_id?: string; job_id?: string };
 }
 
 type LineItem = {
@@ -20,12 +21,12 @@ type LineItem = {
     account_code: string;
 };
 
-export function CreateInvoiceModal({ open, onOpenChange, onCreated }: CreateInvoiceModalProps) {
+export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValues }: CreateInvoiceModalProps) {
     const [saving, setSaving] = useState(false);
     const [reference, setReference] = useState("");
-    const [companyId, setCompanyId] = useState("");
+    const [companyId, setCompanyId] = useState(defaultValues?.company_id || "");
     const [contactId, setContactId] = useState("");
-    const [jobId, setJobId] = useState("");
+    const [jobId, setJobId] = useState(defaultValues?.job_id || "");
     const [issueDate, setIssueDate] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [notes, setNotes] = useState("");

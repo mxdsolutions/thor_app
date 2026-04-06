@@ -10,7 +10,7 @@ Multi-tenant CRM + operations dashboard.
 ## Dev Setup
 
 ```bash
-npm run dev        # starts dev server on localhost:3002
+npm run dev        # starts dev server on localhost:8005
 npm run build      # production build
 npm run start      # start production server
 npm run lint       # ESLint

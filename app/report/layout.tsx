@@ -46,9 +46,11 @@ export default async function ReportLayout({
 
     return (
         <>
-            <TenantBrandingStyle />
             {tenantData ? (
-                <TenantProvider tenant={tenantData}>{children}</TenantProvider>
+                <TenantProvider tenant={tenantData}>
+                    <TenantBrandingStyle />
+                    {children}
+                </TenantProvider>
             ) : (
                 <>{children}</>
             )}

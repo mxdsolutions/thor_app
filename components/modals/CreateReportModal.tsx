@@ -12,6 +12,7 @@ interface CreateReportModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onCreated?: (report: Record<string, unknown>) => void;
+    defaultValues?: { job_id?: string; company_id?: string };
 }
 
 type JobOption = { id: string; description: string };
@@ -30,12 +31,12 @@ const REPORT_TYPES = [
     { value: "other", label: "Other" },
 ];
 
-export function CreateReportModal({ open, onOpenChange, onCreated }: CreateReportModalProps) {
+export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues }: CreateReportModalProps) {
     const [saving, setSaving] = useState(false);
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [templateId, setTemplateId] = useState("");
-    const [jobId, setJobId] = useState("");
+    const [jobId, setJobId] = useState(defaultValues?.job_id || "");
     const [projectId, setProjectId] = useState("");
     const [notes, setNotes] = useState("");
     const [jobs, setJobs] = useState<JobOption[]>([]);
@@ -47,7 +48,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated }: CreateRepor
     useEffect(() => {
         if (open) {
             fetch("/api/jobs").then(r => r.json()).then(d => setJobs(d.items || [])).catch(() => {});
-            fetch("/api/projects").then(r => r.json()).then(d => setProjects(d.items || [])).catch(() => {});
+            fetch("/api/scopes").then(r => r.json()).then(d => setProjects(d.items || [])).catch(() => {});
         }
     }, [open]);
 
@@ -71,9 +72,12 @@ export function CreateReportModal({ open, onOpenChange, onCreated }: CreateRepor
         setNotes("");
     };
 
+    useEffect(() => { if (!open) reset(); }, [open]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !type) return;
+        if (!title.trim()) { toast.error("Report title is required"); return; }
+        if (!type) { toast.error("Report type is required"); return; }
 
         setSaving(true);
         try {
@@ -167,7 +171,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated }: CreateRepor
                             </select>
                         </div>
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Project</label>
+                            <label className="text-xs font-medium text-muted-foreground">Scope</label>
                             <select
                                 value={projectId}
                                 onChange={(e) => setProjectId(e.target.value)}

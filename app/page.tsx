@@ -37,7 +37,7 @@ function AuthContent() {
         toast.error(result.error);
       } else if (result?.success) {
         router.refresh();
-        router.push("/dashboard/operations/overview");
+        router.push("/dashboard/overview");
       }
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -155,7 +155,7 @@ function AuthContent() {
 
           <div className="grid gap-4">
             {[
-              { icon: WrenchIcon, label: "Leads & opportunities" },
+              { icon: WrenchIcon, label: "Leads & pipeline" },
               { icon: DocumentCheckIcon, label: "Projects & jobs" },
               { icon: UsersIcon, label: "Companies & contacts" },
             ].map(({ icon: Icon, label }, i) => (

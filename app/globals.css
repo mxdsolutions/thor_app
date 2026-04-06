@@ -46,14 +46,6 @@
     font-family: var(--font-open-sans);
   }
 
-  /* Standardize all buttons to pill style */
-  button:not([data-no-pill]),
-  [role="button"]:not([data-no-pill]),
-  .inline-flex.items-center.justify-center.rounded-md,
-  .inline-flex.items-center.justify-center.rounded-lg {
-    border-radius: 9999px !important;
-  }
-
   /* Gradient focus glow for inputs */
   input:focus:not([data-no-focus-style]),
   input:focus-visible:not([data-no-focus-style]),

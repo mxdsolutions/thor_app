@@ -54,7 +54,10 @@ export default function BrandingPage() {
                 }),
             });
             if (!res.ok) throw new Error();
-            toast.success("Branding updated. Refresh to see changes.");
+            // Apply brand color immediately
+            document.documentElement.style.setProperty("--color-primary", primaryColor);
+            document.documentElement.style.setProperty("--color-ring", primaryColor);
+            toast.success("Branding updated");
         } catch {
             toast.error("Failed to save branding");
         } finally {

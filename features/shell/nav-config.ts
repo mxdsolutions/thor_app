@@ -4,22 +4,17 @@ import {
     BriefcaseIcon,
     DocumentTextIcon,
     FunnelIcon,
-    RocketLaunchIcon,
     BuildingOffice2Icon,
     UserGroupIcon,
     ClipboardDocumentListIcon,
     CogIcon,
     CubeIcon,
-    LinkIcon,
-    ShieldCheckIcon,
-    CreditCardIcon,
     CalculatorIcon,
     CurrencyDollarIcon,
     BanknotesIcon,
+    CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
 import { ROUTES } from "@/lib/routes";
-
-export type Workspace = "crm" | "operations" | "finance" | "settings";
 
 export type NavItem = {
     href: string;
@@ -28,76 +23,56 @@ export type NavItem = {
     moduleId?: string;
 };
 
-export type WorkspaceConfig = {
-    id: Workspace;
+export type NavSection = {
+    id: string;
     label: string;
-    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    items: NavItem[];
 };
 
-export const WORKSPACES: WorkspaceConfig[] = [
-    { id: "crm", label: "CRM", icon: UserGroupIcon },
-    { id: "operations", label: "Operations", icon: BriefcaseIcon },
-    { id: "finance", label: "Finance", icon: BanknotesIcon },
-    { id: "settings", label: "Settings", icon: CogIcon },
-];
-
-export const OPERATIONS_ITEMS: NavItem[] = [
-    { href: ROUTES.OPS_OVERVIEW, label: "Overview", icon: Squares2X2Icon, moduleId: "operations.overview" },
-    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs" },
-    { href: ROUTES.OPS_PROJECTS, label: "Projects", icon: ClipboardDocumentListIcon, moduleId: "operations.projects" },
-    { href: ROUTES.OPS_SERVICES, label: "Services", icon: CubeIcon, moduleId: "operations.services" },
-    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: DocumentTextIcon, moduleId: "operations.reports" },
-];
-
-export const FINANCE_ITEMS: NavItem[] = [
-    { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes" },
-    { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices" },
-    { href: ROUTES.FINANCE_PRICING, label: "Pricing", icon: CurrencyDollarIcon, moduleId: "finance.pricing" },
-];
+export const OVERVIEW_ITEM: NavItem = {
+    href: ROUTES.OVERVIEW,
+    label: "Overview",
+    icon: Squares2X2Icon,
+};
 
 export const CRM_ITEMS: NavItem[] = [
-    { href: ROUTES.CRM_OVERVIEW, label: "Overview", icon: Squares2X2Icon, moduleId: "crm.overview" },
     { href: ROUTES.CRM_LEADS, label: "Leads", icon: FunnelIcon, moduleId: "crm.leads" },
-    { href: ROUTES.CRM_OPPORTUNITIES, label: "Opportunities", icon: RocketLaunchIcon, moduleId: "crm.opportunities" },
     { href: ROUTES.CRM_COMPANIES, label: "Companies", icon: BuildingOffice2Icon, moduleId: "crm.companies" },
     { href: ROUTES.CRM_CONTACTS, label: "Contacts", icon: UserGroupIcon, moduleId: "crm.contacts" },
 ];
 
-export function getSettingsItems(opts: {
-    hasBrandingAccess: boolean;
-    hasRolesAccess: boolean;
-    hasDomainAccess: boolean;
-}): NavItem[] {
-    return [
-        { href: ROUTES.SETTINGS_USERS, label: "Users", icon: UsersIcon },
-        { href: ROUTES.SETTINGS_INTEGRATIONS, label: "Integrations", icon: LinkIcon },
-        ...(opts.hasBrandingAccess || opts.hasDomainAccess ? [{ href: ROUTES.SETTINGS_COMPANY, label: "Company", icon: BuildingOffice2Icon }] : []),
-        ...(opts.hasRolesAccess ? [{ href: ROUTES.SETTINGS_ROLES, label: "Roles & Permissions", icon: ShieldCheckIcon }] : []),
-        ...(opts.hasDomainAccess ? [{ href: ROUTES.SETTINGS_SUBSCRIPTION, label: "Subscription", icon: CreditCardIcon }] : []),
-    ];
-}
+export const OPERATIONS_ITEMS: NavItem[] = [
+    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs" },
+    { href: ROUTES.OPS_SCHEDULE, label: "Schedule", icon: CalendarDaysIcon, moduleId: "operations.schedule" },
+    { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes" },
+    { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices" },
+    { href: ROUTES.OPS_SERVICES, label: "Services", icon: CubeIcon, moduleId: "operations.services" },
+    { href: ROUTES.FINANCE_PRICING, label: "Materials", icon: CurrencyDollarIcon, moduleId: "finance.pricing" },
+];
 
-export function getItemsForWorkspace(
-    ws: Workspace,
-    settingsItems: NavItem[]
-): NavItem[] {
-    switch (ws) {
-        case "crm":
-            return CRM_ITEMS;
-        case "finance":
-            return FINANCE_ITEMS;
-        case "settings":
-            return settingsItems;
-        default:
-            return OPERATIONS_ITEMS;
+export function buildNavSections(opts: {
+    hasCrmAccess: boolean;
+    hasOperationsAccess: boolean;
+    enabledModules: Set<string>;
+    modulesLoaded: boolean;
+}): NavSection[] {
+    const sections: NavSection[] = [];
+
+    const shouldShow = (moduleId: string) => !opts.modulesLoaded || opts.enabledModules.has(moduleId);
+    const filterByModules = (items: NavItem[]) =>
+        items.filter((item) => !item.moduleId || opts.enabledModules.has(item.moduleId));
+
+    if (opts.hasCrmAccess && shouldShow("crm")) {
+        const items = filterByModules(CRM_ITEMS);
+        if (items.length > 0) sections.push({ id: "crm", label: "CRM", items });
     }
-}
 
-export function getWorkspaceForPath(pathname: string): Workspace {
-    if (pathname.startsWith("/dashboard/crm")) return "crm";
-    if (pathname.startsWith("/dashboard/finance")) return "finance";
-    if (pathname.startsWith("/dashboard/settings")) return "settings";
-    return "operations";
+    if (opts.hasOperationsAccess && (shouldShow("operations") || shouldShow("finance"))) {
+        const items = filterByModules(OPERATIONS_ITEMS);
+        if (items.length > 0) sections.push({ id: "operations", label: "Operations", items });
+    }
+
+    return sections;
 }
 
 /** Filter nav items by enabled modules. Items without a moduleId are always shown. */

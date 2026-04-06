@@ -11,8 +11,9 @@ import { createClient } from "@/lib/supabase/client";
 import { QuoteHeader } from "@/components/quotes/QuoteHeader";
 import { Button } from "@/components/ui/button";
 import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
-import { useTenant } from "@/lib/tenant-context";
+import { useTenantOptional } from "@/lib/tenant-context";
 import { toast } from "sonner";
+import { QUOTE_STATUS_CONFIG } from "@/lib/status-config";
 
 type Quote = {
     id: string;
@@ -36,20 +37,14 @@ interface QuoteSideSheetProps {
     onUpdate?: () => void;
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-    draft: { label: "Draft", color: "bg-gray-400" },
-    sent: { label: "Sent", color: "bg-blue-500" },
-    accepted: { label: "Accepted", color: "bg-emerald-500" },
-    rejected: { label: "Rejected", color: "bg-red-500" },
-    expired: { label: "Expired", color: "bg-amber-500" },
-};
+const statusConfig = QUOTE_STATUS_CONFIG;
 
 /** Side sheet for viewing/editing quote details, line items, and margin calculations. */
 export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSideSheetProps) {
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<Quote | null>(quote);
     const [downloading, setDownloading] = useState(false);
-    const tenant = useTenant();
+    const tenant = useTenantOptional();
 
     useEffect(() => { setData(quote); }, [quote]);
     useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);
@@ -75,7 +70,7 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
 
             const { createElement } = await import("react");
             const blob = await pdf(
-                createElement(QuotePDF, { quote: fullQuote, lineItems, tenant }) as any
+                createElement(QuotePDF, { quote: fullQuote, lineItems, tenant: tenant! }) as any
             ).toBlob();
 
             const url = URL.createObjectURL(blob);

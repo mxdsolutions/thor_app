@@ -31,6 +31,10 @@ export function useTenant(): TenantContextData {
     return ctx;
 }
 
+export function useTenantOptional(): TenantContextData | null {
+    return useContext(TenantContext);
+}
+
 /**
  * Check if the current user has a specific permission.
  * Resolution: specific key (e.g., "crm.leads") -> parent key ("crm") -> deny.

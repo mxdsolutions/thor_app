@@ -30,7 +30,7 @@ export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
 
     const body = await request.json();
 
-    const allowedFields = ["name", "company_name", "primary_color", "logo_url", "logo_dark_url", "custom_domain", "address", "phone", "email", "abn"];
+    const allowedFields = ["name", "company_name", "primary_color", "logo_url", "logo_dark_url", "custom_domain", "address", "phone", "email", "abn", "reference_prefix"];
     const updates: Record<string, unknown> = {};
     for (const key of allowedFields) {
         if (key in body) {

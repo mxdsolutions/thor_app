@@ -1,9 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { DashboardControls } from "@/components/dashboard/DashboardPage";
-import { usePageTitle } from "@/lib/page-title-context";
-import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
+import { useState, useEffect } from "react";
 import {
     tableBase,
     tableHead,
@@ -21,7 +18,6 @@ import {
     MagnifyingGlassIcon,
     UserPlusIcon,
 } from "@heroicons/react/24/outline";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
@@ -29,14 +25,11 @@ import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
 type UserTab = "all" | "owner" | "admin" | "manager" | "member" | "viewer";
 
 export default function UsersPage() {
-    usePageTitle("Users");
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState<UserTab>("all");
     const [users, setUsers] = useState<AppUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [inviteOpen, setInviteOpen] = useState(false);
-
-    // User selection for side sheet
     const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -55,27 +48,17 @@ export default function UsersPage() {
         }
     };
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
+    useEffect(() => { fetchUsers(); }, []);
 
     const filteredUsers = users.filter((user) => {
         const name = getDisplayName(user).toLowerCase();
         const email = user.email.toLowerCase();
         const q = search.toLowerCase();
         const matchesSearch = name.includes(q) || email.includes(q);
-
         if (!matchesSearch) return false;
-
         if (activeTab === "all") return true;
-
         return user.tenant_role === activeTab;
     });
-
-    const handleUserClick = (user: AppUser) => {
-        setSelectedUser(user);
-        setIsSheetOpen(true);
-    };
 
     return (
         <>
@@ -87,46 +70,42 @@ export default function UsersPage() {
                 onUpdate={fetchUsers}
             />
 
-            <ScrollableTableLayout
-                header={
-                    <>
-                        <DashboardControls>
-                            <div className="flex items-center gap-3">
-                                <div className="relative flex-1 max-w-sm">
-                                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search by name or email..."
-                                        className="pl-9 rounded-xl border-border/50"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
-                                </div>
-                                <Select value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)}>
-                                    <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
-                                        <SelectValue placeholder="Role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Roles</SelectItem>
-                                        <SelectItem value="owner">Owners</SelectItem>
-                                        <SelectItem value="admin">Admins</SelectItem>
-                                        <SelectItem value="manager">Managers</SelectItem>
-                                        <SelectItem value="member">Members</SelectItem>
-                                        <SelectItem value="viewer">Viewers</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setInviteOpen(true)}>
-                                <UserPlusIcon className="w-4 h-4 mr-2" />
-                                Invite User
-                            </Button>
-                        </DashboardControls>
-                    </>
-                }
-            >
+            <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="relative flex-1 max-w-md">
+                        <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by name or email..."
+                            className="pl-9 rounded-xl border-border/50"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <Select value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)}>
+                        <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                            <SelectValue placeholder="Role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Roles</SelectItem>
+                            <SelectItem value="owner">Owners</SelectItem>
+                            <SelectItem value="admin">Admins</SelectItem>
+                            <SelectItem value="manager">Managers</SelectItem>
+                            <SelectItem value="member">Members</SelectItem>
+                            <SelectItem value="viewer">Viewers</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <Button className="rounded-full px-6 shrink-0" onClick={() => setInviteOpen(true)}>
+                    <UserPlusIcon className="w-4 h-4 mr-2" />
+                    Invite User
+                </Button>
+            </div>
+
+            <div className="rounded-xl border border-border overflow-hidden">
                 <table className={tableBase + " border-collapse min-w-full"}>
-                    <thead className={tableHead + " sticky top-0 z-10"}>
+                    <thead className={tableHead}>
                         <tr>
-                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>User</th>
+                            <th className={tableHeadCell + " pl-4 pr-4"}>User</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Role</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Last Active</th>
@@ -150,9 +129,9 @@ export default function UsersPage() {
                                 <tr
                                     key={user.id}
                                     className={cn(tableRow, "cursor-pointer hover:bg-muted/50 transition-colors")}
-                                    onClick={() => handleUserClick(user)}
+                                    onClick={() => { setSelectedUser(user); setIsSheetOpen(true); }}
                                 >
-                                    <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
+                                    <td className={tableCell + " pl-4 pr-4"}>
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
                                                 {getInitials(user)}
@@ -189,7 +168,7 @@ export default function UsersPage() {
                         )}
                     </tbody>
                 </table>
-            </ScrollableTableLayout>
+            </div>
         </>
     );
 }

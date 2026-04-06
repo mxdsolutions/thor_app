@@ -1,8 +1,7 @@
 import { headers } from "next/headers";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
-    DEFAULT_LEAD_STATUSES,
-    DEFAULT_OPPORTUNITY_STAGES,
+    DEFAULT_LEAD_STAGES,
     DEFAULT_JOB_STATUSES,
 } from "@/lib/status-config";
 import { DEFAULT_MODULES } from "@/lib/module-config";
@@ -67,7 +66,7 @@ export async function getAuthenticatedContext() {
  * Fetch tenant branding data for the current tenant.
  */
 export async function getTenantBranding(tenantId: string): Promise<TenantBranding | null> {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data, error } = await supabase
         .from("tenants")
         .select("id, name, slug, company_name, logo_url, logo_dark_url, primary_color, plan, max_users, status, custom_domain, domain_verified, address, phone, email, abn")
@@ -183,8 +182,7 @@ export async function seedDefaultStatuses(tenantId: string) {
     const admin = await createAdminClient();
 
     await admin.from("tenant_status_configs").insert([
-        { tenant_id: tenantId, entity_type: "lead", statuses: DEFAULT_LEAD_STATUSES },
-        { tenant_id: tenantId, entity_type: "opportunity", statuses: DEFAULT_OPPORTUNITY_STAGES },
+        { tenant_id: tenantId, entity_type: "lead", statuses: DEFAULT_LEAD_STAGES },
         { tenant_id: tenantId, entity_type: "job", statuses: DEFAULT_JOB_STATUSES },
     ]);
 }

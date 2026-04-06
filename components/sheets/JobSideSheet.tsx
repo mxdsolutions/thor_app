@@ -8,8 +8,10 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { LineItemsTable } from "@/features/line-items/LineItemsTable";
 import { createClient } from "@/lib/supabase/client";
-import { useProfiles, useStatusConfig } from "@/lib/swr";
-import { DEFAULT_JOB_STATUSES, toStatusConfig } from "@/lib/status-config";
+import { useProfiles, useStatusConfig, useJobQuotes, useJobInvoices, useJobReports } from "@/lib/swr";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/routes";
+import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
 import { toast } from "sonner";
 
 type Assignee = { id: string; full_name: string | null; email: string | null };
@@ -24,7 +26,7 @@ type Job = {
     scheduled_date: string | null;
     project?: { id: string; title: string } | null;
     assignees: Assignee[];
-    opportunity?: { id: string; title: string } | null;
+    lead?: { id: string; title: string } | null;
     company?: { id: string; name: string } | null;
     created_at: string;
 };
@@ -54,23 +56,23 @@ interface JobSideSheetProps {
 
 // Status config is loaded dynamically from tenant config
 
-const paidStatusConfig: Record<string, { label: string; color: string }> = {
-    not_paid: { label: "Not Paid", color: "text-rose-500" },
-    partly_paid: { label: "Partly Paid", color: "text-amber-500" },
-    paid_in_full: { label: "Paid in Full", color: "text-emerald-500" },
-};
+const paidStatusConfig = PAID_STATUS_CONFIG;
 
 /** Side sheet for viewing/editing job details, assignees, line items, and payment status. */
 export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheetProps) {
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<Job | null>(job);
     const [jobProjects, setJobProjects] = useState<{ id: string; title: string; status: string }[]>([]);
-    const [opportunities, setOpportunities] = useState<{ value: string; label: string }[]>([]);
+    const [leads, setLeads] = useState<{ value: string; label: string }[]>([]);
     const [companies, setCompanies] = useState<{ value: string; label: string }[]>([]);
     const [lineItems, setLineItems] = useState<LineItem[]>([]);
     const [services, setServices] = useState<Service[]>([]);
     const { data: statusData } = useStatusConfig("job");
     const statusConfig = toStatusConfig(statusData?.statuses ?? DEFAULT_JOB_STATUSES);
+    const { data: quotesData } = useJobQuotes(activeTab === "quotes" ? job?.id ?? null : null);
+    const { data: invoicesData } = useJobInvoices(activeTab === "invoices" ? job?.id ?? null : null);
+    const { data: reportsData } = useJobReports(activeTab === "reports" ? job?.id ?? null : null);
+    const router = useRouter();
     const { data: profilesData } = useProfiles();
     const users: { value: string; label: string }[] = useMemo(() =>
         (profilesData?.users || []).map((u: { id: string; email?: string; user_metadata?: { full_name?: string } }) => ({
@@ -85,8 +87,8 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
 
     useEffect(() => {
         const supabase = createClient();
-        supabase.from("opportunities").select("id, title").then(({ data: opps }) => {
-            if (opps) setOpportunities(opps.map((o) => ({ value: o.id, label: o.title })));
+        supabase.from("leads").select("id, title").then(({ data: lds }) => {
+            if (lds) setLeads(lds.map((o) => ({ value: o.id, label: o.title })));
         });
         supabase.from("companies").select("id, name").then(({ data: comps }) => {
             if (comps) setCompanies(comps.map((c) => ({ value: c.id, label: c.name })));
@@ -186,7 +188,10 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
     const tabs = [
         { id: "details", label: "Details" },
         { id: "services", label: `Services (${lineItems.length})` },
-        { id: "projects", label: `Projects (${jobProjects.length})` },
+        { id: "scopes", label: `Scopes (${jobProjects.length})` },
+        { id: "quotes", label: `Quotes${quotesData?.items?.length ? ` (${quotesData.items.length})` : ""}` },
+        { id: "invoices", label: `Invoices${invoicesData?.items?.length ? ` (${invoicesData.items.length})` : ""}` },
+        { id: "reports", label: `Reports${reportsData?.items?.length ? ` (${reportsData.items.length})` : ""}` },
         { id: "notes", label: "Notes" },
         { id: "activity", label: "Activity" },
     ];
@@ -204,6 +209,15 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
             activeTab={activeTab}
             onTabChange={setActiveTab}
         >
+            <div className="px-4 pb-2">
+                <button
+                    onClick={() => { onOpenChange(false); router.push(`${ROUTES.OPS_JOB_DETAIL}/${data.id}`); }}
+                    className="text-xs text-primary hover:underline"
+                >
+                    Open full job view →
+                </button>
+            </div>
+
             {activeTab === "details" && (
                 <div className="space-y-4">
                     <div className="rounded-xl border border-border bg-card p-5">
@@ -215,7 +229,7 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
                                 { label: "Scheduled Date", value: data.scheduled_date ? new Date(data.scheduled_date).toLocaleDateString("en-AU", { dateStyle: "medium" }) : null, dbColumn: "scheduled_date", type: "date", rawValue: data.scheduled_date },
                                 { label: "Paid Status", value: paidStatusConfig[data.paid_status]?.label || "Not Paid", dbColumn: "paid_status", type: "select", rawValue: data.paid_status, options: Object.entries(paidStatusConfig).map(([k, v]) => ({ value: k, label: v.label })) },
                                 { label: "Payment Received", value: `$${(data.total_payment_received || 0).toLocaleString()}`, dbColumn: "total_payment_received", type: "number", rawValue: data.total_payment_received || 0 },
-                                { label: "Opportunity", value: data.opportunity?.title, dbColumn: "opportunity_id", type: "select", rawValue: data.opportunity?.id ?? null, options: opportunities },
+                                { label: "Lead", value: data.lead?.title, dbColumn: "lead_id", type: "select", rawValue: data.lead?.id ?? null, options: leads },
                                 { label: "Company", value: data.company?.name, dbColumn: "company_id", type: "select", rawValue: data.company?.id ?? null, options: companies },
                                 { label: "Created", value: new Date(data.created_at).toLocaleDateString("en-AU", { dateStyle: "medium" }) },
                             ]}
@@ -284,25 +298,28 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
                             ))}
                         </select>
                     </div>
+
                 </div>
             )}
 
             {activeTab === "services" && (
-                <LineItemsTable
-                    mode="live"
-                    items={lineItems}
-                    services={services}
-                    onAdd={handleAddLineItem}
-                    onUpdate={handleUpdateLineItem}
-                    onDelete={handleDeleteLineItem}
-                />
+                <div className="space-y-4">
+                    <LineItemsTable
+                        mode="live"
+                        items={lineItems}
+                        services={services}
+                        onAdd={handleAddLineItem}
+                        onUpdate={handleUpdateLineItem}
+                        onDelete={handleDeleteLineItem}
+                    />
+                </div>
             )}
 
-            {activeTab === "projects" && (
+            {activeTab === "scopes" && (
                 <div className="space-y-3">
                     {jobProjects.length === 0 ? (
                         <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-                            No projects linked to this job
+                            No scopes linked to this job
                         </div>
                     ) : (
                         jobProjects.map((proj) => (
@@ -325,6 +342,53 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
                             </div>
                         ))
                     )}
+                </div>
+            )}
+
+            {activeTab === "quotes" && (
+                <div className="space-y-2 px-1">
+                    {(quotesData?.items || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-6">No quotes yet</p>
+                    ) : (quotesData?.items || []).map((q: any) => (
+                        <div key={q.id} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm">
+                            <div>
+                                <p className="font-medium">{q.title || "Untitled Quote"}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{q.status}</p>
+                            </div>
+                            <span className="font-semibold">${(q.total_amount || 0).toFixed(2)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {activeTab === "invoices" && (
+                <div className="space-y-2 px-1">
+                    {(invoicesData?.items || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-6">No invoices yet</p>
+                    ) : (invoicesData?.items || []).map((inv: any) => (
+                        <div key={inv.id} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm">
+                            <div>
+                                <p className="font-medium">{inv.invoice_number || "Untitled Invoice"}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{inv.status}</p>
+                            </div>
+                            <span className="font-semibold">${(inv.amount || 0).toFixed(2)}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {activeTab === "reports" && (
+                <div className="space-y-2 px-1">
+                    {(reportsData?.items || []).length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-6">No reports yet</p>
+                    ) : (reportsData?.items || []).map((r: any) => (
+                        <div key={r.id} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm">
+                            <div>
+                                <p className="font-medium">{r.title || "Untitled Report"}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{r.type?.replace(/_/g, " ") || "Report"} · {r.status}</p>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 

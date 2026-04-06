@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { useTenantOptional } from "@/lib/tenant-context";
 
 interface PageTitleContextValue {
     title: string;
@@ -23,10 +24,14 @@ export function PageTitleProvider({ children }: { children: React.ReactNode }) {
 
 export function usePageTitle(title: string) {
     const { setTitle } = useContext(PageTitleContext);
+    const tenant = useTenantOptional();
+    const companyName = tenant?.company_name || tenant?.name;
+
     useEffect(() => {
         setTitle(title);
-        return () => setTitle("");
-    }, [title, setTitle]);
+        document.title = companyName ? `${title} | ${companyName}` : title;
+        return () => { setTitle(""); document.title = companyName || "Dashboard"; };
+    }, [title, setTitle, companyName]);
 }
 
 export function useCurrentPageTitle() {

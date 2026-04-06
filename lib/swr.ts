@@ -14,32 +14,26 @@ const defaultConfig: SWRConfiguration = {
     dedupingInterval: 10000,
 };
 
-export function useCompanies() {
-    return useSWR("/api/companies", fetcher, defaultConfig);
+export function useCompanies(search?: string) {
+    const params = search ? `?search=${encodeURIComponent(search)}` : "";
+    return useSWR(`/api/companies${params}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useContacts() {
-    return useSWR("/api/contacts", fetcher, defaultConfig);
+export function useContacts(search?: string) {
+    const params = search ? `?search=${encodeURIComponent(search)}` : "";
+    return useSWR(`/api/contacts${params}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
 export function useLeads() {
     return useSWR("/api/leads", fetcher, defaultConfig);
 }
 
-export function useOpportunities() {
-    return useSWR("/api/opportunities", fetcher, defaultConfig);
-}
-
 export function useJobs() {
     return useSWR("/api/jobs", fetcher, defaultConfig);
 }
 
-export function useServices() {
-    return useSWR("/api/services", fetcher, defaultConfig);
-}
-
-export function useProjects() {
-    return useSWR("/api/projects", fetcher, defaultConfig);
+export function useScopes() {
+    return useSWR("/api/scopes", fetcher, defaultConfig);
 }
 
 export function useStats() {
@@ -81,18 +75,25 @@ export function useInvoices() {
     return useSWR("/api/invoices", fetcher, defaultConfig);
 }
 
-export function useXeroConnection() {
-    return useSWR("/api/integrations/xero", fetcher, {
+export function useServices() {
+    return useSWR("/api/services", fetcher, defaultConfig);
+}
+
+export function useMyTasks() {
+    return useSWR("/api/tasks?assigned_to=me", fetcher, {
         ...defaultConfig,
-        dedupingInterval: 30000,
+        keepPreviousData: true,
     });
 }
 
-export function useXeroSyncStatus() {
-    return useSWR("/api/integrations/xero/sync/status", fetcher, {
-        ...defaultConfig,
-        dedupingInterval: 30000,
-    });
+// --- Schedule Hooks ---
+
+export function useScheduleEntries(start: string, end: string) {
+    return useSWR(
+        `/api/schedule?start=${start}&end=${end}`,
+        fetcher,
+        defaultConfig,
+    );
 }
 
 // --- Report Template Hooks ---
@@ -149,30 +150,39 @@ export function useTenantModules() {
     });
 }
 
+// --- Job-scoped Hooks ---
+
+export function useJob(id: string | null) {
+    return useSWR(id ? `/api/jobs/${id}` : null, fetcher, defaultConfig);
+}
+
+export function useJobQuotes(jobId: string | null) {
+    return useSWR(jobId ? `/api/quotes?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+export function useJobInvoices(jobId: string | null) {
+    return useSWR(jobId ? `/api/invoices?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+export function useJobReports(jobId: string | null) {
+    return useSWR(jobId ? `/api/reports?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+export function useJobScopes(jobId: string | null) {
+    return useSWR(jobId ? `/api/scopes?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+export function useJobTasks(jobId: string | null) {
+    return useSWR(jobId ? `/api/tasks?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
 // Selection hooks for modals (return only when key is truthy)
 export function useCompanyOptions(enabled = true) {
     return useSWR(enabled ? "/api/companies" : null, fetcher, defaultConfig);
 }
 
-export function useLeadOptions(enabled = true) {
-    return useSWR(enabled ? "/api/leads" : null, fetcher, defaultConfig);
-}
-
 export function useContactOptions(enabled = true) {
     return useSWR(enabled ? "/api/contacts" : null, fetcher, defaultConfig);
-}
-
-// Line item hooks
-export function useQuoteLineItems(quoteId: string | null) {
-    return useSWR(quoteId ? `/api/quotes/${quoteId}/line-items` : null, fetcher, defaultConfig);
-}
-
-export function useJobLineItems(jobId: string | null) {
-    return useSWR(jobId ? `/api/jobs/${jobId}/line-items` : null, fetcher, defaultConfig);
-}
-
-export function useOpportunityLineItems(opportunityId: string | null) {
-    return useSWR(opportunityId ? `/api/opportunities/${opportunityId}/line-items` : null, fetcher, defaultConfig);
 }
 
 export { fetcher };

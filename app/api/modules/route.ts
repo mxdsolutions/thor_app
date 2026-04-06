@@ -9,9 +9,15 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
         .eq("tenant_id", tenantId);
 
     if (error || !data || data.length === 0) {
-        // Fall back to defaults if no module config exists
         return NextResponse.json({ modules: DEFAULT_MODULES });
     }
 
-    return NextResponse.json({ modules: data });
+    // Merge with defaults so new modules appear automatically
+    const existing = new Set(data.map((m) => m.module_id));
+    const merged = [
+        ...data,
+        ...DEFAULT_MODULES.filter((m) => !existing.has(m.module_id)),
+    ];
+
+    return NextResponse.json({ modules: merged });
 });

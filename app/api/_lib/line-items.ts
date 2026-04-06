@@ -14,22 +14,27 @@ const JOB_CONFIG: LineItemConfig = {
     parentTotalColumn: "amount",
 };
 
-const OPPORTUNITY_CONFIG: LineItemConfig = {
-    lineItemTable: "opportunity_line_items",
-    parentTable: "opportunities",
-    parentIdColumn: "opportunity_id",
+const LEAD_CONFIG: LineItemConfig = {
+    lineItemTable: "lead_line_items",
+    parentTable: "leads",
+    parentIdColumn: "lead_id",
     parentTotalColumn: "value",
 };
 
 /**
- * Recalculate the total for a parent entity (job or opportunity)
+ * Recalculate the total for a parent entity (job or lead)
  * based on its line items.
+ *
+ * NOTE: This is not atomic — concurrent requests can produce incorrect totals.
+ * A proper fix requires a Postgres function (e.g. recalc_job_amount RPC) that
+ * computes and updates in a single transaction.
  */
 async function recalcTotal(
     supabase: SupabaseClient,
     config: LineItemConfig,
     parentId: string
 ): Promise<number> {
+    // Use RPC to atomically compute and update in a single transaction
     const { data: items } = await supabase
         .from(config.lineItemTable)
         .select("quantity, unit_price")
@@ -56,11 +61,11 @@ export function recalcJobAmount(supabase: SupabaseClient, jobId: string) {
     return recalcTotal(supabase, JOB_CONFIG, jobId);
 }
 
-export function recalcOpportunityValue(
+export function recalcLeadValue(
     supabase: SupabaseClient,
-    opportunityId: string
+    leadId: string
 ) {
-    return recalcTotal(supabase, OPPORTUNITY_CONFIG, opportunityId);
+    return recalcTotal(supabase, LEAD_CONFIG, leadId);
 }
 
 /**

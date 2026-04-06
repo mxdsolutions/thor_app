@@ -25,7 +25,7 @@ export const GET = withAuth(async (request, { supabase }) => {
                     email
                 )
             ),
-            opportunity:opportunities (
+            lead:leads!jobs_opportunity_id_fkey (
                 id,
                 title
             ),
