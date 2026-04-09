@@ -258,7 +258,7 @@ export default function OverviewPage() {
                                             borderRadius: "12px",
                                             fontSize: "13px",
                                         }}
-                                        formatter={(value: number) => [formatCurrency(value), "Revenue"]}
+                                        formatter={(value) => [formatCurrency(Number(value ?? 0)), "Revenue"]}
                                     />
                                     <Bar
                                         dataKey="revenue"
