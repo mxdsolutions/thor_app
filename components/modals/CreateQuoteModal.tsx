@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { TrashIcon, MagnifyingGlassIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { InlineNumberInput } from "@/features/line-items/InlineNumberInput";
 import { formatCurrency } from "@/lib/utils";
-import { QuoteHeader } from "@/components/quotes/QuoteHeader";
 
 const CreateContactModal = lazy(() =>
     import("./CreateContactModal").then(mod => ({ default: mod.CreateContactModal }))
@@ -292,8 +291,6 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-5 overflow-y-auto px-1 flex-1">
-                    <QuoteHeader />
-
                     {/* Header fields: Contact, Valid Until */}
                     <div className="grid grid-cols-2 gap-3">
                         {/* Contact selector with search + create */}
