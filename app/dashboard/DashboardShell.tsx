@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
-import { useTenantOptional, usePermission } from "@/lib/tenant-context";
+import { useTenantOptional, usePermissionOptional } from "@/lib/tenant-context";
 import { AnimatePresence, motion } from "framer-motion";
 import { IconLogout as ArrowRightStartOnRectangleIcon, IconMenu2 as Bars2Icon, IconX as XMarkIcon, IconMail as EnvelopeIcon, IconBell as BellIcon, IconShieldCheck as ShieldCheckIcon, IconUserCircle as UserCircleIcon, IconSettings as CogIcon } from "@tabler/icons-react";
 
@@ -92,17 +92,9 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
     // Tenant context (optional — null when no TenantProvider wraps this component)
     const tenant = useTenantOptional();
 
-    // Permission checks
-    let _hasCrmAccess = true, _hasOperationsAccess = true, hasSettingsAccess = true;
-    let hasBrandingAccess = false, hasRolesAccess = false, hasDomainAccess = false;
-    try {
-        _hasCrmAccess = usePermission("crm", "read");
-        _hasOperationsAccess = usePermission("operations", "read");
-        hasSettingsAccess = usePermission("settings", "read");
-        hasBrandingAccess = usePermission("settings.branding", "read");
-        hasRolesAccess = usePermission("settings.users", "write");
-        hasDomainAccess = tenant?.role === "owner";
-    } catch { /* defaults */ }
+    // Permission check — defaults to true when no tenant provider is available
+    // (e.g., during auth flows) so the settings link isn't hidden prematurely.
+    const hasSettingsAccess = usePermissionOptional("settings", "read", true);
 
     const { initials, displayName, email: userEmail } = useUserProfile();
     const { notifications, unreadCount, markAllRead, markOneRead, refresh: refreshNotifs } = useNotifications();

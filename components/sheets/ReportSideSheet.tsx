@@ -7,7 +7,7 @@ import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
-import { useTenant } from "@/lib/tenant-context";
+import { useTenantOptional } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
 import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -45,8 +45,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
     const [data, setData] = useState<Report | null>(report);
     const [downloading, setDownloading] = useState(false);
 
-    let tenant: ReturnType<typeof useTenant> | null = null;
-    try { tenant = useTenant(); } catch { /* no provider */ }
+    const tenant = useTenantOptional();
 
     useEffect(() => { setData(report); }, [report]);
     useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);

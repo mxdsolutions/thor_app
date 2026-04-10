@@ -63,7 +63,7 @@ function SchedulePageContent() {
     }, [view, currentMonth, currentWeekStart]);
 
     const { data, isLoading, mutate } = useScheduleEntries(rangeStart, rangeEnd);
-    const entries: ScheduleEntry[] = data?.items || [];
+    const entries: ScheduleEntry[] = useMemo(() => data?.items || [], [data]);
 
     const { data: statusData } = useStatusConfig("job");
     const jobStatusConfig = toStatusConfig(statusData?.statuses ?? DEFAULT_JOB_STATUSES);

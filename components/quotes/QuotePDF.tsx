@@ -221,7 +221,8 @@ export function QuotePDF({ quote, lineItems, tenant }: QuotePDFProps) {
                 <View style={styles.header}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                         {tenant.logo_url && (
-                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} alt="" />
+                            // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
+                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} />
                         )}
                         <View>
                             <Text style={styles.companyName}>{companyName}</Text>

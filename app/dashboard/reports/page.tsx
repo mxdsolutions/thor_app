@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
@@ -62,7 +62,7 @@ export default function ReportsPage() {
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
     const { data, isLoading, mutate } = useReports();
-    const allReports: Report[] = data?.items || [];
+    const allReports: Report[] = useMemo(() => data?.items || [], [data]);
 
     // Auto-open side sheet from ?report=<id> query param
     useEffect(() => {

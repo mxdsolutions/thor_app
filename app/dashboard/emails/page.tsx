@@ -97,6 +97,10 @@ export default function EmailsPage() {
             }
         };
         init();
+        // Initial load only — subsequent fetches are triggered explicitly by
+        // handleSearch / pagination, so we don't want to re-run on fetchEmails
+        // identity changes (which would thrash when `search` updates).
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSearch = () => {

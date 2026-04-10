@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
@@ -31,11 +31,7 @@ export default function RolesPage() {
     const [selectedRole, setSelectedRole] = useState<Role | null>(null);
     const [saving, setSaving] = useState(false);
 
-    useEffect(() => {
-        fetchRoles();
-    }, []);
-
-    const fetchRoles = async () => {
+    const fetchRoles = useCallback(async () => {
         const supabase = createClient();
         const { data } = await supabase
             .from("tenant_roles")
@@ -44,11 +40,13 @@ export default function RolesPage() {
             .order("created_at");
 
         setRoles(data || []);
-        if (data && data.length > 0 && !selectedRole) {
-            setSelectedRole(data[0]);
-        }
+        setSelectedRole((prev) => prev ?? (data && data.length > 0 ? data[0] : null));
         setLoading(false);
-    };
+    }, [tenant.id]);
+
+    useEffect(() => {
+        fetchRoles();
+    }, [fetchRoles]);
 
     const togglePermission = (group: string, action: string) => {
         if (!selectedRole) return;

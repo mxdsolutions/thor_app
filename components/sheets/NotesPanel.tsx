@@ -127,11 +127,7 @@ export function NotesPanel({ entityType, entityId }: NotesPanelProps) {
         });
     }, []);
 
-    useEffect(() => {
-        fetchNotes();
-    }, [entityType, entityId]);
-
-    const fetchNotes = async () => {
+    const fetchNotes = useCallback(async () => {
         try {
             const res = await fetch(`/api/notes?entity_type=${entityType}&entity_id=${entityId}`);
             if (!res.ok) throw new Error();
@@ -142,7 +138,11 @@ export function NotesPanel({ entityType, entityId }: NotesPanelProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [entityType, entityId]);
+
+    useEffect(() => {
+        fetchNotes();
+    }, [fetchNotes]);
 
     const handleSubmit = async () => {
         const trimmed = content.trim();

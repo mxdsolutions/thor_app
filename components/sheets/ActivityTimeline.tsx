@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn, timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -41,11 +41,7 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
     const [activities, setActivities] = useState<Activity[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchActivity();
-    }, [entityType, entityId]);
-
-    const fetchActivity = async () => {
+    const fetchActivity = useCallback(async () => {
         try {
             const res = await fetch(`/api/activity?entity_type=${entityType}&entity_id=${entityId}`);
             if (!res.ok) throw new Error();
@@ -56,7 +52,11 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
         } finally {
             setLoading(false);
         }
-    };
+    }, [entityType, entityId]);
+
+    useEffect(() => {
+        fetchActivity();
+    }, [fetchActivity]);
 
     if (loading) {
         return (

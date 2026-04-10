@@ -143,7 +143,8 @@ function FieldRenderer({ field, value }: { field: FieldDef; value: unknown }) {
                 <View style={styles.photoGrid}>
                     {photos.map((photo: { url: string; caption?: string; filename: string }, i: number) => (
                         <View key={i} style={styles.photoContainer}>
-                            <Image src={photo.url} style={styles.photo} alt="" />
+                            {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt */}
+                            <Image src={photo.url} style={styles.photo} />
                             {photo.caption && <Text style={styles.photoCaption}>{photo.caption}</Text>}
                         </View>
                     ))}
@@ -218,7 +219,8 @@ export function ReportPDF({ report, template, tenant }: ReportPDFProps) {
                 <View style={styles.header}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                         {tenant.logo_url && (
-                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} alt="" />
+                            // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
+                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} />
                         )}
                         <View>
                             <Text style={styles.companyName}>{companyName}</Text>

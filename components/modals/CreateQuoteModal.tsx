@@ -119,6 +119,10 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                 .then(d => setServices(d.items || []))
                 .catch(() => {});
         }
+        // Intentionally only react to open/close. `defaultValues` is consumed
+        // once at open time; treating it as a dep would re-apply defaults on
+        // every parent render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     // Debounced pricing search (150ms — trigram index makes DB queries fast)

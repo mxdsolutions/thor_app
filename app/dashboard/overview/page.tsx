@@ -87,7 +87,7 @@ export default function OverviewPage() {
                 assignees: (j.assignees as Array<{ id: string; full_name: string | null; email: string | null }> | null) || [],
             }));
     }, [jobsData]);
-    const myTasks: Task[] = tasksData?.items || [];
+    const myTasks: Task[] = useMemo(() => tasksData?.items || [], [tasksData]);
     const revenueChart: RevenueDataPoint[] = stats?.revenueChart || [];
 
     // Calculate this month's revenue from chart data

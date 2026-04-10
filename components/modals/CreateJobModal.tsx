@@ -89,6 +89,10 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
             if (defaultValues.contactId) setContactId(defaultValues.contactId);
             if (defaultValues.description) setJobTitle(defaultValues.description);
         }
+        // Intentionally only react to open/close. `defaultValues` is consumed
+        // once at open time; treating it as a dep would re-apply defaults on
+        // every parent render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const handleSelectService = (service: Service) => {
