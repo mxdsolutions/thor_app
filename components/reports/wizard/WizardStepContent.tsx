@@ -2,7 +2,7 @@
 
 import { ReportFormViewer } from "@/components/reports/ReportFormViewer";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, ArrowRightIcon, PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { IconArrowLeft as ArrowLeftIcon, IconArrowRight as ArrowRightIcon, IconSend as PaperAirplaneIcon } from "@tabler/icons-react";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 
 interface WizardStepContentProps {

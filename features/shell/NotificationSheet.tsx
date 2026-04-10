@@ -6,7 +6,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { BellIcon } from "@heroicons/react/24/outline";
+import { IconBell as BellIcon } from "@tabler/icons-react";
 import { cn, timeAgo } from "@/lib/utils";
 import type { Notification } from "./use-notifications";
 

@@ -13,11 +13,7 @@ import { DayDetailList } from "@/components/schedule/DayDetailList";
 import { ScheduleEntryModal } from "@/components/modals/ScheduleEntryModal";
 import { JobSideSheet } from "@/components/sheets/JobSideSheet";
 import { Button } from "@/components/ui/button";
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    PlusIcon,
-} from "@heroicons/react/24/outline";
+import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import {
     formatMonthYear,
     formatDayHeader,

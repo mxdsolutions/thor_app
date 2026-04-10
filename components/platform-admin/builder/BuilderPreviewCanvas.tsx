@@ -4,12 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WizardStepContent } from "@/components/reports/wizard/WizardStepContent";
 import type { SectionDef, TemplateSchema } from "@/lib/report-templates/types";
-import {
-    EyeIcon,
-    ComputerDesktopIcon,
-    DeviceTabletIcon,
-    DevicePhoneMobileIcon,
-} from "@heroicons/react/24/outline";
+import { IconEye as EyeIcon, IconDeviceDesktop as ComputerDesktopIcon, IconDeviceTablet as DeviceTabletIcon, IconDeviceMobile as DevicePhoneMobileIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 type PreviewDevice = "desktop" | "tablet" | "mobile";

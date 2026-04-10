@@ -191,7 +191,9 @@ Tables are "borderless" and bleed to the edges in the dashboard. Use consistent 
 
 ## Icons
 
-Use **Heroicons** (`@heroicons/react/24/outline`) for dashboard UI and **Lucide** for landing pages.
+Use **Tabler Icons** (`@tabler/icons-react`) for dashboard UI and **Lucide** for landing pages. Tabler's sharper, more technical stroke style fits the construction-industry aesthetic better than soft-cornered alternatives.
+
+Import by their `Icon*` names (e.g. `IconPlus`, `IconTrash`, `IconUsersGroup`). Tabler components accept `size`, `stroke`, `color`, and `className` props.
 
 | size | Variable | Value |
 |------|----------|-------|

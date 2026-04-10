@@ -14,10 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, type AppUser, getInitials, getDisplayName, formatLastActive } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    UserPlusIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconUserPlus as UserPlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";

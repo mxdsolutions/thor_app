@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
+import { IconMenu2 as Bars3Icon, IconX as XMarkIcon } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { SectionDef } from "@/lib/report-templates/types";
 import type { SectionStatus } from "@/lib/reports/validation";

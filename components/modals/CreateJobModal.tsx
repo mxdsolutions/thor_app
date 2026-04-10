@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { XMarkIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { IconX as XMarkIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useContacts, useProfiles, useStatusConfig } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, getDefaultStatusId } from "@/lib/status-config";

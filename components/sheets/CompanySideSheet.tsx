@@ -6,7 +6,7 @@ import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";
-import { BuildingOffice2Icon } from "@heroicons/react/24/outline";
+import { IconBuildingSkyscraper as BuildingOffice2Icon } from "@tabler/icons-react";
 
 type Company = {
     id: string;

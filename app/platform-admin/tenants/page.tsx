@@ -16,11 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import {
-    PlusIcon,
-    MagnifyingGlassIcon,
-    ArrowUpRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
 import { CreateTenantModal } from "@/components/modals/CreateTenantModal";
 import { TenantSideSheet } from "@/components/sheets/TenantSideSheet";
 import { usePlatformTenants } from "@/lib/swr";

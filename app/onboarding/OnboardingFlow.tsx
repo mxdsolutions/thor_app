@@ -4,13 +4,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-    ArrowRightIcon,
-    ArrowLeftIcon,
-    CheckIcon,
-    CameraIcon,
-    UserCircleIcon,
-} from "@heroicons/react/24/outline";
+import { IconArrowRight as ArrowRightIcon, IconArrowLeft as ArrowLeftIcon, IconCheck as CheckIcon, IconCamera as CameraIcon, IconUserCircle as UserCircleIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { completeOnboarding } from "@/app/actions/onboarding";
 import { updatePassword } from "@/app/actions/auth";

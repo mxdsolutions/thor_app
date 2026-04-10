@@ -17,13 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Kanban } from "@/components/Kanban";
 import { cn } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    PlusIcon,
-    ArrowUpRightIcon,
-    Squares2X2Icon,
-    ListBulletIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon, IconLayoutGrid as Squares2X2Icon, IconList as ListBulletIcon } from "@tabler/icons-react";
 import { JobSideSheet } from "@/components/sheets/JobSideSheet";
 import { CreateJobModal } from "@/components/modals/CreateJobModal";
 import { useJobs, useStatusConfig } from "@/lib/swr";

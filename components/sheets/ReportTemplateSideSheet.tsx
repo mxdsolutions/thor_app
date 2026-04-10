@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, timeAgo } from "@/lib/utils";
 import { DetailFields } from "./DetailFields";
-import { DocumentTextIcon, WrenchScrewdriverIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { IconFileText as DocumentTextIcon, IconTools as WrenchScrewdriverIcon, IconEye as EyeIcon } from "@tabler/icons-react";
 import { TEMPLATE_CATEGORIES } from "@/lib/report-templates/types";
 import type { ReportTemplate } from "@/lib/report-templates/types";
 

@@ -1,24 +1,22 @@
 import {
-    HomeModernIcon,
-    UserIcon,
-    ShieldCheckIcon,
-    ExclamationTriangleIcon,
-    CameraIcon,
-    Squares2X2Icon,
-    CurrencyDollarIcon,
-    ClipboardDocumentCheckIcon,
-    LinkIcon,
-} from "@heroicons/react/24/outline";
+    IconHome as HomeModernIcon,
+    IconUser as UserIcon,
+    IconShieldCheck as ShieldCheckIcon,
+    IconAlertTriangle as ExclamationTriangleIcon,
+    IconCamera as CameraIcon,
+    IconLayoutGrid as Squares2X2Icon,
+    IconCurrencyDollar as CurrencyDollarIcon,
+    IconClipboardCheck as ClipboardDocumentCheckIcon,
+    IconLink as LinkIcon,
+} from "@tabler/icons-react";
+import type { Icon as TablerIcon } from "@tabler/icons-react";
 import type { FieldDef } from "./types";
-
-// Use `typeof HomeModernIcon` to type the icon — they're all the same component shape
-type HeroIcon = typeof HomeModernIcon;
 
 export interface PresetFieldGroup {
     id: string;
     name: string;
     description: string;
-    icon: HeroIcon;
+    icon: TablerIcon;
     fields: FieldDef[];
 }
 

@@ -16,11 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    PlusIcon,
-    ArrowUpRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
 import { useQuotes } from "@/lib/swr";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
 import { QuoteSideSheet } from "@/components/sheets/QuoteSideSheet";

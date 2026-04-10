@@ -10,7 +10,7 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
 import { QuoteHeader } from "@/components/quotes/QuoteHeader";
 import { Button } from "@/components/ui/button";
-import { ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { IconDownload as ArrowDownTrayIcon } from "@tabler/icons-react";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { toast } from "sonner";
 import { QUOTE_STATUS_CONFIG } from "@/lib/status-config";

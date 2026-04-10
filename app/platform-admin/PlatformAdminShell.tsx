@@ -5,13 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
-import {
-    ArrowRightStartOnRectangleIcon,
-    ArrowLeftIcon,
-    Bars2Icon,
-    XMarkIcon,
-    ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
+import { IconLogout as ArrowRightStartOnRectangleIcon, IconArrowLeft as ArrowLeftIcon, IconMenu2 as Bars2Icon, IconX as XMarkIcon, IconShieldCheck as ShieldCheckIcon } from "@tabler/icons-react";
 import { PLATFORM_ADMIN_NAV } from "@/features/shell/platform-admin-nav-config";
 import { SignOutDialog } from "@/features/shell/SignOutDialog";
 import { useUserProfile } from "@/features/shell/use-user-profile";

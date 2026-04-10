@@ -3,7 +3,7 @@
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { IconPencil as PencilIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
 import type { ScheduleEntry } from "./types";
 
 interface DayDetailListProps {

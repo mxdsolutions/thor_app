@@ -9,7 +9,7 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
-import { DocumentTextIcon, ArrowDownTrayIcon } from "@heroicons/react/24/outline";
+import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "@/lib/status-config";
 import type { ReportTemplate, TemplateSchema } from "@/lib/report-templates/types";

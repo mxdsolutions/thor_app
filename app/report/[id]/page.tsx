@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/lib/tenant-context";
 import { ReportWizardShell } from "@/components/reports/wizard/ReportWizardShell";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { IconArrowLeft as ArrowLeftIcon } from "@tabler/icons-react";
 import type { TemplateSchema, ReportTemplate } from "@/lib/report-templates/types";
 import { buildAutoPopulatedData, type JobContext } from "@/lib/report-templates/auto-populate";
 

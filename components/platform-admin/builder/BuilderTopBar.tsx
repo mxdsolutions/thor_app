@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeftIcon, EyeIcon } from "@heroicons/react/24/outline";
+import { IconArrowLeft as ArrowLeftIcon, IconEye as EyeIcon } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 
 interface BuilderTopBarProps {

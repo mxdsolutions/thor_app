@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import type { SectionDef } from "@/lib/report-templates/types";
 import type { SectionStatus } from "@/lib/reports/validation";

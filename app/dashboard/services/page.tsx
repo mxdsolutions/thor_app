@@ -16,11 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    PlusIcon,
-    ArrowUpRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
 import { CreateServiceModal } from "@/components/modals/CreateServiceModal";
 import { ServiceSideSheet } from "@/components/sheets/ServiceSideSheet";
 import { useServices } from "@/lib/swr";

@@ -7,7 +7,7 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRightIcon, WrenchIcon, DocumentCheckIcon, UsersIcon } from "@heroicons/react/24/outline";
+import { IconArrowRight as ArrowRightIcon, IconTool as WrenchIcon, IconFileCheck as DocumentCheckIcon, IconUsers as UsersIcon } from "@tabler/icons-react";
 import { signIn } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";

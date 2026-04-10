@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PlusIcon, TrashIcon, ArrowUpTrayIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import type { SectionDef } from "@/lib/report-templates/types";

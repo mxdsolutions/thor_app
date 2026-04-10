@@ -4,14 +4,7 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-    PlusIcon,
-    TrashIcon,
-    ChevronUpIcon,
-    ChevronDownIcon,
-    Squares2X2Icon,
-    ArrowPathRoundedSquareIcon,
-} from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconTrash as TrashIcon, IconChevronUp as ChevronUpIcon, IconChevronDown as ChevronDownIcon, IconLayoutGrid as Squares2X2Icon, IconRefreshDot as ArrowPathRoundedSquareIcon } from "@tabler/icons-react";
 import type { TemplateSchema, SectionDef } from "@/lib/report-templates/types";
 import { SectionEditor } from "./SectionEditor";
 

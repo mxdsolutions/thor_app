@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 import { CreateCompanyModal } from "./CreateCompanyModal";
 import { toast } from "sonner";
 import { useCompanyOptions } from "@/lib/swr";

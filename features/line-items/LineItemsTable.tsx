@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { IconTrash as TrashIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { InlineNumberInput } from "./InlineNumberInput";
 
 type Service = {

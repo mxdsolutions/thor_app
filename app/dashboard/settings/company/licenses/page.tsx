@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLicenses } from "@/lib/swr";
-import { PlusIcon, PencilSquareIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell } from "@/lib/design-system";
 
 type License = {

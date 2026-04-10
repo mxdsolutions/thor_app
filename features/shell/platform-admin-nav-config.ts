@@ -1,13 +1,14 @@
 import {
-    ChartBarIcon,
-    BuildingOffice2Icon,
-    DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+    IconChartBar as ChartBarIcon,
+    IconBuildingSkyscraper as BuildingOffice2Icon,
+    IconFileText as DocumentTextIcon,
+} from "@tabler/icons-react";
+import type { Icon } from "@tabler/icons-react";
 
 export type PlatformAdminNavItem = {
     href: string;
     label: string;
-    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    icon: Icon;
 };
 
 export const PLATFORM_ADMIN_NAV: PlatformAdminNavItem[] = [

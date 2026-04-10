@@ -14,7 +14,7 @@ import {
     tableCellMuted,
 } from "@/lib/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
-import { ArrowUpRightIcon } from "@heroicons/react/24/outline";
+import { IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { statLabelClass, statValueClass } from "@/lib/design-system";
 import { useStats, useMyTasks } from "@/lib/swr";

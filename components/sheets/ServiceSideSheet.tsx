@@ -7,7 +7,7 @@ import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";
-import { CubeIcon } from "@heroicons/react/24/outline";
+import { IconCube as CubeIcon } from "@tabler/icons-react";
 
 type Service = {
     id: string;

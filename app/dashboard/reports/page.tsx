@@ -18,11 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, timeAgo } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    PlusIcon,
-    ArrowUpRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
 import { useReports } from "@/lib/swr";
 import { CreateReportModal } from "@/components/modals/CreateReportModal";
 import { ReportSideSheet } from "@/components/sheets/ReportSideSheet";

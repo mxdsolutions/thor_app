@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
 import type { FieldDef, FieldType, EntityType, AutoPopulateKey } from "@/lib/report-templates/types";
 import { FIELD_TYPE_LABELS, ENTITY_TYPE_LABELS, AUTO_POPULATE_KEYS } from "@/lib/report-templates/types";
 

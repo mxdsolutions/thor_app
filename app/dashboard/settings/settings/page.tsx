@@ -6,11 +6,8 @@ import { usePageTitle } from "@/lib/page-title-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-    UserCircleIcon,
-    ShieldCheckIcon,
-} from "@heroicons/react/24/outline";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { IconUserCircle as UserCircleIcon, IconShieldCheck as ShieldCheckIcon } from "@tabler/icons-react";
+import { IconRefresh as ArrowPathIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {

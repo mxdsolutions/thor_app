@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { DetailFields } from "./DetailFields";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";
-import { CurrencyDollarIcon } from "@heroicons/react/24/outline";
+import { IconCurrencyDollar as CurrencyDollarIcon } from "@tabler/icons-react";
 
 type PricingItem = {
     Matrix_ID: string | null;

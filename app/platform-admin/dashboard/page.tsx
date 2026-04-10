@@ -3,14 +3,7 @@
 import { DashboardPage, DashboardMetrics, type DashboardMetric } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { usePlatformStats } from "@/lib/swr";
-import {
-    BuildingOffice2Icon,
-    UserGroupIcon,
-    ClockIcon,
-    ExclamationTriangleIcon,
-    SparklesIcon,
-    XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { IconBuildingSkyscraper as BuildingOffice2Icon, IconUsersGroup as UserGroupIcon, IconClock as ClockIcon, IconAlertTriangle as ExclamationTriangleIcon, IconSparkles as SparklesIcon, IconCircleX as XCircleIcon } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PlatformDashboardPage() {

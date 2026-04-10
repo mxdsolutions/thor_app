@@ -8,7 +8,7 @@ import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { PaperAirplaneIcon, BanknotesIcon } from "@heroicons/react/24/outline";
+import { IconSend as PaperAirplaneIcon, IconCash as BanknotesIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { INVOICE_STATUS_CONFIG } from "@/lib/status-config";
 

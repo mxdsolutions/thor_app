@@ -2,8 +2,7 @@
 
 import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline"
-import { cn } from "@/lib/utils"
+import { IconSearch as MagnifyingGlassIcon } from "@tabler/icons-react";import { cn } from "@/lib/utils"
 
 const Command = React.forwardRef<
     React.ComponentRef<typeof CommandPrimitive>,

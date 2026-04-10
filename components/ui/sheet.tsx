@@ -3,9 +3,7 @@
 import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
-import { XMarkIcon } from "@heroicons/react/24/outline"
-
-import { cn } from "@/lib/utils"
+import { IconX as XMarkIcon } from "@tabler/icons-react";import { cn } from "@/lib/utils"
 
 const Sheet = SheetPrimitive.Root
 

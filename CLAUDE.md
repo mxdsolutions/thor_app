@@ -305,7 +305,7 @@ See `DESIGN_SYSTEM.md` for full tokens. Key rules:
 
 - **Tailwind v4** — uses `@theme` block in `globals.css` with CSS variables, not a `tailwind.config` file
 - Use `cn()` from `lib/utils` for conditional classes — never inline ternaries in className
-- Use Heroicons (`@heroicons/react/24/outline`) for dashboard icons
+- Use Tabler Icons (`@tabler/icons-react`) for dashboard icons — sharper, more technical/industrial feel than Heroicons. Import as `import { IconFoo } from "@tabler/icons-react"`
 - Buttons: `rounded-full`. Cards: `rounded-2xl border bg-card shadow-sm`
 - Spacing: `gap-3` between cards, `space-y-6` between sections
 - Use design system tokens from `lib/design-system.ts` for tables, typography

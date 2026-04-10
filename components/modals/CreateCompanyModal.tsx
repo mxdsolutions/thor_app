@@ -4,7 +4,7 @@ import { useState, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useContactOptions } from "@/lib/swr";
 

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell } from "@/lib/design-system";
-import { PlusIcon, MagnifyingGlassIcon, EnvelopeIcon, LinkIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconMail as EnvelopeIcon, IconLink as LinkIcon } from "@tabler/icons-react";
 import { ComposeEmailModal } from "@/components/modals/ComposeEmailModal";
 import { EmailSideSheet } from "@/components/sheets/EmailSideSheet";
 import { toast } from "sonner";

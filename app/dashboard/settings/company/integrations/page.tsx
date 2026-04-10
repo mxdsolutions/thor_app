@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { LinkIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { IconLink as LinkIcon, IconRefresh as ArrowPathIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 export default function IntegrationsPage() {

@@ -16,15 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-    MagnifyingGlassIcon,
-    ChevronLeftIcon,
-    ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconSearch as MagnifyingGlassIcon, IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
 import { usePricing } from "@/lib/swr";
 import { PricingSideSheet } from "@/components/sheets/PricingSideSheet";
 import { CreateMaterialModal } from "@/components/modals/CreateMaterialModal";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 
 type PricingItem = {
     Matrix_ID: string | null;

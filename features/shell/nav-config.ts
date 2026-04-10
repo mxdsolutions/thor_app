@@ -1,20 +1,21 @@
 import {
-    Squares2X2Icon,
-    BriefcaseIcon,
-    BuildingOffice2Icon,
-    UserGroupIcon,
-    CubeIcon,
-    CalculatorIcon,
-    CurrencyDollarIcon,
-    BanknotesIcon,
-    CalendarDaysIcon,
-} from "@heroicons/react/24/outline";
+    IconLayoutGrid as Squares2X2Icon,
+    IconBriefcase as BriefcaseIcon,
+    IconBuildingSkyscraper as BuildingOffice2Icon,
+    IconUsersGroup as UserGroupIcon,
+    IconCube as CubeIcon,
+    IconCalculator as CalculatorIcon,
+    IconCurrencyDollar as CurrencyDollarIcon,
+    IconCash as BanknotesIcon,
+    IconCalendar as CalendarDaysIcon,
+} from "@tabler/icons-react";
+import type { Icon } from "@tabler/icons-react";
 import { ROUTES } from "@/lib/routes";
 
 export type NavItem = {
     href: string;
     label: string;
-    icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+    icon: Icon;
     moduleId?: string;
 };
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import { IconX as XMarkIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { inviteUser } from "@/app/actions/inviteUser";
 

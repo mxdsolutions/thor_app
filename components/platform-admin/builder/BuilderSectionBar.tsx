@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
 import type { SectionDef } from "@/lib/report-templates/types";
 
 interface BuilderSectionBarProps {

@@ -4,13 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-    PlusIcon,
-    PencilSquareIcon,
-    TrashIcon,
-    ChevronUpIcon,
-    ChevronDownIcon,
-} from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconTrash as TrashIcon, IconChevronUp as ChevronUpIcon, IconChevronDown as ChevronDownIcon } from "@tabler/icons-react";
 import type { SectionDef, FieldDef } from "@/lib/report-templates/types";
 import { FIELD_TYPE_LABELS } from "@/lib/report-templates/types";
 import { FieldEditor } from "../FieldEditor";

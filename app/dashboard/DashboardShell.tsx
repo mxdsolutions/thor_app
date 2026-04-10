@@ -8,16 +8,7 @@ import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
 import { useTenant, useTenantOptional, usePermission } from "@/lib/tenant-context";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-    ArrowRightStartOnRectangleIcon,
-    Bars2Icon,
-    XMarkIcon,
-    EnvelopeIcon,
-    BellIcon,
-    ShieldCheckIcon,
-    UserCircleIcon,
-    CogIcon,
-} from "@heroicons/react/24/outline";
+import { IconLogout as ArrowRightStartOnRectangleIcon, IconMenu2 as Bars2Icon, IconX as XMarkIcon, IconMail as EnvelopeIcon, IconBell as BellIcon, IconShieldCheck as ShieldCheckIcon, IconUserCircle as UserCircleIcon, IconSettings as CogIcon } from "@tabler/icons-react";
 
 import {
     OVERVIEW_ITEM,

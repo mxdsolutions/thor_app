@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useProfiles, useStatusConfig, useJobQuotes, useJobInvoices, useJobReports } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
 import { toast } from "sonner";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
 import { CreateInvoiceModal } from "@/components/modals/CreateInvoiceModal";

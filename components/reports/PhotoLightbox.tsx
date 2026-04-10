@@ -9,10 +9,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { PhotoItem } from "@/lib/report-templates/types";
 

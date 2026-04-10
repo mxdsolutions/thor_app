@@ -3,14 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-    PhotoIcon,
-    TrashIcon,
-    ArrowUpTrayIcon,
-    ArrowPathIcon,
-    XMarkIcon,
-    PencilSquareIcon,
-} from "@heroicons/react/24/outline";
+import { IconPhoto as PhotoIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon, IconRefresh as ArrowPathIcon, IconX as XMarkIcon, IconEdit as PencilSquareIcon } from "@tabler/icons-react";
 import { uploadReportPhoto, deleteReportPhoto } from "@/lib/report-photos";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { AnimatePresence, motion } from "framer-motion";

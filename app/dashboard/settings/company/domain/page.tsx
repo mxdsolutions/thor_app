@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { IconCircleCheck as CheckCircleIcon, IconClock as ClockIcon } from "@tabler/icons-react";
 
 export default function DomainPage() {
     const [domain, setDomain] = useState("");

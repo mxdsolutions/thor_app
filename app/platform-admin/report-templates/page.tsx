@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { PlusIcon, MagnifyingGlassIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconTools as WrenchScrewdriverIcon } from "@tabler/icons-react";
 import { CreateReportTemplateModal } from "@/components/modals/CreateReportTemplateModal";
 import { ReportTemplateSideSheet } from "@/components/sheets/ReportTemplateSideSheet";
 import { usePlatformReportTemplates } from "@/lib/swr";

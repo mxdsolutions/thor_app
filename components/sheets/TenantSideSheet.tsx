@@ -21,7 +21,7 @@ import {
     tableCellMuted,
 } from "@/lib/design-system";
 import { toast } from "sonner";
-import { ChevronDownIcon, XMarkIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { IconChevronDown as ChevronDownIcon, IconX as XMarkIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import type { StatusItem } from "@/lib/status-config";
 
 const PRESET_COLORS = [
