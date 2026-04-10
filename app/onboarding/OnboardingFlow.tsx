@@ -392,6 +392,7 @@ export default function OnboardingFlow() {
                                     >
                                         {avatarPreview ? (
                                             <>
+                                                {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded avatar preview, dimensions unknown */}
                                                 <img
                                                     src={avatarPreview}
                                                     alt="Avatar preview"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
 import { IconSelector as ChevronUpDownIcon, IconCheck as CheckIcon, IconX as XMarkIcon } from "@tabler/icons-react";
@@ -62,6 +62,7 @@ export function EntitySelectField({
     readOnly,
 }: EntitySelectFieldProps) {
     const [open, setOpen] = useState(false);
+    const listboxId = useId();
     const { items, isLoading } = useEntityItems(entityType);
 
     const displayLabel = value?.label || placeholder || `Select ${entityType}...`;
@@ -82,6 +83,7 @@ export function EntitySelectField({
                         type="button"
                         role="combobox"
                         aria-expanded={open}
+                        aria-controls={listboxId}
                         className={cn(
                             "flex h-9 w-full items-center justify-between rounded-xl border border-input bg-background px-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             !value && "text-muted-foreground"
@@ -107,7 +109,7 @@ export function EntitySelectField({
             <PopoverContent>
                 <Command>
                     <CommandInput placeholder={`Search ${entityType}s...`} />
-                    <CommandList>
+                    <CommandList id={listboxId}>
                         <CommandEmpty>
                             {isLoading ? "Loading..." : `No ${entityType}s found.`}
                         </CommandEmpty>

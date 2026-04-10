@@ -61,8 +61,8 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
             reset();
             onOpenChange(false);
             onSent?.();
-        } catch (err: any) {
-            toast.error(err.message || "Failed to send email");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to send email");
         } finally {
             setSending(false);
         }

@@ -11,6 +11,7 @@ export function QuoteHeader() {
             {/* Left: Logo + Company Name */}
             <div className="flex items-center gap-4 min-w-0">
                 {tenant.logo_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element -- tenant-uploaded logo, dimensions unknown */
                     <img
                         src={tenant.logo_url}
                         alt={tenant.company_name || "Company logo"}

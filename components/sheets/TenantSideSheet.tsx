@@ -457,6 +457,7 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
                                                 <div className="flex items-start justify-between gap-4">
                                                     <span className="text-xs font-medium text-muted-foreground shrink-0 pt-1">Logo</span>
                                                     {data.logo_url ? (
+                                                        /* eslint-disable-next-line @next/next/no-img-element -- tenant-uploaded logo, dimensions unknown */
                                                         <img src={data.logo_url} alt="Logo" className="h-8 object-contain" />
                                                     ) : (
                                                         <span className="text-muted-foreground/40 text-sm">&mdash;</span>
@@ -465,6 +466,7 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
                                                 <div className="flex items-start justify-between gap-4">
                                                     <span className="text-xs font-medium text-muted-foreground shrink-0 pt-1">Logo (Dark)</span>
                                                     {data.logo_dark_url ? (
+                                                        /* eslint-disable-next-line @next/next/no-img-element -- tenant-uploaded logo, dimensions unknown */
                                                         <img src={data.logo_dark_url} alt="Logo Dark" className="h-8 object-contain bg-black rounded p-1" />
                                                     ) : (
                                                         <span className="text-muted-foreground/40 text-sm">&mdash;</span>

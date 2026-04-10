@@ -221,7 +221,7 @@ export function QuotePDF({ quote, lineItems, tenant }: QuotePDFProps) {
                 <View style={styles.header}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
                         {tenant.logo_url && (
-                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} />
+                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} alt="" />
                         )}
                         <View>
                             <Text style={styles.companyName}>{companyName}</Text>

@@ -89,8 +89,8 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
             toast.success("Reply sent");
             setReplyText("");
             setShowReply(false);
-        } catch (err: any) {
-            toast.error(err.message || "Failed to send reply");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to send reply");
         } finally {
             setReplying(false);
         }

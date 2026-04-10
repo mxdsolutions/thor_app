@@ -82,8 +82,10 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                     abn: tenant.abn,
                     primary_color: tenant.primary_color || "#000000",
                 },
-            }) as any;
-            const blob = await pdf(element).toBlob();
+            });
+            // react-pdf's pdf() has strict DocumentProps typing that clashes with
+            // a dynamically-imported component's inferred type; cast through unknown.
+            const blob = await pdf(element as unknown as Parameters<typeof pdf>[0]).toBlob();
 
             const url = URL.createObjectURL(blob);
             window.open(url, "_blank");

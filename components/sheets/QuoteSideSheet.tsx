@@ -68,9 +68,10 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
             ]);
 
             const { createElement } = await import("react");
-            const blob = await pdf(
-                createElement(QuotePDF, { quote: fullQuote, lineItems, tenant: tenant! }) as any
-            ).toBlob();
+            // react-pdf's pdf() has strict DocumentProps typing that clashes with
+            // a dynamically-imported component's inferred type; cast through unknown.
+            const element = createElement(QuotePDF, { quote: fullQuote, lineItems, tenant: tenant! });
+            const blob = await pdf(element as unknown as Parameters<typeof pdf>[0]).toBlob();
 
             const url = URL.createObjectURL(blob);
             window.open(url, "_blank");
