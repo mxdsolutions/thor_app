@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
 import { DetailFields } from "./DetailFields";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";

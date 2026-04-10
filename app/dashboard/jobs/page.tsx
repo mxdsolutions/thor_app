@@ -11,7 +11,8 @@ import {
     tableHeadCell,
     tableRow,
     tableCell,
-    tableCellMuted
+    tableCellMuted,
+    paidStatusTextClass,
 } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -58,12 +59,6 @@ const paidStatusLabel: Record<string, string> = {
     not_paid: "Not Paid",
     partly_paid: "Partly Paid",
     paid_in_full: "Paid",
-};
-
-const paidStatusColor: Record<string, string> = {
-    not_paid: "text-rose-500",
-    partly_paid: "text-amber-500",
-    paid_in_full: "text-emerald-500",
 };
 
 function getInitials(name: string | null) {
@@ -150,7 +145,7 @@ function JobsPageContent() {
                                 />
                             </div>
                             <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                                <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -161,7 +156,7 @@ function JobsPageContent() {
                                 </SelectContent>
                             </Select>
                             <Select value={assignedFilter} onValueChange={setAssignedFilter}>
-                                <SelectTrigger className="w-[150px] rounded-xl border-border/50 h-10">
+                                <SelectTrigger className="w-[150px]">
                                     <SelectValue placeholder="Assigned" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -173,7 +168,7 @@ function JobsPageContent() {
                                 </SelectContent>
                             </Select>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                                <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -184,7 +179,7 @@ function JobsPageContent() {
                                 </SelectContent>
                             </Select>
                             <Select value={paidFilter} onValueChange={setPaidFilter}>
-                                <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                                <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Payment" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -194,11 +189,11 @@ function JobsPageContent() {
                                     <SelectItem value="paid_in_full">Paid</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <div className="flex gap-1 p-1 rounded-full bg-secondary">
+                            <div className="flex gap-1 p-1 rounded-lg bg-secondary">
                                 <button
                                     onClick={() => setView("kanban")}
                                     className={cn(
-                                        "p-1.5 rounded-full transition-colors",
+                                        "p-1.5 rounded-sm transition-colors",
                                         view === "kanban" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                     )}
                                     title="Kanban view"
@@ -208,7 +203,7 @@ function JobsPageContent() {
                                 <button
                                     onClick={() => setView("table")}
                                     className={cn(
-                                        "p-1.5 rounded-full transition-colors",
+                                        "p-1.5 rounded-sm transition-colors",
                                         view === "table" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                     )}
                                     title="Table view"
@@ -217,7 +212,7 @@ function JobsPageContent() {
                                 </button>
                             </div>
                         </div>
-                        <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                        <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Add Job
                         </Button>
@@ -255,7 +250,7 @@ function JobsPageContent() {
                                 </div>
 
                                 {/* Paid status */}
-                                <span className={cn("text-[11px] font-medium", paidStatusColor[job.paid_status] || "text-muted-foreground")}>
+                                <span className={cn("text-[11px] font-medium", paidStatusTextClass[job.paid_status] || "text-muted-foreground")}>
                                     {paidStatusLabel[job.paid_status] || job.paid_status}
                                 </span>
 
@@ -307,7 +302,7 @@ function JobsPageContent() {
                                     <tr key={job.id} className={tableRow + " group cursor-pointer"} onClick={() => openJob(job.id)}>
                                         <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-semibold text-sm truncate max-w-[200px]">{job.job_title}</span>
+                                                <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
                                                 {job.reference_id && (
                                                     <span className="text-[10px] text-muted-foreground font-mono">
                                                         {job.reference_id}
@@ -330,7 +325,7 @@ function JobsPageContent() {
                                             <span className="font-bold text-sm">${job.amount.toFixed(2)}</span>
                                         </td>
                                         <td className={tableCell + " px-4 hidden sm:table-cell"}>
-                                            <span className={cn("text-xs font-medium", paidStatusColor[job.paid_status] || "text-muted-foreground")}>
+                                            <span className={cn("text-xs font-medium", paidStatusTextClass[job.paid_status] || "text-muted-foreground")}>
                                                 {paidStatusLabel[job.paid_status] || job.paid_status}
                                             </span>
                                         </td>

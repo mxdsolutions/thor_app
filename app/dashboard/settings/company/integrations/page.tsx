@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
-import { usePageTitle } from "@/lib/page-title-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -201,13 +200,13 @@ function IntegrationsContent() {
                             </div>
                             <div className="shrink-0">
                                 {outlookLoading ? (
-                                    <Button variant="outline" size="sm" disabled className="rounded-full">Loading...</Button>
+                                    <Button variant="outline" size="sm" disabled className="">Loading...</Button>
                                 ) : outlookConnection ? (
-                                    <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive" onClick={handleOutlookDisconnect} disabled={outlookDisconnecting}>
+                                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleOutlookDisconnect} disabled={outlookDisconnecting}>
                                         {outlookDisconnecting ? "Disconnecting..." : "Disconnect"}
                                     </Button>
                                 ) : (
-                                    <Button size="sm" className="rounded-full" onClick={() => { window.location.href = "/api/integrations/outlook/authorize"; }}>
+                                    <Button size="sm" className="" onClick={() => { window.location.href = "/api/integrations/outlook/authorize"; }}>
                                         <LinkIcon className="w-4 h-4 mr-1.5" />
                                         Connect
                                     </Button>
@@ -260,19 +259,19 @@ function IntegrationsContent() {
                             </div>
                             <div className="shrink-0 flex gap-2">
                                 {xeroLoading ? (
-                                    <Button variant="outline" size="sm" disabled className="rounded-full">Loading...</Button>
+                                    <Button variant="outline" size="sm" disabled className="">Loading...</Button>
                                 ) : xeroConnection ? (
                                     <>
-                                        <Button variant="outline" size="sm" className="rounded-full" onClick={handleXeroSync} disabled={xeroSyncing}>
+                                        <Button variant="outline" size="sm" className="" onClick={handleXeroSync} disabled={xeroSyncing}>
                                             <ArrowPathIcon className={`w-4 h-4 mr-1.5 ${xeroSyncing ? "animate-spin" : ""}`} />
                                             {xeroSyncing ? "Syncing..." : "Sync Now"}
                                         </Button>
-                                        <Button variant="outline" size="sm" className="rounded-full text-destructive hover:text-destructive" onClick={handleXeroDisconnect} disabled={xeroDisconnecting}>
+                                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleXeroDisconnect} disabled={xeroDisconnecting}>
                                             {xeroDisconnecting ? "Disconnecting..." : "Disconnect"}
                                         </Button>
                                     </>
                                 ) : (
-                                    <Button size="sm" className="rounded-full" onClick={() => { window.location.href = "/api/integrations/xero/authorize"; }}>
+                                    <Button size="sm" className="" onClick={() => { window.location.href = "/api/integrations/xero/authorize"; }}>
                                         <LinkIcon className="w-4 h-4 mr-1.5" />
                                         Connect
                                     </Button>

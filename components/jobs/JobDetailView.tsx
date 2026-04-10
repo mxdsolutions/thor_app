@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { getJobStatusDot, sheetTitleClass, avatarSurfaceClass } from "@/lib/design-system";
 import { DetailFields } from "@/components/sheets/DetailFields";
 import { NotesPanel } from "@/components/sheets/NotesPanel";
 import { ActivityTimeline } from "@/components/sheets/ActivityTimeline";
@@ -10,7 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useProfiles, useStatusConfig, useJobQuotes, useJobInvoices, useJobReports } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
 import { toast } from "sonner";
-import { PlusIcon, ArrowLeftIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon, IconArrowLeft as ArrowLeftIcon, IconX as XMarkIcon } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { JobTasksPanel } from "@/components/jobs/JobTasksPanel";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
@@ -234,12 +235,12 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
             {/* Header */}
             <div className={cn("px-6 pb-4 border-b border-border shrink-0", mode === "inline" ? "pt-3" : "pt-6")}>
                 <div className="flex items-start gap-4">
-                    <div className="w-[60px] h-[60px] rounded-xl flex items-center justify-center shrink-0 bg-blue-500/10">
-                        <span className="text-lg font-bold text-blue-600">J</span>
+                    <div className={cn("w-[60px] h-[60px] rounded-xl flex items-center justify-center shrink-0", avatarSurfaceClass)}>
+                        <span className="text-lg font-bold uppercase tracking-wide">J</span>
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-[22px] font-bold truncate leading-tight">{data.job_title}</h1>
+                            <h1 className={sheetTitleClass}>{data.job_title}</h1>
                             {data.reference_id && (
                                 <span className="text-xs font-mono text-muted-foreground">{data.reference_id}</span>
                             )}
@@ -416,12 +417,7 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                                             <p className="text-[11px] text-muted-foreground capitalize">{proj.status.replace(/_/g, " ")}</p>
                                         </div>
                                     </div>
-                                    <div className={cn(
-                                        "w-2 h-2 rounded-full",
-                                        proj.status === "completed" ? "bg-emerald-500" :
-                                            proj.status === "in_progress" ? "bg-blue-500" :
-                                                proj.status === "cancelled" ? "bg-rose-400" : "bg-amber-500"
-                                    )} />
+                                    <div className={cn("w-2 h-2 rounded-full", getJobStatusDot(proj.status))} />
                                 </div>
                             ))
                         )}

@@ -19,7 +19,7 @@ type Handler = (
  * Eliminates boilerplate auth/tenant checks from every route.
  */
 export function withAuth(handler: Handler) {
-    return async (request: NextRequest, routeCtx?: unknown) => {
+    return async (request: NextRequest) => {
         try {
             const supabase = await createClient();
             const {

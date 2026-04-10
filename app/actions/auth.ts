@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { loginSchema, signupSchema } from "@/lib/validation";
@@ -84,7 +83,7 @@ export async function signUp(formData: FormData) {
     }
     
     return { success: true, message: "Check your email to confirm your account" }
-  } catch (err: unknown) {
+  } catch {
     return { success: false, error: "An unexpected error occurred." };
   }
 }
@@ -111,7 +110,7 @@ export async function signInWithMagicLink(formData: FormData) {
     }
     
     return { success: "Magic link sent! Check your email." };
-  } catch (err: unknown) {
+  } catch {
     return { error: "An unexpected error occurred." };
   }
 }
@@ -135,7 +134,7 @@ export async function resetPassword(formData: FormData) {
     }
     
     return { success: "Password reset instructions sent to your email." };
-  } catch (err: unknown) {
+  } catch {
     return { error: "An unexpected error occurred." };
   }
 }
@@ -157,7 +156,7 @@ export async function updatePassword(formData: FormData) {
     if (error) {
       return { error: error.message };
     }
-  } catch (err: unknown) {
+  } catch {
     return { error: "An unexpected error occurred." };
   }
 

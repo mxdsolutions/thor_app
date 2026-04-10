@@ -1,10 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Open_Sans, Bebas_Neue } from "next/font/google";
+import { IBM_Plex_Sans, Antonio } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
-const openSans = Open_Sans({ subsets: ["latin"], variable: "--font-open-sans" });
-const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas-neue" });
+const plexSans = IBM_Plex_Sans({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-plex-sans" });
+const antonio = Antonio({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-antonio" });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -27,8 +27,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${openSans.variable} ${bebasNeue.variable} font-sans min-h-screen flex flex-col`}>
+    <html lang="en" className={`${plexSans.variable} ${antonio.variable}`}>
+      <body className="font-sans min-h-screen flex flex-col">
         {children}
         <Toaster position="top-center" richColors />
       </body>

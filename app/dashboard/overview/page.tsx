@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
+import { StatCard } from "@/components/dashboard/StatCard";
 import { usePageTitle } from "@/lib/page-title-context";
 import {
     tableBase,
@@ -12,20 +12,17 @@ import {
     tableRow,
     tableCell,
     tableCellMuted,
+    priorityDotClass,
+    getJobStatusDot,
 } from "@/lib/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon } from "@tabler/icons-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { statLabelClass, statValueClass } from "@/lib/design-system";
+import { SegmentedControl } from "@/components/ui/segmented-control";
+import { fadeInUp } from "@/lib/motion";
 import { useStats, useMyTasks, useJobs } from "@/lib/swr";
 import { MetricsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
-
-const fadeInUp = {
-    hidden: { y: 12, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.4 } },
-};
 
 type ActiveJob = {
     id: string;
@@ -57,7 +54,6 @@ type RevenueDataPoint = {
 };
 
 const priorityLabels: Record<number, string> = { 1: "Urgent", 2: "High", 3: "Normal", 4: "Low" };
-const priorityColors: Record<number, string> = { 1: "bg-red-500", 2: "bg-orange-500", 3: "bg-blue-500", 4: "bg-gray-400" };
 
 export default function OverviewPage() {
     usePageTitle("Overview");
@@ -146,7 +142,7 @@ export default function OverviewPage() {
     const jobsTable = (
         <div className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-                <h2 className="text-sm font-bold tracking-tight shrink-0">All Jobs</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wide leading-none shrink-0">All Jobs</h2>
                 <div className="relative flex-1 max-w-xs">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -183,7 +179,7 @@ export default function OverviewPage() {
                                     <tr key={job.id} className={tableRow + " group"}>
                                         <td className={tableCell + " pl-4 pr-4"}>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-semibold text-sm truncate max-w-[200px]">{job.job_title}</span>
+                                                <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
                                                 {job.reference_id && (
                                                     <span className="text-[10px] text-muted-foreground font-mono">{job.reference_id}</span>
                                                 )}
@@ -202,12 +198,7 @@ export default function OverviewPage() {
                                         </td>
                                         <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                             <div className="flex items-center gap-2">
-                                                <div className={cn(
-                                                    "w-1.5 h-1.5 rounded-full",
-                                                    job.status === "completed" ? "bg-emerald-500" :
-                                                    job.status === "in_progress" ? "bg-blue-500" :
-                                                    job.status === "cancelled" ? "bg-red-500" : "bg-amber-500"
-                                                )} />
+                                                <div className={cn("w-1.5 h-1.5 rounded-full", getJobStatusDot(job.status))} />
                                                 <span className="text-xs font-medium text-muted-foreground capitalize">
                                                     {job.status.replace(/_/g, " ")}
                                                 </span>
@@ -226,10 +217,10 @@ export default function OverviewPage() {
     const tasksTable = (
         <div className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-bold tracking-tight shrink-0">My Tasks</h2>
+                <h2 className="text-2xl font-bold uppercase tracking-wide leading-none shrink-0">My Tasks</h2>
                 <div className="flex items-center gap-2">
                     <Select value={taskDueFilter} onValueChange={setTaskDueFilter}>
-                        <SelectTrigger className="w-[120px] rounded-xl border-border/50 h-9 text-xs">
+                        <SelectTrigger className="w-[120px] h-9 text-xs">
                             <SelectValue placeholder="Due" />
                         </SelectTrigger>
                         <SelectContent>
@@ -241,7 +232,7 @@ export default function OverviewPage() {
                         </SelectContent>
                     </Select>
                     <Select value={taskStatusFilter} onValueChange={setTaskStatusFilter}>
-                        <SelectTrigger className="w-[120px] rounded-xl border-border/50 h-9 text-xs">
+                        <SelectTrigger className="w-[120px] h-9 text-xs">
                             <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -278,13 +269,8 @@ export default function OverviewPage() {
                                     <tr key={task.id} className={tableRow + " group"}>
                                         <td className={tableCell + " pl-4 pr-4"}>
                                             <div className="flex items-center gap-2">
-                                                <div className={cn(
-                                                    "w-1.5 h-1.5 rounded-full shrink-0",
-                                                    task.status === "completed" ? "bg-emerald-500" :
-                                                    task.status === "in_progress" ? "bg-blue-500" :
-                                                    task.status === "cancelled" ? "bg-red-500" : "bg-amber-500"
-                                                )} />
-                                                <span className="font-medium text-sm truncate max-w-[180px] block">{task.title}</span>
+                                                <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", getJobStatusDot(task.status))} />
+                                                <span className="font-medium truncate max-w-[180px] block">{task.title}</span>
                                             </div>
                                         </td>
                                         <td className={tableCellMuted + " px-4"}>
@@ -292,7 +278,7 @@ export default function OverviewPage() {
                                         </td>
                                         <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                             <div className="flex items-center gap-1.5">
-                                                <div className={cn("w-1.5 h-1.5 rounded-full", priorityColors[task.priority] || "bg-gray-400")} />
+                                                <div className={cn("w-1.5 h-1.5 rounded-full", priorityDotClass[task.priority] || "bg-gray-400")} />
                                                 <span className="text-xs font-medium text-muted-foreground">
                                                     {priorityLabels[task.priority] || "Normal"}
                                                 </span>
@@ -316,43 +302,23 @@ export default function OverviewPage() {
             ) : (
                 <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
                     <div className="flex gap-3 overflow-x-auto pb-1 md:grid md:grid-cols-3 md:overflow-visible">
-                        {statCards.map((card, i) => {
-                            const inner = (
-                                <Card key={i} className={cn("border-border shadow-none rounded-2xl shrink-0 min-w-[140px] flex-1", card.href && "hover:bg-secondary/40 transition-colors cursor-pointer")}>
-                                    <CardContent className="p-4 md:p-5">
-                                        <span className={statLabelClass}>{card.label}</span>
-                                        <h3 className={cn(statValueClass, "mt-2")}>{card.value}</h3>
-                                    </CardContent>
-                                </Card>
-                            );
-                            return card.href ? <Link key={i} href={card.href} className="shrink-0 min-w-[140px] flex-1">{inner}</Link> : <div key={i} className="shrink-0 min-w-[140px] flex-1">{inner}</div>;
-                        })}
+                        {statCards.map((card, i) => (
+                            <StatCard key={i} label={card.label} value={card.value} href={card.href} />
+                        ))}
                     </div>
                 </motion.div>
             )}
 
             {/* Mobile Tab Switcher */}
             <div className="lg:hidden px-4 md:px-6">
-                <div className="flex gap-1 p-1 bg-secondary/60 rounded-xl w-fit">
-                    <button
-                        onClick={() => setMobileTab("tasks")}
-                        className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-lg transition-all",
-                            mobileTab === "tasks" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        My Tasks
-                    </button>
-                    <button
-                        onClick={() => setMobileTab("jobs")}
-                        className={cn(
-                            "px-4 py-1.5 text-sm font-medium rounded-lg transition-all",
-                            mobileTab === "jobs" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                        )}
-                    >
-                        All Jobs
-                    </button>
-                </div>
+                <SegmentedControl
+                    value={mobileTab}
+                    onChange={setMobileTab}
+                    options={[
+                        { value: "tasks", label: "My Tasks" },
+                        { value: "jobs", label: "All Jobs" },
+                    ]}
+                />
             </div>
 
             {/* Desktop: 65:35 split */}

@@ -66,10 +66,10 @@ export function FieldCard({ field, index, total, onEdit, onDelete, onMoveUp, onM
             </div>
 
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onEdit}>
+                <Button variant="ghost" size="icon" aria-label="Edit field" className="h-7 w-7" onClick={onEdit}>
                     <PencilIcon className="w-3.5 h-3.5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600" onClick={onDelete}>
+                <Button variant="ghost" size="icon" aria-label="Delete field" className="h-7 w-7 text-red-500 hover:text-red-600" onClick={onDelete}>
                     <TrashIcon className="w-3.5 h-3.5" />
                 </Button>
             </div>

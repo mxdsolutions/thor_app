@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
                 toast.success("Password updated! Please sign in with your new password.");
                 router.push("/");
             }
-        } catch (err: unknown) {
+        } catch {
             toast.error("An error occurred updating the password.");
         } finally {
             setIsLoading(false);

@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { withPlatformAuth } from "@/app/api/_lib/handler";
-import { serverError } from "@/app/api/_lib/errors";
 
 export const GET = withPlatformAuth(async (_request, { adminClient }) => {
     const [

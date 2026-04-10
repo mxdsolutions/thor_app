@@ -6,6 +6,7 @@ import { usePageTitle } from "@/lib/page-title-context";
 import { formatCurrency } from "@/lib/utils";
 import { useStats } from "@/lib/swr";
 import { MetricsSkeleton } from "@/components/ui/skeleton";
+import { fadeInUp } from "@/lib/motion";
 import {
     BarChart,
     Bar,
@@ -15,11 +16,6 @@ import {
     ResponsiveContainer,
     CartesianGrid,
 } from "recharts";
-
-const fadeInUp = {
-    hidden: { y: 12, opacity: 0 },
-    show: { y: 0, opacity: 1, transition: { duration: 0.4 } },
-};
 
 type RevenueDataPoint = {
     month: string;

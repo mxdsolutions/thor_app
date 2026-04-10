@@ -139,6 +139,7 @@ export function DayDetailList({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label="Edit entry"
                                                 className="h-7 w-7 rounded-lg text-muted-foreground"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -150,6 +151,7 @@ export function DayDetailList({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                aria-label="Delete entry"
                                                 className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive"
                                                 onClick={(e) => {
                                                     e.stopPropagation();

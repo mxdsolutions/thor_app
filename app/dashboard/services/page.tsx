@@ -13,7 +13,6 @@ import {
     tableCellMuted
 } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
@@ -63,7 +62,7 @@ export default function ServicesPage() {
                                 />
                             </div>
                         </div>
-                        <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                        <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Add Service
                         </Button>
@@ -99,7 +98,7 @@ export default function ServicesPage() {
                                                 {service.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-sm truncate">{service.name}</p>
+                                                <p className="font-semibold truncate">{service.name}</p>
                                                 {service.description && <p className="text-xs text-muted-foreground truncate">{service.description}</p>}
                                             </div>
                                         </div>

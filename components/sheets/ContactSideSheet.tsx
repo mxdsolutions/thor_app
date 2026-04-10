@@ -6,7 +6,6 @@ import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";
-import { IconUsersGroup as UserGroupIcon } from "@tabler/icons-react";
 
 type Contact = {
     id: string;

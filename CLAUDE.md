@@ -35,7 +35,7 @@ app/
   platform-admin/         # Platform admin UI (cross-tenant management)
   onboarding/             # Tenant onboarding flow
 components/
-  dashboard/              # DashboardPage, DashboardHeader, DashboardControls
+  dashboard/              # DashboardPage, DashboardControls, StatCard, ScrollableTableLayout
   modals/                 # Create*Modal components
   sheets/                 # Entity side sheets
   ui/                     # Radix-based UI primitives
@@ -197,7 +197,6 @@ export default function ThingsPage() {
 - Always call `usePageTitle("Title")` — do **not** render page titles in the page body
 - `DashboardControls` uses `justify-between`: left side = search + filters, right side = action button
 - Pages without controls (overview/settings) just call `usePageTitle()` with no `DashboardControls`
-- Do **not** use `DashboardHeader` — it is deprecated
 
 ### Filters
 
@@ -207,7 +206,7 @@ Table filters (e.g. status) **must use dropdown selects**, not inline pill butto
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 <Select value={statusFilter} onValueChange={setStatusFilter}>
-    <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+    <SelectTrigger className="w-[140px]">
         <SelectValue placeholder="Status" />
     </SelectTrigger>
     <SelectContent>
@@ -220,7 +219,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 
 **Rules:**
 - Place dropdowns next to the search input inside `DashboardControls`
-- Use `rounded-xl border-border/50 h-10` on `SelectTrigger` to match the search input style
+- The `SelectTrigger` primitive ships with `rounded-xl border-border/50 h-10` as the default — only override width (`w-[Npx]`) or additional utilities when needed
 - First option should be the "All" unfiltered state (e.g. "All Statuses")
 - Do **not** use filter pill buttons for status/type filters
 
@@ -309,7 +308,9 @@ See `DESIGN_SYSTEM.md` for full tokens. Key rules:
 - **Tailwind v4** — uses `@theme` block in `globals.css` with CSS variables, not a `tailwind.config` file
 - Use `cn()` from `lib/utils` for conditional classes — never inline ternaries in className
 - Use Tabler Icons (`@tabler/icons-react`) for dashboard icons — sharper, more technical/industrial feel than Heroicons. Import as `import { IconFoo } from "@tabler/icons-react"`
-- Buttons: `rounded-full`. Cards: `rounded-2xl border bg-card shadow-sm`
+- **Typography:** body text is IBM Plex Sans (`--font-plex-sans`, wired to `--font-sans`) — chosen for its industrial/engineered character to pair with the Antonio display face. All `h1`–`h6` headings use Antonio (`--font-antonio`, exposed as `--font-display` / `font-display` utility) via a base layer rule — apply heading styles to semantic `<h*>` tags so they pick this up automatically. Non-heading elements styled as headings (e.g. a `<div>` with `text-xl font-bold`) will render in Plex Sans — use `font-display` if you need Antonio on a non-heading. Antonio ships real weights 100–700, so `font-normal`/`font-medium`/`font-semibold`/`font-bold` all work as expected (no synthetic bold). The base layer applies `font-weight: 500` to headings by default. Apply `uppercase` when you want the all-caps display look.
+- **Radius scale** (industrial feel, deliberately tight): `rounded-sm`/`rounded-md` → 2px, `rounded-lg`/`rounded-xl`/`rounded-2xl`/`rounded-3xl` → 4px. Don't introduce arbitrary values like `rounded-[8px]` — stick to the token scale.
+- Buttons: `rounded-lg` (4px, matches cards) — this is the industrial default. Reserve `rounded-full` for avatars and pill badges only. Cards: `rounded-2xl border bg-card shadow-sm` (renders at 4px per the token override).
 - Spacing: `gap-3` between cards, `space-y-6` between sections
 - Use design system tokens from `lib/design-system.ts` for tables, typography
 - Toasts: `sonner`. Animations: `framer-motion`. Charts: `recharts`. PDFs: `@react-pdf/renderer`

@@ -11,6 +11,7 @@ import {
     tableRow,
     tableCell,
     tableCellMuted,
+    invoiceStatusDotClass,
 } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,6 @@ type Invoice = {
     created_at: string;
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
-};
-
-const STATUS_COLORS: Record<string, string> = {
-    draft: "bg-gray-400",
-    submitted: "bg-blue-500",
-    authorised: "bg-indigo-500",
-    paid: "bg-emerald-500",
-    voided: "bg-red-500",
 };
 
 export default function InvoicesPage() {
@@ -82,7 +75,7 @@ export default function InvoicesPage() {
                                     />
                                 </div>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                                    <SelectTrigger className="w-[140px]">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -94,7 +87,7 @@ export default function InvoicesPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setCreateOpen(true)}>
+                            <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
                                 Add Invoice
                             </Button>
@@ -122,14 +115,14 @@ export default function InvoicesPage() {
                             {invoices.map((inv) => (
                                 <tr key={inv.id} className={tableRow + " group cursor-pointer"} onClick={() => setSelectedInvoice(inv)}>
                                     <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                        <span className="font-semibold text-sm">{inv.invoice_number || inv.reference || "Draft"}</span>
+                                        <span className="font-semibold">{inv.invoice_number || inv.reference || "Draft"}</span>
                                     </td>
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                         {inv.company?.name || "—"}
                                     </td>
                                     <td className={tableCell + " px-4"}>
                                         <div className="flex items-center gap-2">
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", STATUS_COLORS[inv.status] || "bg-gray-400")} />
+                                            <div className={cn("w-1.5 h-1.5 rounded-full", invoiceStatusDotClass[inv.status] || "bg-gray-400")} />
                                             <span className="text-xs font-medium text-muted-foreground capitalize">{inv.status}</span>
                                         </div>
                                     </td>

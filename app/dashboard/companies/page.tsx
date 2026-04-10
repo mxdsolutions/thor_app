@@ -62,7 +62,7 @@ export default function CompaniesPage() {
                                     />
                                 </div>
                             </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                            <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
                                 Add Company
                             </Button>
@@ -97,7 +97,7 @@ export default function CompaniesPage() {
                                                 {company.name.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-sm truncate">{company.name}</p>
+                                                <p className="font-semibold truncate">{company.name}</p>
                                                 {company.email && <p className="text-xs text-muted-foreground truncate">{company.email}</p>}
                                             </div>
                                         </div>

@@ -51,7 +51,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                     <div>
                         <h2 className="text-lg font-semibold">Invite a team member</h2>
                         <p className="text-xs text-muted-foreground mt-0.5">
-                            They'll receive an email with a link to join.
+                            They&apos;ll receive an email with a link to join.
                         </p>
                     </div>
                     <button

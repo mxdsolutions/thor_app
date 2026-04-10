@@ -1,7 +1,8 @@
 @import "tailwindcss/index.css";
 
 @theme {
-  --font-sans: var(--font-open-sans);
+  --font-sans: var(--font-plex-sans);
+  --font-display: var(--font-antonio);
 
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(0 0% 0%);
@@ -31,9 +32,13 @@
   --color-input: hsl(0 0% 89.8%);
   --color-ring: hsl(16 87% 55%);
 
-  --radius-lg: 0.5rem;
-  --radius-md: calc(0.5rem - 2px);
-  --radius-sm: calc(0.5rem - 4px);
+  /* Industrial radius scale: small elements 2px, surfaces 4px. */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
 }
 
 @layer base {
@@ -43,29 +48,13 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-open-sans);
+    font-family: var(--font-plex-sans);
   }
 
-  /* Gradient focus glow for inputs */
-  input:focus:not([data-no-focus-style]),
-  input:focus-visible:not([data-no-focus-style]),
-  textarea:focus:not([data-no-focus-style]),
-  textarea:focus-visible:not([data-no-focus-style]),
-  select:focus:not([data-no-focus-style]),
-  select:focus-visible:not([data-no-focus-style]) {
-    outline: none !important;
-    --tw-ring-shadow: none !important;
-    --tw-ring-offset-shadow: none !important;
-    border-color: transparent !important;
-    background-image:
-      linear-gradient(white, white),
-      linear-gradient(135deg, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 60%, white) 50%, var(--color-primary) 100%);
-    background-origin: border-box;
-    background-clip: padding-box, border-box;
-    box-shadow:
-      0 0 8px color-mix(in srgb, var(--color-primary) 50%, transparent),
-      0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent),
-      0 0 40px color-mix(in srgb, var(--color-primary) 10%, transparent) !important;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-antonio);
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
 }
 

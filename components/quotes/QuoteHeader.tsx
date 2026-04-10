@@ -17,8 +17,8 @@ export function QuoteHeader() {
                         className="h-12 w-auto max-w-[120px] object-contain shrink-0"
                     />
                 ) : (
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                        <span className="text-lg font-bold text-primary">
+                    <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                        <span className="text-lg font-bold text-foreground font-display uppercase">
                             {(tenant.company_name || tenant.name || "?")[0].toUpperCase()}
                         </span>
                     </div>

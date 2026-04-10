@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
-import { useTenant, useTenantOptional, usePermission } from "@/lib/tenant-context";
+import { useTenantOptional, usePermission } from "@/lib/tenant-context";
 import { AnimatePresence, motion } from "framer-motion";
 import { IconLogout as ArrowRightStartOnRectangleIcon, IconMenu2 as Bars2Icon, IconX as XMarkIcon, IconMail as EnvelopeIcon, IconBell as BellIcon, IconShieldCheck as ShieldCheckIcon, IconUserCircle as UserCircleIcon, IconSettings as CogIcon } from "@tabler/icons-react";
 
@@ -23,15 +23,16 @@ import { NotificationSheet } from "@/features/shell/NotificationSheet";
 import { SignOutDialog } from "@/features/shell/SignOutDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
+import { pageHeadingClass } from "@/lib/design-system";
 
 function PageTitle({ companyName }: { companyName?: string | null }) {
     const title = useCurrentPageTitle();
     if (!title) return null;
     return (
-        <h1 className="text-lg font-semibold tracking-tight">
+        <h1 className={cn(pageHeadingClass, "leading-none")}>
             {title}
             {companyName && (
-                <span className="text-muted-foreground font-normal"> | {companyName}</span>
+                <span className="text-muted-foreground font-medium"> | {companyName}</span>
             )}
         </h1>
     );
@@ -39,18 +40,18 @@ function PageTitle({ companyName }: { companyName?: string | null }) {
 
 function SidebarNav({ items, pathname, onNavigate }: { items: NavItem[]; pathname: string; onNavigate?: () => void }) {
     const linkClass = (isActive: boolean) => cn(
-        "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+        "group flex items-center gap-4 px-3 py-3 rounded-lg font-display text-lg font-bold uppercase tracking-wide transition-all duration-200",
         isActive ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/[0.07]"
     );
 
     return (
-        <div className="space-y-0.5">
+        <div className="space-y-1">
             <Link
                 href={OVERVIEW_ITEM.href}
                 onClick={onNavigate}
                 className={linkClass(pathname === OVERVIEW_ITEM.href || pathname.startsWith(OVERVIEW_ITEM.href + "/"))}
             >
-                <OVERVIEW_ITEM.icon className={cn("w-[18px] h-[18px] transition-transform duration-200", !(pathname === OVERVIEW_ITEM.href) && "group-hover:scale-110")} />
+                <OVERVIEW_ITEM.icon className={cn("w-6 h-6 shrink-0 transition-transform duration-200", !(pathname === OVERVIEW_ITEM.href) && "group-hover:scale-110")} />
                 {OVERVIEW_ITEM.label}
             </Link>
             {items.map((item) => {
@@ -62,7 +63,7 @@ function SidebarNav({ items, pathname, onNavigate }: { items: NavItem[]; pathnam
                         onClick={onNavigate}
                         className={linkClass(isActive)}
                     >
-                        <item.icon className={cn("w-[18px] h-[18px] transition-transform duration-200", !isActive && "group-hover:scale-110")} />
+                        <item.icon className={cn("w-6 h-6 shrink-0 transition-transform duration-200", !isActive && "group-hover:scale-110")} />
                         {item.label}
                     </Link>
                 );
@@ -119,13 +120,13 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
     return (
         <div className="min-h-screen bg-black flex">
             {/* Desktop Sidebar */}
-            <aside className="w-64 bg-black hidden md:flex flex-col fixed inset-y-0 left-0 z-30">
-                <div className="h-16 px-5 flex items-center">
-                    <Link href="/dashboard/overview" className="flex items-center gap-2.5">
-                        <div className="rounded-[10px] overflow-hidden shrink-0 w-8 h-8 flex items-center justify-center">
+            <aside className="w-[268px] bg-black hidden md:flex flex-col fixed inset-y-0 left-0 z-30">
+                <div className="h-20 px-5 flex items-center">
+                    <Link href="/dashboard/overview" className="flex items-center gap-3">
+                        <div className="rounded-lg overflow-hidden shrink-0 w-12 h-12 flex items-center justify-center">
                             <Logo size="default" tenantLogoUrl={tenant?.logo_url} tenantLogoDarkUrl={tenant?.logo_dark_url} />
                         </div>
-                        <span className="text-sm font-semibold text-white/70 truncate">{tenant?.company_name || tenant?.name || "Workspace"}</span>
+                        <span className="font-display text-lg font-bold uppercase tracking-wide text-white/80 truncate">{tenant?.company_name || tenant?.name || "Workspace"}</span>
                     </Link>
                 </div>
                 <nav className="flex-1 px-3 overflow-y-auto pt-4 pb-4">
@@ -136,21 +137,21 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                         <Link
                             href={ROUTES.SETTINGS_USERS}
                             className={cn(
-                                "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                                "group flex items-center gap-4 px-3 py-3 rounded-lg font-display text-lg font-bold uppercase tracking-wide transition-all duration-200",
                                 pathname.startsWith("/dashboard/settings")
                                     ? "bg-white/10 text-white"
                                     : "text-white/50 hover:text-white hover:bg-white/[0.07]"
                             )}
                         >
-                            <CogIcon className="w-[18px] h-[18px]" />
+                            <CogIcon className="w-6 h-6 shrink-0" />
                             Settings
                         </Link>
                     </div>
                 )}
                 <div className="p-3 pb-5 border-t border-white/10">
                     <Link href="/dashboard/settings/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                            <span className="text-xs font-bold text-violet-600">{initials}</span>
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                            <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-base font-medium text-white truncate">{displayName}</p>
@@ -179,12 +180,12 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                             transition={{ type: "spring", damping: 28, stiffness: 300 }}
                             className="fixed inset-y-0 left-0 w-72 bg-black z-50 md:hidden flex flex-col shadow-2xl"
                         >
-                            <div className="h-14 flex items-center justify-between px-5">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="rounded-[10px] overflow-hidden shrink-0 w-8 h-8 flex items-center justify-center">
+                            <div className="h-20 flex items-center justify-between px-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-lg overflow-hidden shrink-0 w-12 h-12 flex items-center justify-center">
                                         <Logo size="default" tenantLogoUrl={tenant?.logo_url} tenantLogoDarkUrl={tenant?.logo_dark_url} />
                                     </div>
-                                    <span className="text-sm font-semibold text-white/70 truncate">{tenant?.company_name || tenant?.name || "Workspace"}</span>
+                                    <span className="font-display text-lg font-bold uppercase tracking-wide text-white/80 truncate">{tenant?.company_name || tenant?.name || "Workspace"}</span>
                                 </div>
                                 <button onClick={() => setMobileMenuOpen(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60">
                                     <XMarkIcon className="w-5 h-5" />
@@ -201,29 +202,29 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                                         href={ROUTES.SETTINGS_USERS}
                                         onClick={() => setMobileMenuOpen(false)}
                                         className={cn(
-                                            "group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                                            "group flex items-center gap-4 px-3 py-3 rounded-lg font-display text-lg font-bold uppercase tracking-wide transition-all duration-200",
                                             pathname.startsWith("/dashboard/settings")
                                                 ? "bg-white/10 text-white"
                                                 : "text-white/50 hover:text-white hover:bg-white/[0.07]"
                                         )}
                                     >
-                                        <CogIcon className="w-[18px] h-[18px]" />
+                                        <CogIcon className="w-6 h-6 shrink-0" />
                                         Settings
                                     </Link>
                                 </div>
                             )}
                             <div className="p-3 border-t border-white/10 space-y-0.5">
                                 <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-violet-600">{initials}</span>
+                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                        <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-base font-medium text-white truncate">{displayName}</p>
                                         <p className="text-[15px] text-white/40 truncate">{userEmail}</p>
                                     </div>
                                 </Link>
-                                <button onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }} className="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-white/50 hover:text-white hover:bg-white/[0.07] transition-colors w-full">
-                                    <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px]" />
+                                <button onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }} className="flex items-center gap-4 px-3 py-3 rounded-lg font-display text-lg font-bold uppercase tracking-wide text-white/50 hover:text-white hover:bg-white/[0.07] transition-colors w-full">
+                                    <ArrowRightStartOnRectangleIcon className="w-6 h-6 shrink-0" />
                                     Sign out
                                 </button>
                             </div>
@@ -233,11 +234,11 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
             </AnimatePresence>
 
             {/* Main content */}
-            <main className="flex-1 min-w-0 overflow-hidden md:ml-64 md:mt-2 md:mr-2 md:mb-2">
+            <main className="flex-1 min-w-0 overflow-hidden md:ml-[268px]">
               <PageTitleProvider>
-                <div className="bg-background h-dvh md:h-[calc(100dvh-16px)] md:rounded-2xl md:border md:border-border overflow-hidden flex flex-col">
+                <div className="bg-background h-dvh overflow-hidden flex flex-col">
                     {/* Desktop header — inside the container */}
-                    <header className="hidden md:flex h-14 border-b border-border items-center px-6 lg:px-10 gap-4 shrink-0">
+                    <header className="hidden md:flex h-16 border-b border-border items-center px-6 lg:px-10 gap-4 shrink-0">
                         <PageTitle companyName={tenant?.company_name || tenant?.name} />
                         <div className="flex items-center gap-1 ml-auto">
                             {showPlatformAdminLink && (
@@ -267,8 +268,8 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                                     onClick={() => setAvatarMenuOpen(!avatarMenuOpen)}
                                     className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                                 >
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-violet-600">{initials}</span>
+                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                        <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                                     </div>
                                 </button>
                                 {avatarMenuOpen && (
@@ -295,7 +296,7 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                     </header>
 
                     {/* Mobile header */}
-                    <header className="md:hidden h-14 border-b border-border flex items-center px-4 sticky top-0 z-20 bg-background shrink-0">
+                    <header className="md:hidden h-16 border-b border-border flex items-center px-4 sticky top-0 z-20 bg-background shrink-0">
                         <div className="w-10">
                             <button onClick={() => setMobileMenuOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors" aria-label="Open menu">
                                 <Bars2Icon className="w-5 h-5" />

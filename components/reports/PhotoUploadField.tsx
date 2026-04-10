@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { IconPhoto as PhotoIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon, IconRefresh as ArrowPathIcon, IconX as XMarkIcon, IconEdit as PencilSquareIcon } from "@tabler/icons-react";
 import { uploadReportPhoto, deleteReportPhoto } from "@/lib/report-photos";
@@ -79,7 +78,6 @@ export function PhotoUploadField({
     // Revoke object URLs when queue items are done or component unmounts
     useEffect(() => {
         return () => {
-            // eslint-disable-next-line react-hooks/exhaustive-deps
             uploadQueue.forEach((item) => {
                 if (item.localPreviewUrl) {
                     URL.revokeObjectURL(item.localPreviewUrl);

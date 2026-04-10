@@ -13,7 +13,7 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
 
     try {
         let endpoint: string;
-        let headers: Record<string, string> = {};
+        const headers: Record<string, string> = {};
 
         const select = "$select=id,subject,bodyPreview,from,toRecipients,receivedDateTime,isRead,hasAttachments";
 
@@ -46,7 +46,7 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
             }
         }
 
-        let matchedContacts: Record<string, { id: string; first_name: string; last_name: string }> = {};
+        const matchedContacts: Record<string, { id: string; first_name: string; last_name: string }> = {};
         if (emailAddresses.size > 0) {
             const { data: contacts } = await supabase
                 .from("contacts")

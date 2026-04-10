@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
-import { toast } from "sonner";
 import { useScopes } from "@/lib/swr";
 import { TableSkeleton } from "@/components/ui/skeleton";
 
@@ -36,7 +35,7 @@ type Scope = {
 
 export default function ScopesPage() {
     const [search, setSearch] = useState("");
-    const { data, isLoading: loading, mutate } = useScopes();
+    const { data, isLoading: loading } = useScopes();
     const scopes: Scope[] = data?.items || [];
 
     const filteredScopes = scopes.filter(scope =>
@@ -62,7 +61,7 @@ export default function ScopesPage() {
                             />
                         </div>
                     </div>
-                    <Button className="rounded-full px-6 shrink-0">
+                    <Button className="px-6 shrink-0">
                         <PlusIcon className="w-4 h-4 mr-2" />
                         Add Scope
                     </Button>
@@ -92,7 +91,7 @@ export default function ScopesPage() {
                             <tr key={scope.id} className={tableRow + " group cursor-pointer"}>
                                 <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
                                     <div className="flex flex-col min-w-0">
-                                        <span className="font-semibold text-sm truncate">{scope.title}</span>
+                                        <span className="font-semibold truncate">{scope.title}</span>
                                         <span className="text-xs text-muted-foreground truncate">{scope.address}</span>
                                     </div>
                                 </td>

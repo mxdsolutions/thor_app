@@ -79,7 +79,7 @@ export default function UsersPage() {
                         />
                     </div>
                     <Select value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)}>
-                        <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                        <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -92,7 +92,7 @@ export default function UsersPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <Button className="rounded-full px-6 shrink-0" onClick={() => setInviteOpen(true)}>
+                <Button className="px-6 shrink-0" onClick={() => setInviteOpen(true)}>
                     <UserPlusIcon className="w-4 h-4 mr-2" />
                     Invite User
                 </Button>
@@ -134,7 +134,7 @@ export default function UsersPage() {
                                                 {getInitials(user)}
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="font-semibold text-sm truncate">{getDisplayName(user)}</p>
+                                                <p className="font-semibold truncate">{getDisplayName(user)}</p>
                                                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                                             </div>
                                         </div>

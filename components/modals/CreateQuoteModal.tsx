@@ -21,7 +21,6 @@ interface CreateQuoteModalProps {
 }
 
 type ContactOption = { id: string; first_name: string; last_name: string; email: string | null; company_id: string | null; company?: { id: string; name: string } | null };
-type CompanyOption = { id: string; name: string };
 
 type PricingItem = {
     Matrix_ID: string;
@@ -82,7 +81,6 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
     const [showCreateContact, setShowCreateContact] = useState(false);
 
     // Company (auto-filled from contact)
-    const [companies, setCompanies] = useState<CompanyOption[]>([]);
     const [companyId, setCompanyId] = useState("");
 
     // Services (preloaded — small dataset)
@@ -115,13 +113,7 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                     if (defaultValues?.contactId) setContactId(defaultValues.contactId);
                 })
                 .catch(() => {});
-            fetch("/api/companies")
-                .then(r => r.json())
-                .then(d => {
-                    setCompanies(d.items || []);
-                    if (defaultValues?.companyId) setCompanyId(defaultValues.companyId);
-                })
-                .catch(() => {});
+            if (defaultValues?.companyId) setCompanyId(defaultValues.companyId);
             fetch("/api/services?limit=200")
                 .then(r => r.json())
                 .then(d => setServices(d.items || []))
@@ -151,7 +143,6 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
     }, []);
 
     const selectedContact = contacts.find(c => c.id === contactId);
-    const selectedCompany = companies.find(c => c.id === companyId);
     const filteredContacts = contacts.filter(c => {
         const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
         return fullName.includes(contactSearch.toLowerCase()) ||

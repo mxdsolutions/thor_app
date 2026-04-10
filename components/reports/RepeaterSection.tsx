@@ -172,7 +172,7 @@ export function RepeaterSection({ section, items, onChange, readOnly, reportId, 
                                 </Button>
                             </>
                         )}
-                        <Button variant="outline" size="sm" className="rounded-full text-xs" onClick={handleAddItem}>
+                        <Button variant="outline" size="sm" className="text-xs" onClick={handleAddItem}>
                             <PlusIcon className="w-3.5 h-3.5 mr-1" />
                             {section.addLabel || "Add Item"}
                         </Button>

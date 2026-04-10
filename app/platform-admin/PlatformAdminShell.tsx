@@ -67,8 +67,8 @@ export function PlatformAdminShell({ children }: { children: React.ReactNode }) 
                         Back to Dashboard
                     </Link>
                     <Link href="/dashboard/settings/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                            <span className="text-xs font-bold text-violet-600">{initials}</span>
+                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                            <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-white truncate">{displayName}</p>
@@ -140,8 +140,8 @@ export function PlatformAdminShell({ children }: { children: React.ReactNode }) 
                                     Back to Dashboard
                                 </Link>
                                 <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer">
-                                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-100 to-blue-100 flex items-center justify-center">
-                                        <span className="text-xs font-bold text-violet-600">{initials}</span>
+                                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                                        <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className="text-sm font-medium text-white truncate">{displayName}</p>
@@ -159,8 +159,8 @@ export function PlatformAdminShell({ children }: { children: React.ReactNode }) 
             </AnimatePresence>
 
             {/* Main content */}
-            <main className="flex-1 md:ml-60 min-w-0 overflow-hidden md:mt-2 md:mr-2 md:mb-2">
-                <div className="bg-background min-h-screen md:min-h-[calc(100vh-16px)] md:rounded-2xl overflow-hidden">
+            <main className="flex-1 md:ml-60 min-w-0 overflow-hidden">
+                <div className="bg-background min-h-screen overflow-hidden">
                     <header className="md:hidden h-14 border-b border-border bg-background flex items-center justify-between px-4 sticky top-0 z-20">
                         <Link href="/platform-admin/dashboard" className="flex items-center gap-2">
                             <Logo />

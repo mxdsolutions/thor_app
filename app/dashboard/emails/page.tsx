@@ -144,7 +144,7 @@ export default function EmailsPage() {
                             Connect your Microsoft Outlook account to view and send emails directly from the CRM.
                         </p>
                         <Button
-                            className="rounded-full"
+                            className=""
                             onClick={() => {
                                 window.location.href = "/dashboard/settings/company/integrations";
                             }}
@@ -177,10 +177,10 @@ export default function EmailsPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
-                                <Button variant="outline" size="sm" className="rounded-full" onClick={() => fetchEmails(0, search)}>
+                                <Button variant="outline" size="sm" className="" onClick={() => fetchEmails(0, search)}>
                                     Refresh
                                 </Button>
-                                <Button size="sm" className="rounded-full" onClick={() => setShowCompose(true)}>
+                                <Button size="sm" className="" onClick={() => setShowCompose(true)}>
                                     <PlusIcon className="w-4 h-4 mr-1.5" />
                                     Compose
                                 </Button>
@@ -193,7 +193,7 @@ export default function EmailsPage() {
                         <Button
                             variant="outline"
                             size="sm"
-                            className="rounded-full"
+                            className=""
                             onClick={() => fetchEmails(nextSkip, search)}
                             disabled={loadingMore}
                         >

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTenant } from "@/lib/tenant-context";
 
 const PLAN_DETAILS: Record<string, { label: string; description: string; users: string }> = {
     trial: { label: "Trial", description: "14-day free trial with full access", users: "Up to 5 users" },
@@ -10,9 +9,15 @@ const PLAN_DETAILS: Record<string, { label: string; description: string; users: 
     enterprise: { label: "Enterprise", description: "Unlimited access for large organizations", users: "Unlimited users" },
 };
 
+type TenantData = {
+    plan?: string | null;
+    status?: string | null;
+    max_users?: number | null;
+    trial_ends_at?: string | null;
+};
+
 export default function SubscriptionPage() {
-    const tenant = useTenant();
-    const [tenantData, setTenantData] = useState<any>(null);
+    const [tenantData, setTenantData] = useState<TenantData | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

@@ -1,8 +1,7 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { seedDefaultRoles, setActiveTenant } from "@/lib/tenant";
-import { getURL } from "@/lib/utils";
+import { seedDefaultRoles } from "@/lib/tenant";
 
 export async function tenantSignup(formData: FormData) {
     const companyName = formData.get("company_name") as string;

@@ -39,7 +39,7 @@ export async function GET(
             }
         }
 
-        let matchedContacts: Record<string, { id: string; first_name: string; last_name: string }> = {};
+        const matchedContacts: Record<string, { id: string; first_name: string; last_name: string }> = {};
         if (emailAddresses.size > 0) {
             const { data: contacts } = await supabase
                 .from("contacts")

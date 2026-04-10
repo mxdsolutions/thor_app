@@ -69,7 +69,6 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             ]);
             const { createElement } = await import("react");
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const element = createElement(ReportPDF, {
                 report: data,
                 template: { name: tpl.name, schema },

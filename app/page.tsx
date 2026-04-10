@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +69,7 @@ function AuthContent() {
       } else {
         toast.success("Password reset email sent! Please check your inbox.");
       }
-    } catch (err: unknown) {
+    } catch {
       toast.error("Failed to send reset email.");
     } finally {
       setIsLoading(false);

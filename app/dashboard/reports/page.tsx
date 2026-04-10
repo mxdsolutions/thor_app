@@ -12,6 +12,7 @@ import {
     tableRow,
     tableCell,
     tableCellMuted,
+    reportStatusDotClass,
 } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -41,13 +42,6 @@ const REPORT_TYPES = [
     "All", "assessment", "defect", "inspection", "make_safe",
     "specialist", "variation", "roof", "other",
 ];
-
-const STATUS_COLORS: Record<string, string> = {
-    draft: "bg-gray-400",
-    in_progress: "bg-blue-500",
-    complete: "bg-emerald-500",
-    submitted: "bg-purple-500",
-};
 
 const TYPE_LABELS: Record<string, string> = {
     assessment: "Assessment",
@@ -103,7 +97,7 @@ export default function ReportsPage() {
                             />
                         </div>
                         <Select value={typeFilter} onValueChange={setTypeFilter}>
-                            <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                            <SelectTrigger className="w-[140px]">
                                 <SelectValue placeholder="Type" />
                             </SelectTrigger>
                             <SelectContent>
@@ -115,7 +109,7 @@ export default function ReportsPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button className="rounded-full px-6 shrink-0" onClick={() => setCreateOpen(true)}>
+                    <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
                         <PlusIcon className="w-4 h-4 mr-2" />
                         New Report
                     </Button>
@@ -141,7 +135,7 @@ export default function ReportsPage() {
                         {reports.map((report) => (
                             <tr key={report.id} className={tableRow + " group cursor-pointer"} onClick={() => setSelectedReport(report)}>
                                 <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                    <span className="font-semibold text-sm">{report.title}</span>
+                                    <span className="font-semibold">{report.title}</span>
                                 </td>
                                 <td className={tableCell + " px-4"}>
                                     <Badge variant="outline" className="rounded-full px-2 py-0 text-[10px] font-medium border-border/50">
@@ -150,7 +144,7 @@ export default function ReportsPage() {
                                 </td>
                                 <td className={tableCell + " px-4"}>
                                     <div className="flex items-center gap-2">
-                                        <div className={cn("w-1.5 h-1.5 rounded-full", STATUS_COLORS[report.status] || "bg-gray-400")} />
+                                        <div className={cn("w-1.5 h-1.5 rounded-full", reportStatusDotClass[report.status] || "bg-gray-400")} />
                                         <span className="text-xs font-medium text-muted-foreground capitalize">
                                             {report.status.replace("_", " ")}
                                         </span>

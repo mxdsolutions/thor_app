@@ -70,30 +70,6 @@ export function DashboardPage({ children, className }: DashboardPageProps) {
     );
 }
 
-interface DashboardHeaderProps {
-    title: string;
-    subtitle?: string;
-    children?: React.ReactNode;
-}
-
-export function DashboardHeader({ title, subtitle, children }: DashboardHeaderProps) {
-    return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 md:px-6 lg:px-10">
-            <div>
-                <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-                {subtitle && (
-                    <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
-                )}
-            </div>
-            {children && (
-                <div className="flex items-center gap-3 shrink-0">
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-}
-
 interface DashboardControlsProps {
     children: React.ReactNode;
 }

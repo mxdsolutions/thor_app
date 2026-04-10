@@ -201,7 +201,7 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
                         <p className="text-xs text-muted-foreground mb-4">
                             Sections group related fields together. Add your first section to start building the template.
                         </p>
-                        <Button onClick={handleAddSection} className="rounded-full px-6">
+                        <Button onClick={handleAddSection} className="px-6">
                             Create First Section
                         </Button>
                     </div>

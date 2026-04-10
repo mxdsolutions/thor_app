@@ -40,7 +40,7 @@ export default function PricingPage() {
     usePageTitle("Materials"); // Route is /pricing but display name is "Materials"
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [tradeFilter, setTradeFilter] = useState<string>("All");
+    const [tradeFilter] = useState<string>("All");
     const [page, setPage] = useState(0);
     const [selectedItem, setSelectedItem] = useState<PricingItem | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
@@ -142,7 +142,7 @@ export default function PricingPage() {
                                 onClick={() => { setSelectedItem(item); setSheetOpen(true); }}
                             >
                                 <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                    <span className="font-semibold text-sm">{item.Item || "—"}</span>
+                                    <span className="font-semibold">{item.Item || "—"}</span>
                                 </td>
                                 <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                     {item.Pricing_Status && (

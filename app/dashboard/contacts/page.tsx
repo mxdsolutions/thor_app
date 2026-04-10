@@ -69,7 +69,7 @@ export default function ContactsPage() {
                                     />
                                 </div>
                             </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                            <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
                                 Add Contact
                             </Button>
@@ -103,7 +103,7 @@ export default function ContactsPage() {
                                             <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
                                                 {contact.first_name[0]}{contact.last_name[0]}
                                             </div>
-                                            <span className="font-semibold text-sm truncate">
+                                            <span className="font-semibold truncate">
                                                 {contact.first_name} {contact.last_name}
                                             </span>
                                         </div>

@@ -24,7 +24,6 @@ import {
     getWeekDays,
     getCalendarDays,
     todayKey,
-    toDateKey,
 } from "@/lib/calendar-utils";
 import type { ScheduleEntry } from "@/components/schedule/types";
 import { toast } from "sonner";
@@ -192,16 +191,16 @@ function SchedulePageContent() {
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="secondary"
-                                className="rounded-full px-4"
+                                className="px-4"
                                 onClick={goToToday}
                             >
                                 Today
                             </Button>
-                            <div className="flex items-center rounded-full border border-border/50 p-1">
+                            <div className="flex items-center rounded-lg border border-border/50 p-1">
                                 <button
                                     type="button"
                                     onClick={() => switchView("week")}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-sm transition-colors ${
                                         view === "week"
                                             ? "bg-foreground text-background"
                                             : "text-muted-foreground hover:text-foreground"
@@ -212,7 +211,7 @@ function SchedulePageContent() {
                                 <button
                                     type="button"
                                     onClick={() => switchView("month")}
-                                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${
+                                    className={`px-4 py-1.5 text-sm font-medium rounded-sm transition-colors ${
                                         view === "month"
                                             ? "bg-foreground text-background"
                                             : "text-muted-foreground hover:text-foreground"
@@ -227,7 +226,7 @@ function SchedulePageContent() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="rounded-full h-9 w-9"
+                                className="h-9 w-9"
                                 onClick={goToPrev}
                             >
                                 <ChevronLeftIcon className="w-4 h-4" />
@@ -238,14 +237,14 @@ function SchedulePageContent() {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="rounded-full h-9 w-9"
+                                className="h-9 w-9"
                                 onClick={goToNext}
                             >
                                 <ChevronRightIcon className="w-4 h-4" />
                             </Button>
                         </div>
                         {/* Right: Schedule button */}
-                        <Button className="rounded-full px-6 shrink-0" onClick={() => handleAddEntry()}>
+                        <Button className="px-6 shrink-0" onClick={() => handleAddEntry()}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Schedule Job
                         </Button>

@@ -68,7 +68,7 @@ export default function TenantsPage() {
                                     />
                                 </div>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px] rounded-xl border-border/50 h-10">
+                                    <SelectTrigger className="w-[140px]">
                                         <SelectValue placeholder="Status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -80,7 +80,7 @@ export default function TenantsPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setCreateOpen(true)}>
+                            <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
                                 New Tenant
                             </Button>

@@ -10,7 +10,6 @@ import {
     SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn, timeAgo } from "@/lib/utils";
 import { DetailFields } from "./DetailFields";
 import { IconFileText as DocumentTextIcon, IconTools as WrenchScrewdriverIcon, IconEye as EyeIcon } from "@tabler/icons-react";
@@ -217,11 +216,11 @@ export function ReportTemplateSideSheet({ templateId, open, onOpenChange, onUpda
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="rounded-xl border border-border bg-card p-4">
                                                 <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">Sections</p>
-                                                <p className="text-2xl font-bold mt-1">{countSections(data.schema)}</p>
+                                                <h3 className="text-2xl font-bold mt-1">{countSections(data.schema)}</h3>
                                             </div>
                                             <div className="rounded-xl border border-border bg-card p-4">
                                                 <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground/60">Fields</p>
-                                                <p className="text-2xl font-bold mt-1">{countFields(data.schema)}</p>
+                                                <h3 className="text-2xl font-bold mt-1">{countFields(data.schema)}</h3>
                                             </div>
                                         </div>
 

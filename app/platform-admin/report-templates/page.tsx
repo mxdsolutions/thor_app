@@ -67,7 +67,7 @@ export default function ReportTemplatesPage() {
                                     />
                                 </div>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="w-[160px] rounded-xl border-border/50 h-10">
+                                    <SelectTrigger className="w-[160px]">
                                         <SelectValue placeholder="Category" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -79,7 +79,7 @@ export default function ReportTemplatesPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button className="rounded-full px-6 shrink-0" onClick={() => setCreateOpen(true)}>
+                            <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />
                                 New Template
                             </Button>

@@ -226,12 +226,12 @@ export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValue
                     </div>
 
                     <div className="flex items-center justify-between pt-2 border-t">
-                        <div className="text-lg font-bold">
+                        <h3 className="text-lg font-bold">
                             Total: {new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(total)}
-                        </div>
+                        </h3>
                         <div className="flex gap-2">
-                            <Button variant="outline" className="rounded-full" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button className="rounded-full" onClick={handleSubmit} disabled={saving}>
+                            <Button variant="outline" className="" onClick={() => onOpenChange(false)}>Cancel</Button>
+                            <Button className="" onClick={handleSubmit} disabled={saving}>
                                 {saving ? "Creating..." : "Create Invoice"}
                             </Button>
                         </div>

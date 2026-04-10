@@ -109,7 +109,7 @@ export default function SettingsPage() {
                             <Button 
                                 onClick={handleSave} 
                                 disabled={saving}
-                                className="rounded-full px-6"
+                                className="px-6"
                             >
                                 {saving ? "Saving..." : "Save changes"}
                             </Button>
@@ -130,7 +130,7 @@ export default function SettingsPage() {
                                 <p className="text-sm font-medium">Password</p>
                                 <p className="text-xs text-muted-foreground">Managed via authentication provider</p>
                             </div>
-                            <Button variant="outline" className="text-sm rounded-full px-5">Change</Button>
+                            <Button variant="outline" className="text-sm px-5">Change</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                             <p className="text-sm font-medium text-destructive">Delete account</p>
                             <p className="text-xs text-muted-foreground">Once deleted, your data cannot be recovered.</p>
                         </div>
-                        <Button variant="destructive" className="text-sm rounded-full px-5">Delete</Button>
+                        <Button variant="destructive" className="text-sm px-5">Delete</Button>
                     </CardContent>
                 </Card>
             </div>

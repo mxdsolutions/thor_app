@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
             } else {
                 toast.success("Password reset instructions sent to your email.");
             }
-        } catch (err: unknown) {
+        } catch {
             toast.error("An error occurred. Please try again.");
         } finally {
             setIsLoading(false);
@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
             <div className="w-full max-w-md bg-white p-8 rounded-xl border border-gray-200">
                 <div className="mb-8 text-center">
                     <h1 className="text-2xl font-bold text-black font-sans">Reset Password</h1>
-                    <p className="text-gray-500 font-sans">We'll send you instructions in an email</p>
+                    <p className="text-gray-500 font-sans">We&apos;ll send you instructions in an email</p>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleReset}>

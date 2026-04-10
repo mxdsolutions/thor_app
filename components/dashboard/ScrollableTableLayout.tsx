@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 
 interface ScrollableTableLayoutProps {
-    /** Header area (DashboardHeader + DashboardControls) — stays pinned at top */
+    /** Header area (typically a `<DashboardControls>`) — stays pinned at top */
     header: ReactNode;
     /** The table element — scrolls vertically, thead should use sticky top-0 */
     children: ReactNode;
@@ -18,7 +18,7 @@ interface ScrollableTableLayoutProps {
  * Usage:
  * ```tsx
  * <ScrollableTableLayout
- *     header={<><DashboardHeader .../><DashboardControls>...</DashboardControls></>}
+ *     header={<DashboardControls>...</DashboardControls>}
  *     footer={<PaginationControls />}
  * >
  *     <table>...</table>

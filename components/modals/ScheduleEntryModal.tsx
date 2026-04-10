@@ -201,12 +201,11 @@ export function ScheduleEntryModal({
                         <Button
                             type="button"
                             variant="outline"
-                            className="rounded-full"
                             onClick={() => onOpenChange(false)}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" className="rounded-full" disabled={saving}>
+                        <Button type="submit" disabled={saving}>
                             {saving
                                 ? "Saving..."
                                 : isEditing

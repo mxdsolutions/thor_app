@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import { cn } from "@/lib/utils";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useProfiles } from "@/lib/swr";
@@ -108,12 +108,10 @@ export function JobTasksPanel({ jobId, variant = "rail" }: JobTasksPanelProps) {
             variant === "rail" && "border-l border-border bg-background"
         )}>
             <div className="px-5 pt-5 pb-3 flex items-center justify-between shrink-0">
-                <h3 className="text-sm font-bold tracking-tight">Tasks</h3>
+                <h3 className="text-xl font-bold uppercase tracking-wide">Tasks</h3>
                 <Button
                     type="button"
                     size="sm"
-                    variant="secondary"
-                    className="rounded-full h-8 px-3"
                     onClick={() => setAdding((v) => !v)}
                 >
                     <PlusIcon className="w-3.5 h-3.5 mr-1" />

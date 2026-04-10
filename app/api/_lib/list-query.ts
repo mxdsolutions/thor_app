@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { parsePagination, type PaginationParams } from "./pagination";
+import { parsePagination } from "./pagination";
 
 export type TenantListOptions = {
     /** Postgrest select string (with relations). Defaults to "*". */

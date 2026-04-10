@@ -128,10 +128,10 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
                     </div>
 
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button variant="ghost" size="sm" className="rounded-full" onClick={() => onOpenChange(false)}>
+                        <Button variant="ghost" size="sm" className="" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button size="sm" className="rounded-full" onClick={handleSend} disabled={sending}>
+                        <Button size="sm" className="" onClick={handleSend} disabled={sending}>
                             {sending ? "Sending..." : "Send Email"}
                         </Button>
                     </div>

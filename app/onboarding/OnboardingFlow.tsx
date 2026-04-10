@@ -145,7 +145,6 @@ export default function OnboardingFlow() {
 
     const inputClass =
         "h-14 text-lg bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-primary/50 focus:bg-white/10 transition-all rounded-2xl";
-    const btnClass = "bg-white text-black hover:bg-white/90 rounded-full";
     const btnLgClass = "bg-white text-black hover:bg-white/90 rounded-full px-8";
 
     return (

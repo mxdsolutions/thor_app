@@ -15,12 +15,13 @@ import {
 } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
 import {
-    MagnifyingGlassIcon,
-    PlusIcon,
-    ArrowUpRightIcon,
-} from "@heroicons/react/24/outline";
+    IconSearch as MagnifyingGlassIcon,
+    IconPlus as PlusIcon,
+    IconArrowUpRight as ArrowUpRightIcon,
+} from "@tabler/icons-react";
 import { CreateContactModal } from "@/components/modals/CreateContactModal";
 import { ContactSideSheet } from "@/components/sheets/ContactSideSheet";
 import { CreateCompanyModal } from "@/components/modals/CreateCompanyModal";
@@ -98,28 +99,14 @@ function ClientsPageContent() {
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
     const tabSwitcher = (
-        <div className="flex gap-1 p-1 rounded-full bg-secondary">
-            <button
-                type="button"
-                onClick={() => handleTabChange("contacts")}
-                className={cn(
-                    "px-4 py-1.5 text-xs font-semibold rounded-full transition-all",
-                    tab === "contacts" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-            >
-                Contacts
-            </button>
-            <button
-                type="button"
-                onClick={() => handleTabChange("companies")}
-                className={cn(
-                    "px-4 py-1.5 text-xs font-semibold rounded-full transition-all",
-                    tab === "companies" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                )}
-            >
-                Companies
-            </button>
-        </div>
+        <SegmentedControl
+            value={tab}
+            onChange={handleTabChange}
+            options={[
+                { value: "contacts", label: "Contacts" },
+                { value: "companies", label: "Companies" },
+            ]}
+        />
     );
 
     const contactsHeader = (
@@ -136,7 +123,7 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreateContact(true)}>
+            <Button className="px-6 shrink-0" onClick={() => setShowCreateContact(true)}>
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Contact
             </Button>
@@ -157,7 +144,7 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="rounded-full px-6 shrink-0" onClick={() => setShowCreateCompany(true)}>
+            <Button className="px-6 shrink-0" onClick={() => setShowCreateCompany(true)}>
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Company
             </Button>
@@ -191,7 +178,7 @@ function ClientsPageContent() {
                                     <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
                                         {contact.first_name[0]}{contact.last_name[0]}
                                     </div>
-                                    <span className="font-semibold text-sm truncate">
+                                    <span className="font-semibold truncate">
                                         {contact.first_name} {contact.last_name}
                                     </span>
                                 </div>
@@ -217,7 +204,7 @@ function ClientsPageContent() {
                                 </div>
                             </td>
                             <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
+                                <Button variant="ghost" size="icon" aria-label="Open contact" className="rounded-lg h-8 w-8 text-muted-foreground">
                                     <ArrowUpRightIcon className="w-4 h-4" />
                                 </Button>
                             </td>
@@ -256,7 +243,7 @@ function ClientsPageContent() {
                                         {company.name.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="font-semibold text-sm truncate">{company.name}</p>
+                                        <p className="font-semibold truncate">{company.name}</p>
                                         {company.email && <p className="text-xs text-muted-foreground truncate">{company.email}</p>}
                                     </div>
                                 </div>
@@ -282,7 +269,7 @@ function ClientsPageContent() {
                                 </div>
                             </td>
                             <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
+                                <Button variant="ghost" size="icon" aria-label="Open company" className="rounded-lg h-8 w-8 text-muted-foreground">
                                     <ArrowUpRightIcon className="w-4 h-4" />
                                 </Button>
                             </td>
