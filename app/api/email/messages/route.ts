@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { graphFetch } from "@/lib/microsoft-graph";
 
-export const GET = withAuth(async (request, { supabase, user }) => {
+export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
     const searchParams = request.nextUrl.searchParams;
     const allowedFolders = ["inbox", "drafts", "sentitems", "deleteditems", "junkemail", "archive"];
     const folderParam = searchParams.get("folder") || "inbox";
@@ -51,6 +51,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
             const { data: contacts } = await supabase
                 .from("contacts")
                 .select("id, first_name, last_name, email")
+                .eq("tenant_id", tenantId)
                 .in("email", Array.from(emailAddresses));
 
             if (contacts) {

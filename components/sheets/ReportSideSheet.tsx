@@ -23,7 +23,7 @@ type Report = {
     created_at: string;
     data: Record<string, unknown>;
     template_id?: string | null;
-    job?: { id: string; description: string } | null;
+    job?: { id: string; job_title: string; description?: string | null } | null;
     project?: { id: string; title: string } | null;
     company?: { id: string; name: string } | null;
     creator?: { id: string; full_name: string } | null;
@@ -221,7 +221,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                     {data.job && (
                         <LinkedEntityCard
                             label="Job"
-                            title={data.job.description}
+                            title={data.job.job_title}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">J</span>
                             }

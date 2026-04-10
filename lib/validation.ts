@@ -39,7 +39,8 @@ export const contactSchema = z.object({
     last_name: z.string().min(1, "Last name is required"),
     email: z.string().email("Invalid email").optional().or(z.literal("")),
     phone: z.string().optional(),
-    job_title: z.string().optional(),
+    type: z.enum(["business", "customer"]).optional(),
+    job_title: z.string().optional().nullable(),
     company_id: z.string().uuid().optional().nullable(),
     status: z.string().optional(),
     address: z.string().optional().nullable(),
@@ -89,13 +90,17 @@ export const lineItemUpdateSchema = z.object({
 // --- Job Schemas ---
 
 export const jobSchema = z.object({
-    description: z.string().min(1, "Job description is required"),
+    job_title: z.string().min(1, "Job name is required"),
+    description: z.string().optional().nullable(),
     status: z.string().optional(),
     amount: z.number().min(0).optional(),
     project_id: z.string().uuid().optional().nullable(),
     assigned_to: z.string().uuid().optional().nullable(),
     scheduled_date: z.string().optional().nullable(),
     company_id: z.string().uuid().optional().nullable(),
+    contact_id: z.string().uuid().optional().nullable(),
+    service_id: z.string().uuid().optional().nullable(),
+    notes: z.string().optional().nullable(),
     paid_status: z.enum(["not_paid", "partly_paid", "paid_in_full"]).optional(),
     total_payment_received: z.number().min(0).optional(),
     reference_id: z.string().max(50).optional().nullable(),

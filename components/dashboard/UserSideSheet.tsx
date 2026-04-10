@@ -10,7 +10,7 @@ import { toast } from "sonner";
 type Project = { id: string; title: string; status: string; role: string };
 type UserJob = {
     id: string;
-    description: string;
+    job_title: string;
     status: string;
     amount: number;
     scheduled_date: string | null;
@@ -63,15 +63,17 @@ export function UserSideSheet({ user, open, onOpenChange, onUpdate }: UserSideSh
         const supabase = createClient();
         supabase
             .from("job_assignees")
-            .select("job:jobs ( id, description, status, amount, scheduled_date, company:companies ( name ) )")
+            .select("job:jobs ( id, job_title, status, amount, scheduled_date, company:companies ( name ) )")
             .eq("user_id", data.id)
             .then(({ data: rows }) => {
                 const list = (rows || [])
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .map((r: any) => r.job)
                     .filter(Boolean)
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     .map((j: any) => ({
                         id: j.id,
-                        description: j.description,
+                        job_title: j.job_title,
                         status: j.status,
                         amount: j.amount,
                         scheduled_date: j.scheduled_date,
@@ -245,7 +247,7 @@ export function UserSideSheet({ user, open, onOpenChange, onUpdate }: UserSideSh
                                         J
                                     </div>
                                     <div>
-                                        <p className="text-sm font-medium">{job.description}</p>
+                                        <p className="text-sm font-medium">{job.job_title}</p>
                                         <p className="text-[11px] text-muted-foreground">
                                             ${job.amount.toLocaleString()}
                                             {job.company_name ? ` \u00b7 ${job.company_name}` : ""}

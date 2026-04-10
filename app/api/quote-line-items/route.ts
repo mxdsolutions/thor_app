@@ -22,13 +22,14 @@ const quoteLineItemUpdateSchema = z.object({
     labour_cost: z.number().min(0).optional(),
 });
 
-export const GET = withAuth(async (request, { supabase }) => {
+export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const quoteId = request.nextUrl.searchParams.get("quote_id");
     if (!quoteId) return missingParamError("quote_id");
 
     const { data, error } = await supabase
         .from("quote_line_items")
         .select("*")
+        .eq("tenant_id", tenantId)
         .eq("quote_id", quoteId)
         .order("created_at", { ascending: true });
 
@@ -69,7 +70,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ lineItem: data, quoteTotal: newTotal }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase }) => {
+export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const validation = quoteLineItemUpdateSchema.safeParse(body);
     if (!validation.success)
@@ -87,6 +88,7 @@ export const PATCH = withAuth(async (request, { supabase }) => {
             .from("quote_line_items")
             .select("material_cost, labour_cost")
             .eq("id", id)
+            .eq("tenant_id", tenantId)
             .single();
         if (current) {
             const mc = updates.material_cost ?? current.material_cost;
@@ -99,6 +101,7 @@ export const PATCH = withAuth(async (request, { supabase }) => {
         .from("quote_line_items")
         .update(patchData)
         .eq("id", id)
+        .eq("tenant_id", tenantId)
         .select()
         .single();
 
@@ -109,7 +112,7 @@ export const PATCH = withAuth(async (request, { supabase }) => {
     return NextResponse.json({ lineItem: data, quoteTotal: newTotal });
 });
 
-export const DELETE = withAuth(async (request, { supabase }) => {
+export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
     const id = request.nextUrl.searchParams.get("id");
     if (!id) return missingParamError("id");
 
@@ -117,6 +120,7 @@ export const DELETE = withAuth(async (request, { supabase }) => {
         .from("quote_line_items")
         .select("quote_id")
         .eq("id", id)
+        .eq("tenant_id", tenantId)
         .single();
 
     if (!item) return notFoundError("Line item");
@@ -124,7 +128,8 @@ export const DELETE = withAuth(async (request, { supabase }) => {
     const { error } = await supabase
         .from("quote_line_items")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("tenant_id", tenantId);
 
     if (error) return serverError();
 

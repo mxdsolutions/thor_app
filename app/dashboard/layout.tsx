@@ -37,6 +37,7 @@ export default async function DashboardLayout({
                     phone: branding.phone,
                     email: branding.email,
                     abn: branding.abn,
+                    reference_prefix: branding.reference_prefix,
                     role: membership.role,
                     permissions: membership.permissions,
                 };

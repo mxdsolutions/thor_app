@@ -1,23 +1,16 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { parsePagination } from "@/app/api/_lib/pagination";
+import { tenantListQuery } from "@/app/api/_lib/list-query";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { companySchema } from "@/lib/validation";
 import { pushCompanyToXero } from "@/lib/xero-sync";
 
 export const GET = withAuth(async (request, { supabase, tenantId }) => {
-    const { limit, offset, search } = parsePagination(request);
-
-    let query = supabase
-        .from("companies")
-        .select("*", { count: "exact" })
-        .eq("tenant_id", tenantId)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-    if (search) {
-        query = query.or(`name.ilike.%${search}%,industry.ilike.%${search}%,email.ilike.%${search}%`);
-    }
+    const { query } = tenantListQuery(supabase, "companies", {
+        tenantId,
+        request,
+        searchColumns: ["name", "industry", "email"],
+    });
 
     const { data, error, count } = await query;
     if (error) return serverError();

@@ -47,7 +47,6 @@ lib/
   data/                   # Data fetching utilities
   supabase/               # Client setup (server.ts, client.ts)
   design-system.ts        # Visual tokens (see DESIGN_SYSTEM.md)
-  permissions.ts          # Permission checking (hasPermission, roles)
   tenant.ts               # Tenant resolution (getTenantId, getTenantBranding)
   tenant-context.tsx      # Client-side tenant/permission hooks
   swr.ts                  # SWR hooks (useCompanies, useJobs, useContacts, etc.)
@@ -101,9 +100,10 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 **Rules:**
 - Always use `withAuth()` — it provides `{ supabase, user, tenantId }`
 - Always validate POST/PATCH bodies with Zod schemas from `lib/validation.ts`
+- For tenant-scoped GET list routes, prefer `tenantListQuery()` from `_lib/list-query.ts` — it bakes in `.eq("tenant_id", tenantId)`, pagination, ordering, and a search OR clause so the tenant filter can't be forgotten. For routes with complex joins or many filters you can build the query manually, but you **must** still call `.eq("tenant_id", tenantId)` on every SELECT, UPDATE, and DELETE.
 - Use `parsePagination()` for GET routes — defaults: limit=50, max=200
 - Use `serverError()`, `validationError()`, `notFoundError()` from `_lib/errors.ts`
-- Always include `tenant_id` on inserts
+- Always include `tenant_id` on inserts and `.eq("tenant_id", tenantId)` on updates and deletes — never rely on RLS alone
 
 ### Platform Admin API Routes
 
@@ -242,14 +242,17 @@ Use `SideSheetLayout` from `features/side-sheets/`:
 - Props: `open`, `onOpenChange`, `icon`, `iconBg`, `title`, `subtitle`, `badge`, `tabs`, `activeTab`, `onTabChange`
 - Standard tabs: Details, Notes, Activity
 
-### Tenant & Permissions
+### Tenant & Roles
 
 - Middleware resolves tenant from custom domain → subdomain → JWT claims fallback, with in-memory caching (60s TTL)
 - `/platform-admin/*` routes gated by `is_platform_admin` in `app_metadata` (checked via `getUser()`, not JWT claims)
 - Server-side: `getTenantId()` from `lib/tenant.ts`
-- Client-side: `useTenant()` and `usePermission()` from `lib/tenant-context.tsx`
-- Roles: Owner > Admin > Manager > Member > Viewer
-- Check permissions: `hasPermission(userId, tenantId, "crm.companies", "write")`
+- Client-side: `useTenant()` from `lib/tenant-context.tsx`
+- Roles: Owner > Admin > Manager > Member > Viewer (stored on `tenant_memberships.role`)
+- **Tenant isolation is enforced two ways:**
+  1. **Postgres RLS** — every tenant-scoped table has strict `tenant_id = get_user_tenant_id()` policies. No loose `auth.role() = 'authenticated'` policies are allowed.
+  2. **Explicit `.eq("tenant_id", tenantId)` in API routes** — defense-in-depth. Use the `tenantListQuery` helper from `app/api/_lib/list-query.ts` for new GET routes so the filter cannot be forgotten.
+- **Role-based permission enforcement is not yet wired up.** Routes that need to gate by role (e.g. owners only) check `tenant_memberships.role` inline — see `app/api/users/route.ts` for the pattern. Do not invent a `hasPermission()` helper without designing the role/resource map first.
 
 ### Server Actions
 

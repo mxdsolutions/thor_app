@@ -147,7 +147,7 @@ export function CalendarGrid({
 
                                             {/* Job title */}
                                             <p className="text-sm font-medium truncate leading-tight text-white">
-                                                {job?.description || "Untitled Job"}
+                                                {job?.job_title || "Untitled Job"}
                                             </p>
 
                                             {/* Bottom row: amount + assignees */}

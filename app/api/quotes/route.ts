@@ -4,12 +4,13 @@ import { parsePagination } from "@/app/api/_lib/pagination";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { quoteSchema, quoteUpdateSchema, createQuoteWithItemsSchema } from "@/lib/validation";
 
-export const GET = withAuth(async (request, { supabase }) => {
+export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const { limit, offset, search } = parsePagination(request);
 
     let query = supabase
         .from("quotes")
         .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title)", { count: "exact" })
+        .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 

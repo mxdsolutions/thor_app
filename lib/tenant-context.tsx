@@ -15,6 +15,7 @@ export type TenantContextData = {
     phone: string | null;
     email: string | null;
     abn: string | null;
+    reference_prefix: string | null;
     role: string;
     permissions: Record<string, { read?: boolean; write?: boolean; delete?: boolean }>;
 };

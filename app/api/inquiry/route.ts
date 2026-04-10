@@ -161,8 +161,8 @@ export async function POST(request: Request) {
         ? services.split(",").map(s => s.trim().replace(/-/g, " ")).join(", ")
         : "";
 
+    const jobTitle = `Website Inquiry — ${company}`;
     const jobDescription = [
-        `Website Inquiry — ${company}`,
         message && `Message: ${message}`,
         servicesLabel && `Services: ${servicesLabel}`,
         source && `Source page: ${source}`,
@@ -171,7 +171,8 @@ export async function POST(request: Request) {
     const { data: job, error: jobError } = await supabase
         .from("jobs")
         .insert({
-            description: jobDescription,
+            job_title: jobTitle,
+            description: jobDescription || null,
             status: "new",
             company_id: companyId,
             assigned_to: SYSTEM_USER_ID,

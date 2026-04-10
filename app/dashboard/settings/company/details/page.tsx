@@ -11,6 +11,7 @@ export default function DetailsPage() {
     const [phone, setPhone] = useState(tenant.phone || "");
     const [email, setEmail] = useState(tenant.email || "");
     const [abn, setAbn] = useState(tenant.abn || "");
+    const [referencePrefix, setReferencePrefix] = useState(tenant.reference_prefix || "");
     const [saving, setSaving] = useState(false);
 
     const handleSave = async () => {
@@ -25,6 +26,7 @@ export default function DetailsPage() {
                     phone: phone || null,
                     email: email || null,
                     abn: abn || null,
+                    reference_prefix: referencePrefix.trim() || null,
                 }),
             });
             if (!res.ok) throw new Error();
@@ -101,6 +103,21 @@ export default function DetailsPage() {
                 />
                 <p className="text-xs text-muted-foreground mt-1.5">
                     Australian Business Number — displayed on quotes and invoices
+                </p>
+            </div>
+
+            {/* Job ID Prefix */}
+            <div>
+                <label className="block text-sm font-medium mb-2">Job ID Prefix</label>
+                <input
+                    type="text"
+                    value={referencePrefix}
+                    onChange={(e) => setReferencePrefix(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-border rounded-xl text-sm bg-background"
+                    placeholder="ACME"
+                />
+                <p className="text-xs text-muted-foreground mt-1.5">
+                    Applied to every new job, e.g. ACME-1001. Leave blank to skip auto-numbering.
                 </p>
             </div>
 

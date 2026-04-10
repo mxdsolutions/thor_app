@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { serverError, missingParamError } from "@/app/api/_lib/errors";
 
-export const GET = withAuth(async (request, { supabase }) => {
+export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const { searchParams } = new URL(request.url);
     const entityType = searchParams.get("entity_type");
     const entityId = searchParams.get("entity_id");
@@ -21,6 +21,7 @@ export const GET = withAuth(async (request, { supabase }) => {
                 email
             )
         `)
+        .eq("tenant_id", tenantId)
         .eq("entity_type", entityType)
         .eq("entity_id", entityId)
         .order("created_at", { ascending: false })

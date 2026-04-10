@@ -14,14 +14,23 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
             *,
             job:jobs (
                 id,
+                job_title,
                 description,
+                reference_id,
                 status,
                 amount,
+                paid_status,
+                total_payment_received,
+                scheduled_date,
+                created_at,
                 company:companies(id, name),
+                contact:contacts(id, first_name, last_name),
+                service:products!jobs_service_id_fkey(id, name),
                 assignees:job_assignees (
                     user:profiles (
                         id,
-                        full_name
+                        full_name,
+                        email
                     )
                 )
             )
@@ -55,14 +64,23 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             *,
             job:jobs (
                 id,
+                job_title,
                 description,
+                reference_id,
                 status,
                 amount,
+                paid_status,
+                total_payment_received,
+                scheduled_date,
+                created_at,
                 company:companies(id, name),
+                contact:contacts(id, first_name, last_name),
+                service:products!jobs_service_id_fkey(id, name),
                 assignees:job_assignees (
                     user:profiles (
                         id,
-                        full_name
+                        full_name,
+                        email
                     )
                 )
             )

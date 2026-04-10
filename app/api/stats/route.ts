@@ -21,7 +21,7 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
     ] = await Promise.all([
         supabase.rpc("get_tenant_stats", { p_tenant_id: tenantId }),
         supabase.from("jobs").select(`id, amount, status, updated_at, project:projects(title), assigned_to:profiles!jobs_assigned_to_fkey(full_name)`).eq("tenant_id", tenantId).order("updated_at", { ascending: false }).limit(5),
-        supabase.from("jobs").select(`id, description, amount, status, scheduled_date, project:projects(title), assigned_to:profiles!jobs_assigned_to_fkey(full_name)`).eq("tenant_id", tenantId).not("status", "in", '("Completed","Cancelled","cancelled","completed")').order("scheduled_date", { ascending: true }).limit(10),
+        supabase.from("jobs").select(`id, job_title, description, reference_id, amount, status, scheduled_date, project:projects(title), assigned_to:profiles!jobs_assigned_to_fkey(full_name)`).eq("tenant_id", tenantId).not("status", "in", '("Completed","Cancelled","cancelled","completed")').order("scheduled_date", { ascending: true }).limit(10),
         supabase.from("tasks").select("*", { count: "exact", head: true }).eq("tenant_id", tenantId).in("status", ["pending", "in_progress"]).lte("due_date", sevenDaysFromNow),
         supabase.rpc("get_revenue_chart_data", { p_tenant_id: tenantId }),
     ]);
@@ -59,7 +59,9 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
             const project = unwrapJoin(j.project as JoinedProject);
             return {
                 id: j.id,
-                description: j.description,
+                job_title: j.job_title,
+                description: j.description || null,
+                reference_id: j.reference_id || null,
                 project: project?.title || null,
                 assignedTo: profile?.full_name || null,
                 amount: j.amount || 0,

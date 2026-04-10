@@ -22,6 +22,7 @@ type CompanyOption = { id: string; name: string };
 /** Modal for creating a new contact. Optionally pre-selects a company via `defaultCompanyId`. */
 export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompanyId }: CreateContactModalProps) {
     const [saving, setSaving] = useState(false);
+    const [type, setType] = useState<"business" | "customer">(defaultCompanyId ? "business" : "customer");
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -45,6 +46,7 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
     );
 
     const reset = () => {
+        setType(defaultCompanyId ? "business" : "customer");
         setFirstName("");
         setLastName("");
         setEmail("");
@@ -62,22 +64,24 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
         e.preventDefault();
         if (!firstName.trim() || !lastName.trim()) return;
 
+        const isBusiness = type === "business";
         setSaving(true);
         try {
             const res = await fetch("/api/contacts", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    type,
                     first_name: firstName.trim(),
                     last_name: lastName.trim(),
                     email: email.trim() || null,
                     phone: phone.trim() || null,
-                    job_title: jobTitle.trim() || null,
+                    job_title: isBusiness ? (jobTitle.trim() || null) : null,
                     address: address.trim() || null,
                     city: city.trim() || null,
                     state: state.trim() || null,
                     postcode: postcode.trim() || null,
-                    company_id: companyId || null,
+                    company_id: isBusiness ? (companyId || null) : null,
                 }),
             });
             if (!res.ok) throw new Error("Failed to create contact");
@@ -102,6 +106,30 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                         <DialogDescription>Add a person to your contacts.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+                        {/* Type toggle */}
+                        <div className="flex gap-1 p-1 rounded-full bg-secondary w-fit">
+                            <button
+                                type="button"
+                                onClick={() => setType("customer")}
+                                className={cn(
+                                    "px-4 py-1.5 text-xs font-semibold rounded-full transition-all",
+                                    type === "customer" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Customer
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setType("business")}
+                                className={cn(
+                                    "px-4 py-1.5 text-xs font-semibold rounded-full transition-all",
+                                    type === "business" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Business
+                            </button>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-1.5">
                                 <label className="text-sm font-medium text-muted-foreground">First Name *</label>
@@ -145,15 +173,17 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                             </div>
                         </div>
 
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Job Title</label>
-                            <Input
-                                placeholder="Project Manager"
-                                value={jobTitle}
-                                onChange={(e) => setJobTitle(e.target.value)}
-                                className="rounded-xl"
-                            />
-                        </div>
+                        {type === "business" && (
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-medium text-muted-foreground">Position</label>
+                                <Input
+                                    placeholder="e.g. Project Manager"
+                                    value={jobTitle}
+                                    onChange={(e) => setJobTitle(e.target.value)}
+                                    className="rounded-xl"
+                                />
+                            </div>
+                        )}
 
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Address</label>
@@ -195,7 +225,8 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                             </div>
                         </div>
 
-                        {/* Company selector */}
+                        {/* Company selector — only for business contacts */}
+                        {type === "business" && (
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Company</label>
                             <div className="relative">
@@ -251,6 +282,7 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                                 )}
                             </div>
                         </div>
+                        )}
 
                         <div className="flex justify-end gap-2 pt-2">
                             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

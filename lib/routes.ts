@@ -1,8 +1,10 @@
 export const ROUTES = {
     // Overview (top-level)
     OVERVIEW: "/dashboard/overview",
+    ANALYTICS: "/dashboard/analytics",
 
     // CRM
+    CRM_CLIENTS: "/dashboard/clients",
     CRM_COMPANIES: "/dashboard/companies",
     CRM_CONTACTS: "/dashboard/contacts",
     CRM_EMAILS: "/dashboard/emails",

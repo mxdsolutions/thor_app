@@ -22,6 +22,7 @@ export type TenantBranding = {
     phone: string | null;
     email: string | null;
     abn: string | null;
+    reference_prefix: string | null;
 };
 
 export type TenantMembership = {
@@ -68,7 +69,7 @@ export async function getTenantBranding(tenantId: string): Promise<TenantBrandin
     const supabase = await createAdminClient();
     const { data, error } = await supabase
         .from("tenants")
-        .select("id, name, slug, company_name, logo_url, logo_dark_url, primary_color, plan, max_users, status, custom_domain, domain_verified, address, phone, email, abn")
+        .select("id, name, slug, company_name, logo_url, logo_dark_url, primary_color, plan, max_users, status, custom_domain, domain_verified, address, phone, email, abn, reference_prefix")
         .eq("id", tenantId)
         .single();
 

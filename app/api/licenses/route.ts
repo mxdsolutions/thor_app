@@ -3,10 +3,11 @@ import { withAuth } from "@/app/api/_lib/handler";
 import { validationError, serverError, notFoundError } from "@/app/api/_lib/errors";
 import { licenseSchema, licenseUpdateSchema } from "@/lib/validation";
 
-export const GET = withAuth(async (_request, { supabase }) => {
+export const GET = withAuth(async (_request, { supabase, tenantId }) => {
     const { data, error } = await supabase
         .from("tenant_licenses")
         .select("*")
+        .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false });
 
     if (error) return serverError();

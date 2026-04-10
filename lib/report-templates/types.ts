@@ -14,6 +14,7 @@ export type FieldType =
 export type EntityType = "job" | "company" | "contact";
 
 export type AutoPopulateKey =
+    | "job.job_title"
     | "job.description"
     | "job.status"
     | "job.amount"
@@ -94,6 +95,7 @@ export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
 };
 
 export const AUTO_POPULATE_KEYS: { value: AutoPopulateKey; label: string; fieldTypes: FieldType[] }[] = [
+    { value: "job.job_title", label: "Job Name", fieldTypes: ["text"] },
     { value: "job.description", label: "Job Description", fieldTypes: ["text", "textarea"] },
     { value: "job.status", label: "Job Status", fieldTypes: ["text", "select"] },
     { value: "job.amount", label: "Job Amount", fieldTypes: ["number", "currency"] },

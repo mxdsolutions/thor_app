@@ -29,7 +29,7 @@ type ReportData = {
     notes: string | null;
     created_at: string;
     data: Record<string, unknown>;
-    job?: { id: string; description: string } | null;
+    job?: { id: string; job_title: string; description?: string | null } | null;
     company?: { id: string; name: string } | null;
 };
 
@@ -257,7 +257,7 @@ export function ReportPDF({ report, template, tenant }: ReportPDFProps) {
                     {report.job && (
                         <View>
                             <Text style={styles.infoLabel}>Job</Text>
-                            <Text style={styles.infoValue}>{report.job.description}</Text>
+                            <Text style={styles.infoValue}>{report.job.job_title}</Text>
                         </View>
                     )}
                     {report.company && (

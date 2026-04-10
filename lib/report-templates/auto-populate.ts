@@ -2,7 +2,8 @@ import type { TemplateSchema, AutoPopulateKey } from "./types";
 
 export interface JobContext {
     id: string;
-    description: string;
+    job_title: string;
+    description: string | null;
     status: string;
     amount: number | null;
     scheduled_date: string | null;
@@ -18,6 +19,7 @@ export interface JobContext {
 
 function resolveValue(key: AutoPopulateKey, job: JobContext): unknown {
     const map: Record<AutoPopulateKey, unknown> = {
+        "job.job_title": job.job_title,
         "job.description": job.description,
         "job.status": job.status,
         "job.amount": job.amount,

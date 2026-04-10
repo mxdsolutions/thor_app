@@ -154,7 +154,13 @@ function SchedulePageContent() {
     // Handlers
     const handleJobClick = (entry: ScheduleEntry) => {
         if (entry.job) {
-            setSelectedJob(entry.job);
+            // Unwrap nested assignees: job.assignees is Array<{ user: Profile }> from the PostgREST join.
+            const rawAssignees = (entry.job.assignees || []) as Array<{ user: unknown }>;
+            const unwrapped = {
+                ...entry.job,
+                assignees: rawAssignees.map((a) => a.user).filter(Boolean),
+            };
+            setSelectedJob(unwrapped);
             setSheetOpen(true);
         }
     };

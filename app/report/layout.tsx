@@ -35,6 +35,7 @@ export default async function ReportLayout({
                     phone: branding.phone,
                     email: branding.email,
                     abn: branding.abn,
+                    reference_prefix: branding.reference_prefix,
                     role: membership.role,
                     permissions: membership.permissions,
                 };

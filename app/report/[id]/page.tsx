@@ -32,7 +32,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             const supabase = createClient();
             const { data } = await supabase
                 .from("reports")
-                .select("id, title, type, status, template_id, data, job_id, job:jobs(id, description, status, amount, scheduled_date, company:companies(id, name, email, phone, address, postcode))")
+                .select("id, title, type, status, template_id, data, job_id, job:jobs(id, job_title, description, status, amount, scheduled_date, company:companies(id, name, email, phone, address, postcode))")
                 .eq("id", id)
                 .single();
 

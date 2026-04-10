@@ -59,7 +59,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ item: data }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase }) => {
+export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const { Matrix_ID, ...updates } = body;
     if (!Matrix_ID) return NextResponse.json({ error: "Matrix_ID is required" }, { status: 400 });
@@ -71,6 +71,7 @@ export const PATCH = withAuth(async (request, { supabase }) => {
         .from("pricing")
         .update(validation.data)
         .eq("Matrix_ID", Matrix_ID)
+        .eq("tenant_id", tenantId)
         .select()
         .single();
 

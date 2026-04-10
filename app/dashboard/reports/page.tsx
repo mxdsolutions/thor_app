@@ -35,7 +35,7 @@ type Report = {
     notes: string | null;
     data: Record<string, unknown>;
     created_at: string;
-    job?: { id: string; description: string } | null;
+    job?: { id: string; job_title: string; description?: string | null } | null;
     project?: { id: string; title: string } | null;
     company?: { id: string; name: string } | null;
     creator?: { id: string; full_name: string } | null;
@@ -161,7 +161,7 @@ export default function ReportsPage() {
                                     </div>
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                    {report.job?.description || report.project?.title || report.company?.name || "—"}
+                                    {report.job?.job_title || report.project?.title || report.company?.name || "—"}
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
                                     {report.creator?.full_name || "—"}

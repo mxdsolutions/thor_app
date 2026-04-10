@@ -90,7 +90,7 @@ export function DayDetailList({
                                             </span>
                                         </div>
                                         <p className="font-semibold text-sm truncate">
-                                            {job?.description || "Untitled Job"}
+                                            {job?.job_title || "Untitled Job"}
                                         </p>
                                         <div className="flex items-center gap-3 mt-1">
                                             {job?.company && (
