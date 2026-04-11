@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
@@ -17,22 +17,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
-import { usePricing } from "@/lib/swr";
+import { usePricing, type PricingItem } from "@/lib/swr";
 import { PricingSideSheet } from "@/components/sheets/PricingSideSheet";
 import { CreateMaterialModal } from "@/components/modals/CreateMaterialModal";
 import { IconPlus as PlusIcon } from "@tabler/icons-react";
-
-type PricingItem = {
-    Matrix_ID: string | null;
-    Trade: string | null;
-    Category: string | null;
-    Item: string | null;
-    UOM: string | null;
-    Total_Rate: string | null;
-    Material_Cost: string | null;
-    Labour_Cost: string | null;
-    Pricing_Status: string | null;
-};
 
 const PAGE_SIZE = 20;
 
@@ -40,7 +28,6 @@ export default function PricingPage() {
     usePageTitle("Materials"); // Route is /pricing but display name is "Materials"
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [tradeFilter] = useState<string>("All");
     const [page, setPage] = useState(0);
     const [selectedItem, setSelectedItem] = useState<PricingItem | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
@@ -48,7 +35,7 @@ export default function PricingPage() {
 
     const { data, isLoading } = usePricing(
         debouncedSearch || undefined,
-        tradeFilter !== "All" ? tradeFilter : undefined,
+        undefined,
         page * PAGE_SIZE,
         PAGE_SIZE
     );
@@ -61,8 +48,18 @@ export default function PricingPage() {
         setSearch(value);
         setPage(0);
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => setDebouncedSearch(value), 300);
+        // pg_trgm needs 3+ chars to use the GIN indexes; for 1–2 char input,
+        // fall back to the unfiltered list instead of triggering a seq scan.
+        debounceRef.current = setTimeout(
+            () => setDebouncedSearch(value.length >= 3 ? value : ""),
+            300,
+        );
     };
+
+    // Cancel any pending debounce when the page unmounts.
+    useEffect(() => () => {
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+    }, []);
 
     return (
         <>
@@ -151,7 +148,7 @@ export default function PricingPage() {
                                                 "w-1.5 h-1.5 rounded-full",
                                                 item.Pricing_Status === "Verified" ? "bg-emerald-500" : "bg-amber-500"
                                             )} />
-                                            <span className="text-xs font-medium text-muted-foreground">{item.Pricing_Status}</span>
+                                            <span className="font-medium text-muted-foreground">{item.Pricing_Status}</span>
                                         </div>
                                     )}
                                 </td>
@@ -170,7 +167,7 @@ export default function PricingPage() {
                                     {item.Labour_Cost || "—"}
                                 </td>
                                 <td className={tableCell + " px-4 text-right"}>
-                                    <span className="font-bold text-sm">{item.Total_Rate || "—"}</span>
+                                    <span className="font-bold">{item.Total_Rate || "—"}</span>
                                 </td>
                             </tr>
                         ))}
