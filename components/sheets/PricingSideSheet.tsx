@@ -5,18 +5,7 @@ import { DetailFields } from "./DetailFields";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { createClient } from "@/lib/supabase/client";
 import { IconCurrencyDollar as CurrencyDollarIcon } from "@tabler/icons-react";
-
-type PricingItem = {
-    Matrix_ID: string | null;
-    Trade: string | null;
-    Category: string | null;
-    Item: string | null;
-    UOM: string | null;
-    Total_Rate: string | null;
-    Material_Cost: string | null;
-    Labour_Cost: string | null;
-    Pricing_Status: string | null;
-};
+import type { PricingItem } from "@/lib/swr";
 
 interface PricingSideSheetProps {
     item: PricingItem | null;

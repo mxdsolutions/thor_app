@@ -1,5 +1,19 @@
 import useSWR, { type SWRConfiguration } from "swr";
 
+// --- Shared API response shapes ---
+
+export type PricingItem = {
+    Matrix_ID: string | null;
+    Trade: string | null;
+    Category: string | null;
+    Item: string | null;
+    UOM: string | null;
+    Total_Rate: string | null;
+    Material_Cost: string | null;
+    Labour_Cost: string | null;
+    Pricing_Status: string | null;
+};
+
 const fetcher = async (url: string) => {
     const res = await fetch(url);
     if (!res.ok) {
@@ -167,6 +181,10 @@ export function useCompanyOptions(enabled = true) {
 
 export function useContactOptions(enabled = true) {
     return useSWR(enabled ? "/api/contacts" : null, fetcher, defaultConfig);
+}
+
+export function useServiceOptions(enabled = true) {
+    return useSWR(enabled ? "/api/services?limit=200" : null, fetcher, defaultConfig);
 }
 
 export { fetcher };

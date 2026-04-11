@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { parsePagination } from "@/app/api/_lib/pagination";
+import { tenantListQuery } from "@/app/api/_lib/list-query";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { z } from "zod";
 
@@ -16,28 +16,18 @@ const pricingItemSchema = z.object({
 });
 
 export const GET = withAuth(async (request, { supabase, tenantId }) => {
-    const { limit, offset, search } = parsePagination(request);
-    const { searchParams } = new URL(request.url);
-    const trade = searchParams.get("trade");
+    const trade = new URL(request.url).searchParams.get("trade");
 
-    let query = supabase
-        .from("pricing")
-        .select("*", { count: "exact" })
-        .eq("tenant_id", tenantId)
-        .order("Trade", { ascending: true })
-        .range(offset, offset + limit - 1);
+    const { query } = tenantListQuery(supabase, "pricing", {
+        tenantId,
+        request,
+        // pricing has no created_at column; sort by Trade for stable browse order.
+        orderBy: { column: "Trade", ascending: true },
+        searchColumns: ["Item", "Trade", "Category"],
+    });
 
-    if (search) {
-        query = query.or(
-            `Item.ilike.%${search}%,Trade.ilike.%${search}%,Category.ilike.%${search}%`
-        );
-    }
-
-    if (trade) {
-        query = query.eq("Trade", trade);
-    }
-
-    const { data, error, count } = await query;
+    const finalQuery = trade ? query.eq("Trade", trade) : query;
+    const { data, error, count } = await finalQuery;
     if (error) return serverError();
 
     return NextResponse.json({ items: data, total: count || 0 });
