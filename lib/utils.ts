@@ -43,10 +43,6 @@ export function getInitials(user: AppUser): string {
   return user.email.slice(0, 2).toUpperCase();
 }
 
-export function getContactInitials(firstName: string, lastName: string): string {
-  return `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
-}
-
 export function getDisplayName(user: AppUser): string {
   const { first_name, last_name, full_name } = user.user_metadata;
   if (first_name && last_name) return `${first_name} ${last_name}`;

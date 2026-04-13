@@ -34,26 +34,27 @@ export default function AnalyticsPage() {
                 <MetricsSkeleton count={1} />
             ) : revenueChart.length > 0 ? (
                 <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
-                    <div className="rounded-2xl border border-border bg-card p-5">
+                    <div className="rounded-2xl border border-border bg-card p-3 md:p-5">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-sm font-bold tracking-tight">Revenue</h2>
                             <span className="text-xs text-muted-foreground">Last 6 months</span>
                         </div>
-                        <div className="h-[240px]">
+                        <div className="h-[200px] md:h-[240px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={revenueChart} barSize={32}>
+                                <BarChart data={revenueChart} barSize={24} margin={{ left: -20, right: 4, top: 4, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                     <XAxis
                                         dataKey="month"
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                                     />
                                     <YAxis
                                         axisLine={false}
                                         tickLine={false}
-                                        tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
+                                        tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                                         tickFormatter={(v: number) => `$${(v / 1000).toFixed(0)}k`}
+                                        width={45}
                                     />
                                     <Tooltip
                                         cursor={{ fill: "var(--secondary)", opacity: 0.5 }}

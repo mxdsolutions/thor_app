@@ -1,10 +1,12 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
+import { TablePagination } from "@/components/dashboard/TablePagination";
 import {
     tableBase,
     tableHead,
@@ -37,6 +39,7 @@ type Contact = {
     email: string | null;
     phone: string | null;
     job_title: string | null;
+    type: string | null;
     address: string | null;
     city: string | null;
     state: string | null;
@@ -84,19 +87,29 @@ function ClientsPageContent() {
 
     // Contacts state
     const [contactsSearch, setContactsSearch] = useState("");
+    const [contactsPage, setContactsPage] = useState(0);
+    const PAGE_SIZE = 20;
     const debouncedContactsSearch = useDebouncedValue(contactsSearch);
-    const { data: contactsData, isLoading: contactsLoading, mutate: mutateContacts } = useContacts(debouncedContactsSearch || undefined);
+    const { data: contactsData, isLoading: contactsLoading, mutate: mutateContacts } = useContacts(debouncedContactsSearch || undefined, contactsPage * PAGE_SIZE, PAGE_SIZE);
     const contacts: Contact[] = contactsData?.items || [];
+    const contactsTotal: number = contactsData?.total || 0;
     const [showCreateContact, setShowCreateContact] = useState(false);
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
     // Companies state
     const [companiesSearch, setCompaniesSearch] = useState("");
+    const [companiesPage, setCompaniesPage] = useState(0);
     const debouncedCompaniesSearch = useDebouncedValue(companiesSearch);
-    const { data: companiesData, isLoading: companiesLoading, mutate: mutateCompanies } = useCompanies(debouncedCompaniesSearch || undefined);
+    const { data: companiesData, isLoading: companiesLoading, mutate: mutateCompanies } = useCompanies(debouncedCompaniesSearch || undefined, companiesPage * PAGE_SIZE, PAGE_SIZE);
     const companies: Company[] = companiesData?.items || [];
+    const companiesTotal: number = companiesData?.total || 0;
     const [showCreateCompany, setShowCreateCompany] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+
+    useMobileHeaderAction(useCallback(() => {
+        if (tab === "contacts") setShowCreateContact(true);
+        else setShowCreateCompany(true);
+    }, [tab]));
 
     const tabSwitcher = (
         <SegmentedControl
@@ -111,8 +124,8 @@ function ClientsPageContent() {
 
     const contactsHeader = (
         <DashboardControls>
-            <div className="flex items-center gap-3">
-                <div className="relative flex-1 min-w-[320px] max-w-xl">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search contacts..."
@@ -123,7 +136,7 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="px-6 shrink-0" onClick={() => setShowCreateContact(true)}>
+            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateContact(true)}>
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Contact
             </Button>
@@ -132,8 +145,8 @@ function ClientsPageContent() {
 
     const companiesHeader = (
         <DashboardControls>
-            <div className="flex items-center gap-3">
-                <div className="relative flex-1 min-w-[320px] max-w-xl">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search companies..."
@@ -144,7 +157,7 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="px-6 shrink-0" onClick={() => setShowCreateCompany(true)}>
+            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateCompany(true)}>
                 <PlusIcon className="w-4 h-4 mr-2" />
                 Add Company
             </Button>
@@ -282,7 +295,13 @@ function ClientsPageContent() {
 
     return (
         <>
-            <ScrollableTableLayout header={tab === "contacts" ? contactsHeader : companiesHeader}>
+            <ScrollableTableLayout
+                header={tab === "contacts" ? contactsHeader : companiesHeader}
+                footer={tab === "contacts"
+                    ? <TablePagination page={contactsPage} pageSize={PAGE_SIZE} total={contactsTotal} onPageChange={setContactsPage} />
+                    : <TablePagination page={companiesPage} pageSize={PAGE_SIZE} total={companiesTotal} onPageChange={setCompaniesPage} />
+                }
+            >
                 {tab === "contacts" ? contactsTable : companiesTable}
             </ScrollableTableLayout>
 

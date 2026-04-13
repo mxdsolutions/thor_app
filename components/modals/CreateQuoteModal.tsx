@@ -1,13 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
     IconTrash as TrashIcon,
-    IconSearch as MagnifyingGlassIcon,
     IconPlus as PlusIcon,
     IconLayoutList as SectionIcon,
     IconChevronUp,
@@ -15,11 +14,8 @@ import {
 } from "@tabler/icons-react";
 import { InlineNumberInput } from "@/features/line-items/InlineNumberInput";
 import { formatCurrency } from "@/lib/utils";
-import {
-    useContactOptions,
-    useServiceOptions,
-    type PricingItem,
-} from "@/lib/swr";
+import { useContactOptions } from "@/lib/swr";
+import { PricingSearchDropdown, type NewLineItem } from "@/components/quotes/PricingSearchDropdown";
 
 const CreateContactModal = lazy(() =>
     import("./CreateContactModal").then(mod => ({ default: mod.CreateContactModal }))
@@ -34,34 +30,11 @@ interface CreateQuoteModalProps {
 
 type ContactOption = { id: string; first_name: string; last_name: string; email: string | null; company_id: string | null; company?: { id: string; name: string } | null };
 
-type ServiceItem = {
-    id: string;
-    name: string;
-    initial_value: number | null;
-};
-
-type QuoteLineItem = {
-    pricing_matrix_id: string | null;
-    description: string;
-    line_description: string;
-    trade: string;
-    uom: string;
-    quantity: number;
-    material_cost: number;
-    labour_cost: number;
-};
-
 type Section = {
     id: string;
     name: string;
-    items: QuoteLineItem[];
+    items: NewLineItem[];
 };
-
-function parseNum(val: string | null | undefined): number {
-    if (!val) return 0;
-    const n = parseFloat(val.replace(/[^0-9.\-]/g, ""));
-    return isNaN(n) ? 0 : n;
-}
 
 const GST_RATE = 0.1;
 
@@ -91,18 +64,6 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
     const [showCreateContact, setShowCreateContact] = useState(false);
     const [companyId, setCompanyId] = useState("");
 
-    // Services
-    const { data: servicesData } = useServiceOptions(open);
-    const services: ServiceItem[] = useMemo(() => servicesData?.items ?? [], [servicesData]);
-
-    // Pricing search
-    const [pricingSearch, setPricingSearch] = useState("");
-    const [pricingResults, setPricingResults] = useState<PricingItem[]>([]);
-    const [showPricingDropdown, setShowPricingDropdown] = useState(false);
-    const [pricingLoading, setPricingLoading] = useState(false);
-    const pricingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const pricingRequestIdRef = useRef(0);
-
     // Sections
     const [sections, setSections] = useState<Section[]>([]);
     const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -118,46 +79,12 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
-    useEffect(() => () => {
-        if (pricingDebounceRef.current) clearTimeout(pricingDebounceRef.current);
-    }, []);
-
-    const searchPricing = useCallback((query: string) => {
-        if (pricingDebounceRef.current) clearTimeout(pricingDebounceRef.current);
-        if (query.length < 3) {
-            setPricingResults([]);
-            setPricingLoading(false);
-            return;
-        }
-        setPricingLoading(true);
-        const requestId = ++pricingRequestIdRef.current;
-        pricingDebounceRef.current = setTimeout(async () => {
-            try {
-                const res = await fetch(`/api/pricing?search=${encodeURIComponent(query)}&limit=20`);
-                const data = await res.json();
-                if (requestId !== pricingRequestIdRef.current) return;
-                setPricingResults(data.items || []);
-            } catch {
-                if (requestId !== pricingRequestIdRef.current) return;
-                setPricingResults([]);
-            } finally {
-                if (requestId === pricingRequestIdRef.current) setPricingLoading(false);
-            }
-        }, 150);
-    }, []);
-
     const selectedContact = contacts.find(c => c.id === contactId);
     const filteredContacts = contacts.filter(c => {
         const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
         return fullName.includes(contactSearch.toLowerCase()) ||
             (c.email && c.email.toLowerCase().includes(contactSearch.toLowerCase()));
     });
-
-    const filteredServices = useMemo(() => {
-        if (pricingSearch.length < 3) return [];
-        const q = pricingSearch.toLowerCase();
-        return services.filter(s => s.name.toLowerCase().includes(q));
-    }, [pricingSearch, services]);
 
     // Calculations
     const totals = useMemo(() => {
@@ -185,10 +112,6 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
         setContactId("");
         setContactSearch("");
         setCompanyId("");
-        setPricingSearch("");
-        setPricingResults([]);
-        setPricingLoading(false);
-        pricingRequestIdRef.current++;
         setSections([]);
         setActiveSectionId(null);
     };
@@ -231,9 +154,8 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
     };
 
     // Add item to active section
-    const addItemToSection = (item: QuoteLineItem) => {
+    const addItemToSection = useCallback((item: NewLineItem) => {
         if (!activeSectionId) {
-            // Auto-create first section
             const id = crypto.randomUUID();
             setSections([{ id, name: "Section 1", items: [item] }]);
             setActiveSectionId(id);
@@ -242,39 +164,9 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
         setSections(prev => prev.map(s =>
             s.id === activeSectionId ? { ...s, items: [...s.items, item] } : s
         ));
-    };
+    }, [activeSectionId]);
 
-    const addPricingItem = (pricingItem: PricingItem) => {
-        addItemToSection({
-            pricing_matrix_id: pricingItem.Matrix_ID,
-            description: pricingItem.Item || "Unknown Item",
-            line_description: "",
-            trade: pricingItem.Trade || "",
-            uom: pricingItem.UOM || "",
-            quantity: 1,
-            material_cost: parseNum(pricingItem.Material_Cost),
-            labour_cost: parseNum(pricingItem.Labour_Cost),
-        });
-        setPricingSearch("");
-        setShowPricingDropdown(false);
-    };
-
-    const addServiceItem = (svc: ServiceItem) => {
-        addItemToSection({
-            pricing_matrix_id: null,
-            description: svc.name,
-            line_description: "",
-            trade: "Service",
-            uom: "each",
-            quantity: 1,
-            material_cost: 0,
-            labour_cost: svc.initial_value || 0,
-        });
-        setPricingSearch("");
-        setShowPricingDropdown(false);
-    };
-
-    const updateLineItem = (sectionId: string, itemIdx: number, field: keyof QuoteLineItem, value: number | string) => {
+    const updateLineItem = (sectionId: string, itemIdx: number, field: keyof NewLineItem, value: number | string) => {
         setSections(prev => prev.map(s => {
             if (s.id !== sectionId) return s;
             const items = [...s.items];
@@ -448,84 +340,11 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                                     Add Section
                                 </Button>
                             </div>
-                            <div className="relative">
-                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                <Input
-                                    placeholder={activeSectionId ? `Search materials — adding to "${sections.find(s => s.id === activeSectionId)?.name}"` : "Search materials or services..."}
-                                    value={pricingSearch}
-                                    onChange={(e) => {
-                                        setPricingSearch(e.target.value);
-                                        searchPricing(e.target.value);
-                                        setShowPricingDropdown(e.target.value.length >= 3);
-                                    }}
-                                    onFocus={() => { if (pricingSearch.length >= 3) setShowPricingDropdown(true); }}
-                                    onBlur={() => setTimeout(() => setShowPricingDropdown(false), 200)}
-                                    className="rounded-xl pl-9"
-                                />
-                                {showPricingDropdown && (
-                                    <div className="absolute z-50 top-full mt-1 w-full bg-background border border-border rounded-xl shadow-lg max-h-72 overflow-y-auto">
-                                        {pricingLoading && filteredServices.length === 0 && (
-                                            <div className="px-3 py-2 text-sm text-muted-foreground">Searching...</div>
-                                        )}
-
-                                        {filteredServices.length > 0 && (
-                                            <>
-                                                <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-secondary/40 border-b border-border/50">
-                                                    Services
-                                                </div>
-                                                {filteredServices.map(svc => (
-                                                    <button
-                                                        key={svc.id}
-                                                        type="button"
-                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
-                                                        onClick={() => addServiceItem(svc)}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <span className="font-medium truncate">{svc.name}</span>
-                                                            {svc.initial_value != null && (
-                                                                <span className="text-xs text-muted-foreground shrink-0">{formatCurrency(svc.initial_value)}</span>
-                                                            )}
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </>
-                                        )}
-
-                                        {pricingResults.length > 0 && (
-                                            <>
-                                                <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-secondary/40 border-b border-border/50">
-                                                    Materials
-                                                </div>
-                                                {pricingResults.map((item) => (
-                                                    <button
-                                                        key={item.Matrix_ID}
-                                                        type="button"
-                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
-                                                        onClick={() => addPricingItem(item)}
-                                                    >
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex-1 min-w-0">
-                                                                <span className="font-medium truncate block">{item.Item}</span>
-                                                                <span className="text-xs text-muted-foreground">
-                                                                    {item.Trade}{item.Category ? ` / ${item.Category}` : ""}{item.UOM ? ` (${item.UOM})` : ""}
-                                                                </span>
-                                                            </div>
-                                                            <div className="text-xs text-muted-foreground text-right shrink-0">
-                                                                <div>Mat: {formatCurrency(parseNum(item.Material_Cost))}</div>
-                                                                <div>Lab: {formatCurrency(parseNum(item.Labour_Cost))}</div>
-                                                            </div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </>
-                                        )}
-
-                                        {!pricingLoading && pricingResults.length === 0 && filteredServices.length === 0 && pricingSearch.length >= 3 && (
-                                            <div className="px-3 py-2 text-sm text-muted-foreground">No items found</div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                            <PricingSearchDropdown
+                                enabled={open}
+                                activeSectionName={sections.find(s => s.id === activeSectionId)?.name}
+                                onAddItem={addItemToSection}
+                            />
                         </div>
                     </div>
 
@@ -663,7 +482,7 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                         {/* Summary */}
                         {totalItemCount > 0 && (
                             <div className="flex justify-end">
-                                <div className="w-full max-w-[50%] rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
+                                <div className="w-full sm:max-w-[50%] rounded-xl border border-border bg-secondary/20 p-4 space-y-3">
                                     <div className="space-y-1.5 text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground">Materials subtotal</span>
@@ -728,16 +547,18 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                     </div>
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between pt-3 mt-1 border-t border-border px-1 shrink-0">
-                        <div className="text-sm text-muted-foreground">
-                            {sections.length} section{sections.length !== 1 ? "s" : ""} · {totalItemCount} item{totalItemCount !== 1 ? "s" : ""}
-                            {totalItemCount > 0 && <span className="ml-2 font-medium text-foreground">{formatCurrency(totals.grandTotal)}</span>}
+                    <div className="pt-3 mt-1 border-t border-border px-1 shrink-0 space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">
+                                {sections.length} section{sections.length !== 1 ? "s" : ""} · {totalItemCount} item{totalItemCount !== 1 ? "s" : ""}
+                            </span>
+                            {totalItemCount > 0 && <span className="font-medium text-foreground">{formatCurrency(totals.grandTotal)}</span>}
                         </div>
                         <div className="flex gap-2">
-                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                            <Button type="button" variant="ghost" className="flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={totalItemCount === 0 || saving}>
+                            <Button type="submit" className="flex-1 sm:flex-none" disabled={totalItemCount === 0 || saving}>
                                 {saving ? "Creating..." : "Create Quote"}
                             </Button>
                         </div>
@@ -760,6 +581,7 @@ export function CreateQuoteModal({ open, onOpenChange, onCreated, defaultValues 
                 />
             </Suspense>
         )}
+
         </>
     );
 }

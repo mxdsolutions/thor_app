@@ -172,8 +172,11 @@ export default function OverviewPage() {
                                         <td className={tableCell + " pl-4 pr-4"}>
                                             <div className="flex flex-col min-w-0">
                                                 <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
+                                                <span className="text-[10px] text-muted-foreground truncate sm:hidden">
+                                                    {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "")}
+                                                </span>
                                                 {job.reference_id && (
-                                                    <span className="text-[10px] text-muted-foreground font-mono">{job.reference_id}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono hidden sm:block">{job.reference_id}</span>
                                                 )}
                                             </div>
                                         </td>
@@ -300,8 +303,8 @@ export default function OverviewPage() {
                 </>
             ) : (
                 <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
-                    {/* Mobile: 2 cards stacked */}
-                    <div className="grid grid-cols-1 gap-3 md:hidden">
+                    {/* Mobile: 2 cards in a row */}
+                    <div className="grid grid-cols-2 gap-3 md:hidden">
                         {mobileStatCards.map((card, i) => (
                             <StatCard key={i} label={card.label} value={card.value} href={card.href} />
                         ))}

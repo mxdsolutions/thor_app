@@ -1,21 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
-import {
-    tableBase,
-    tableHead,
-    tableHeadCell,
-    tableRow,
-    tableCell,
-    tableCellMuted
-} from "@/lib/design-system";
+import { TablePagination } from "@/components/dashboard/TablePagination";
+import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { CreateServiceModal } from "@/components/modals/CreateServiceModal";
 import { ServiceSideSheet } from "@/components/sheets/ServiceSideSheet";
 import { useServices } from "@/lib/swr";
@@ -31,28 +26,66 @@ type Service = {
     created_at: string;
 };
 
+const columns: DataTableColumn<Service>[] = [
+    {
+        key: "name",
+        label: "Service",
+        render: (s) => (
+            <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
+                    {s.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                    <p className="font-semibold truncate">{s.name}</p>
+                    {s.description && <p className="text-xs text-muted-foreground truncate">{s.description}</p>}
+                </div>
+            </div>
+        ),
+    },
+    { key: "initial", label: "Initial Value", muted: true, className: "hidden sm:table-cell", render: (s) => formatCurrency(s.initial_value) },
+    { key: "monthly", label: "Monthly Value", muted: true, className: "hidden sm:table-cell", render: (s) => formatCurrency(s.monthly_value) },
+    { key: "yearly", label: "Yearly Value", muted: true, className: "whitespace-nowrap", render: (s) => formatCurrency(s.yearly_value) },
+    {
+        key: "status",
+        label: "Status",
+        className: "hidden sm:table-cell",
+        render: (s) => (
+            <div className="flex items-center gap-2">
+                <div className={cn("w-1.5 h-1.5 rounded-full", s.status === "active" ? "bg-emerald-500" : "bg-amber-500")} />
+                <span className="font-medium text-muted-foreground capitalize">{s.status}</span>
+            </div>
+        ),
+    },
+];
+
 export default function ServicesPage() {
-    const [search, setSearch] = useState("");
+    usePageTitle("Services");
     const [showCreate, setShowCreate] = useState(false);
+    useMobileHeaderAction(useCallback(() => setShowCreate(true), []));
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(0);
+    const PAGE_SIZE = 20;
     const [selectedService, setSelectedService] = useState<Service | null>(null);
 
-    const { data: servicesData, isLoading: loading, mutate } = useServices();
-    const services: Service[] = servicesData?.items || [];
+    const { data, isLoading, mutate } = useServices(page * PAGE_SIZE, PAGE_SIZE);
+    const total: number = data?.total || 0;
 
-    const filteredServices = services.filter(s =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.description?.toLowerCase().includes(search.toLowerCase())
-    );
-
-    usePageTitle("Services");
+    const filtered = useMemo(() => {
+        const services: Service[] = data?.items || [];
+        if (!search) return services;
+        const q = search.toLowerCase();
+        return services.filter(s =>
+            s.name.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q)
+        );
+    }, [data?.items, search]);
 
     return (
         <>
             <ScrollableTableLayout
                 header={
                     <DashboardControls>
-                        <div className="flex items-center gap-3">
-                            <div className="relative flex-1 min-w-[320px] max-w-xl">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Search services..."
@@ -62,77 +95,21 @@ export default function ServicesPage() {
                                 />
                             </div>
                         </div>
-                        <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Add Service
                         </Button>
                     </DashboardControls>
                 }
+                footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
-                <table className={tableBase + " border-collapse min-w-full"}>
-                    <thead className={tableHead + " sticky top-0 z-10"}>
-                        <tr>
-                            <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Service</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Initial Value</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Monthly Value</th>
-                            <th className={tableHeadCell + " px-4"}>Yearly Value</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
-                            <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">Loading services...</td>
-                            </tr>
-                        ) : filteredServices.length === 0 ? (
-                            <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No services found.</td>
-                            </tr>
-                        ) : (
-                            filteredServices.map((service) => (
-                                <tr key={service.id} className={tableRow + " group cursor-pointer"} onClick={() => setSelectedService(service)}>
-                                    <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
-                                                {service.name.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="font-semibold truncate">{service.name}</p>
-                                                {service.description && <p className="text-xs text-muted-foreground truncate">{service.description}</p>}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {formatCurrency(service.initial_value)}
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {formatCurrency(service.monthly_value)}
-                                    </td>
-                                    <td className={tableCellMuted + " px-4"}>
-                                        {formatCurrency(service.yearly_value)}
-                                    </td>
-                                    <td className={tableCell + " px-4 hidden sm:table-cell"}>
-                                        <div className="flex items-center gap-2">
-                                            <div className={cn(
-                                                "w-1.5 h-1.5 rounded-full",
-                                                service.status === "active" ? "bg-emerald-500" : "bg-amber-500"
-                                            )} />
-                                            <span className="font-medium text-muted-foreground capitalize">
-                                                {service.status}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                        <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
-                                            <ArrowUpRightIcon className="w-4 h-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                <DataTable
+                    items={filtered}
+                    columns={columns}
+                    loading={isLoading}
+                    emptyMessage="No services found."
+                    onRowClick={setSelectedService}
+                />
             </ScrollableTableLayout>
 
             <CreateServiceModal

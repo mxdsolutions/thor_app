@@ -21,12 +21,13 @@ interface SideSheetLayoutProps {
     icon: ReactNode;
     iconBg: string;
     title: string;
-    subtitle: string;
+    subtitle?: string | null;
     badge?: {
         label: string;
         dotColor: string;
     };
     actions?: ReactNode;
+    footer?: ReactNode;
     contentClassName?: string;
     tabs: Tab[];
     activeTab: string;
@@ -44,6 +45,7 @@ export function SideSheetLayout({
     subtitle,
     badge,
     actions,
+    footer,
     contentClassName,
     tabs,
     activeTab,
@@ -61,7 +63,7 @@ export function SideSheetLayout({
                         </div>
                         <div className="flex-1 min-w-0">
                             <SheetTitle className="text-[22px] font-bold truncate leading-tight">{title}</SheetTitle>
-                            <SheetDescription className="sr-only">{subtitle}</SheetDescription>
+                            <SheetDescription className="sr-only">{subtitle || title}</SheetDescription>
                             {(badge || actions) && (
                                 <div className="flex items-center justify-between gap-3 mt-[2px]">
                                     <div className="flex items-center gap-2">
@@ -115,6 +117,12 @@ export function SideSheetLayout({
                     <div className="flex-1 overflow-y-auto p-6">
                         {children}
                     </div>
+
+                    {footer && (
+                        <div className="p-4 border-t border-border bg-background shrink-0">
+                            {footer}
+                        </div>
+                    )}
                 </div>
             </SheetContent>
         </Sheet>

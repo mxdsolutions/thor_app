@@ -102,8 +102,9 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 - Always validate POST/PATCH bodies with Zod schemas from `lib/validation.ts`
 - For tenant-scoped GET list routes, prefer `tenantListQuery()` from `_lib/list-query.ts` — it bakes in `.eq("tenant_id", tenantId)`, pagination, ordering, and a search OR clause so the tenant filter can't be forgotten. For routes with complex joins or many filters you can build the query manually, but you **must** still call `.eq("tenant_id", tenantId)` on every SELECT, UPDATE, and DELETE.
 - Use `parsePagination()` for GET routes — defaults: limit=50, max=200
-- Use `serverError()`, `validationError()`, `notFoundError()` from `_lib/errors.ts`
+- Use `serverError()`, `validationError()`, `notFoundError()`, `missingParamError()` from `_lib/errors.ts` — **never** use inline `NextResponse.json({ error: ... })` for error responses
 - Always include `tenant_id` on inserts and `.eq("tenant_id", tenantId)` on updates and deletes — never rely on RLS alone
+- **No hard deletes.** All entities use soft-delete via an `archived` / status column. There are no `DELETE` API endpoints for business entities — instead, PATCH the record to an archived state. This preserves data integrity and audit trails. The only exceptions are join-table rows (e.g. `job_assignees`, `quote_sections`) where hard delete is acceptable.
 
 ### Platform Admin API Routes
 
@@ -241,6 +242,18 @@ Use `SideSheetLayout` from `features/side-sheets/`:
 - Props: `open`, `onOpenChange`, `icon`, `iconBg`, `title`, `subtitle`, `badge`, `tabs`, `activeTab`, `onTabChange`
 - Standard tabs: Details, Notes, Activity
 
+### Middleware & Tenant Resolution
+
+Middleware (`middleware.ts`) resolves the tenant for every request using three strategies in order:
+
+1. **Custom domain** — looks up `tenants.custom_domain` in Supabase (e.g. `app.clientco.com`)
+2. **Subdomain** — extracts the slug from `{slug}.platform.com` and looks up `tenants.slug`
+3. **JWT fallback** — reads `app_metadata.active_tenant_id` from the session token
+
+Results are cached in an in-memory `Map` (60s TTL, max 500 entries) with LRU-style eviction when full. Platform domains (`localhost`, `admin.mxdsolutions.com.au`) bypass tenant lookup entirely.
+
+The resolved `tenant_id` and `slug` are stored in `x-tenant-id` / `x-tenant-slug` request headers, which `withAuth()` reads in API routes.
+
 ### Tenant & Roles
 
 - Middleware resolves tenant from custom domain → subdomain → JWT claims fallback, with in-memory caching (60s TTL)
@@ -251,7 +264,7 @@ Use `SideSheetLayout` from `features/side-sheets/`:
 - **Tenant isolation is enforced two ways:**
   1. **Postgres RLS** — every tenant-scoped table has strict `tenant_id = get_user_tenant_id()` policies. No loose `auth.role() = 'authenticated'` policies are allowed.
   2. **Explicit `.eq("tenant_id", tenantId)` in API routes** — defense-in-depth. Use the `tenantListQuery` helper from `app/api/_lib/list-query.ts` for new GET routes so the filter cannot be forgotten.
-- **Role-based permission enforcement is not yet wired up.** Routes that need to gate by role (e.g. owners only) check `tenant_memberships.role` inline — see `app/api/users/route.ts` for the pattern. Do not invent a `hasPermission()` helper without designing the role/resource map first.
+- **Role-based permission enforcement:** Client-side hooks (`usePermission()`, `useRole()` in `lib/tenant-context.tsx`) resolve the current user's role and can check permissions. However, **API routes do not yet enforce role-based access consistently** — routes that need to gate by role (e.g. owners only) check `tenant_memberships.role` inline (see `app/api/users/route.ts` for the pattern). Do not invent a `hasPermission()` helper without designing the role/resource map first.
 
 ### Server Actions
 
@@ -275,6 +288,34 @@ export async function myAction(formData: FormData) {
 **When to use server actions vs API routes:**
 - Server actions: auth flows, form submissions, one-off mutations that don't need REST endpoints
 - API routes: CRUD operations that SWR hooks consume, integrations, webhooks
+
+### Reusable Components
+
+**`DataTable`** (`components/dashboard/DataTable.tsx`) — Generic typed table for list pages. Handles loading skeletons, empty states, hover-reveal row actions, and responsive column hiding. Use this instead of building raw `<table>` markup:
+
+```tsx
+import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
+
+const columns: DataTableColumn<Contact>[] = [
+    { key: "name", label: "Name", render: (c) => <span className="font-semibold">{c.first_name} {c.last_name}</span> },
+    { key: "email", label: "Email", render: (c) => c.email || "—", muted: true, className: "hidden sm:table-cell" },
+];
+
+<DataTable items={contacts} columns={columns} loading={isLoading} onRowClick={setSelected} />
+```
+
+**`EntitySearchDropdown`** (`components/ui/entity-search-dropdown.tsx`) — Searchable dropdown with inline "Create new" modal for contact/company/job selection in forms. Use this in modals instead of building custom dropdowns.
+
+**`useFormSubmit`** (`lib/hooks/use-form-submit.ts`) — Hook for modal form submission. Handles saving state, fetch, optional Zod validation, toast notifications, and error handling:
+
+```tsx
+const { saving, submit } = useFormSubmit({
+    url: "/api/contacts",
+    schema: contactSchema,
+    onSuccess: (result) => { onCreated?.(result); onOpenChange(false); },
+    successMessage: "Contact created",
+});
+```
 
 ### Route Constants
 
@@ -355,3 +396,10 @@ Each audit has:
 - **Run one file:** `npx vitest run path/to/file.test.ts`
 - **Watch mode:** `npx vitest`
 - Test files go next to source: `route.test.ts`, `component.test.tsx`
+
+---
+
+## Known Issues
+
+- **Line-items amount recalculation is not atomic** (`app/api/_lib/line-items.ts`) — concurrent requests can produce incorrect job totals. A proper fix requires a Postgres function (e.g. `recalc_job_amount` RPC) that computes and updates in a single transaction.
+- **Stripe integration is stubbed** — `app/dashboard/settings/company/subscription/page.tsx` has TODO placeholders for Stripe checkout/portal API calls.

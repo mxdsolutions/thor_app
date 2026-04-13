@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { validationError, serverError } from "@/app/api/_lib/errors";
+import { validationError, serverError, missingParamError } from "@/app/api/_lib/errors";
 import { scheduleEntrySchema, scheduleEntryUpdateSchema } from "@/lib/validation";
 
 export const GET = withAuth(async (request, { supabase, tenantId }) => {
@@ -113,7 +113,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
 export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+    if (!id) return missingParamError("id");
 
     const { error } = await supabase
         .from("job_schedule_entries")

@@ -1,25 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
+import { IconPaperclip, IconX, IconPlus } from "@tabler/icons-react";
+import useSWR from "swr";
+
+export type EmailAttachment = {
+    name: string;
+    contentType: string;
+    contentBytes: string; // base64
+};
 
 interface ComposeEmailModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onSent?: () => void;
     defaultTo?: string;
+    defaultSubject?: string;
+    defaultBody?: string;
+    defaultAttachments?: EmailAttachment[];
 }
 
-export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: ComposeEmailModalProps) {
+const fetcher = (url: string) => fetch(url).then(r => r.json());
+
+export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defaultSubject, defaultBody, defaultAttachments }: ComposeEmailModalProps) {
     const [sending, setSending] = useState(false);
     const [to, setTo] = useState(defaultTo || "");
     const [cc, setCc] = useState("");
-    const [subject, setSubject] = useState("");
-    const [body, setBody] = useState("");
+    const [subject, setSubject] = useState(defaultSubject || "");
+    const [body, setBody] = useState(defaultBody || "");
     const [showCc, setShowCc] = useState(false);
+    const [attachments, setAttachments] = useState<EmailAttachment[]>(defaultAttachments || []);
+
+    // Fetch connected email address
+    const { data: outlookData } = useSWR(open ? "/api/integrations/outlook" : null, fetcher);
+    const fromEmail: string | null = outlookData?.connection?.email_address || null;
+
+    // Sync defaults when modal opens with new values
+    useEffect(() => {
+        if (open) {
+            setTo(defaultTo || "");
+            setSubject(defaultSubject || "");
+            setBody(defaultBody || "");
+            setAttachments(defaultAttachments || []);
+        }
+    }, [open, defaultTo, defaultSubject, defaultBody, defaultAttachments]);
+
+    const removeAttachment = (idx: number) => {
+        setAttachments(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files) return;
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = (reader.result as string).split(",")[1];
+                setAttachments(prev => [...prev, {
+                    name: file.name,
+                    contentType: file.type || "application/octet-stream",
+                    contentBytes: base64,
+                }]);
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = "";
+    };
 
     const reset = () => {
         setTo(defaultTo || "");
@@ -27,11 +78,12 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
         setSubject("");
         setBody("");
         setShowCc(false);
+        setAttachments([]);
     };
 
     const handleSend = async () => {
-        if (!to.trim() || !subject.trim() || !body.trim()) {
-            toast.error("Please fill in To, Subject, and Body");
+        if (!to.trim() || !subject.trim()) {
+            toast.error("Please fill in To and Subject");
             return;
         }
 
@@ -49,6 +101,7 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
                     subject,
                     body,
                     contentType: "HTML",
+                    attachments: attachments.length > 0 ? attachments : undefined,
                 }),
             });
 
@@ -70,13 +123,22 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>New Email</DialogTitle>
                     <DialogDescription>Compose and send an email from your connected Outlook account.</DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 mt-2">
+                    {/* From */}
+                    {fromEmail && (
+                        <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium text-muted-foreground">From</span>
+                            <span className="text-foreground">{fromEmail}</span>
+                        </div>
+                    )}
+
+                    {/* To */}
                     <div>
                         <div className="flex items-center justify-between mb-1.5">
                             <label className="text-sm font-medium text-muted-foreground">To</label>
@@ -108,6 +170,7 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
                         </div>
                     )}
 
+                    {/* Subject */}
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Subject</label>
                         <Input
@@ -117,21 +180,53 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo }: Com
                         />
                     </div>
 
+                    {/* Body — Rich Text Editor */}
                     <div>
                         <label className="text-sm font-medium text-muted-foreground mb-1.5 block">Body</label>
-                        <textarea
-                            className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm min-h-[160px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
-                            placeholder="Write your email..."
+                        <RichTextEditor
                             value={body}
-                            onChange={(e) => setBody(e.target.value)}
+                            onChange={setBody}
+                            placeholder="Write your email..."
+                            className="min-h-[240px]"
                         />
                     </div>
 
+                    {/* Attachments */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {attachments.map((att, idx) => (
+                            <div
+                                key={idx}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary text-sm"
+                            >
+                                <IconPaperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                <span className="truncate max-w-[180px]">{att.name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => removeAttachment(idx)}
+                                    className="p-0.5 rounded hover:bg-muted-foreground/20 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <IconX className="w-3 h-3" />
+                                </button>
+                            </div>
+                        ))}
+                        <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer">
+                            <IconPlus className="w-3.5 h-3.5" />
+                            Attach file
+                            <input
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={handleFileUpload}
+                            />
+                        </label>
+                    </div>
+
+                    {/* Actions */}
                     <div className="flex justify-end gap-3 pt-2">
-                        <Button variant="ghost" size="sm" className="" onClick={() => onOpenChange(false)}>
+                        <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
-                        <Button size="sm" className="" onClick={handleSend} disabled={sending}>
+                        <Button size="sm" onClick={handleSend} disabled={sending}>
                             {sending ? "Sending..." : "Send Email"}
                         </Button>
                     </div>

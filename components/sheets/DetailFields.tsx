@@ -109,7 +109,7 @@ function EditableValue({
     // Non-editable fields
     if (!field.dbColumn || !onSave) {
         return (
-            <span className="text-[15px] text-foreground text-right min-w-0 truncate">
+            <span className={cn("text-[15px] text-foreground min-w-0 truncate", !field.label ? "text-left" : "text-right")}>
                 {field.value || <span className="text-muted-foreground/40">&mdash;</span>}
             </span>
         );
@@ -117,7 +117,8 @@ function EditableValue({
 
     // Editable text/number/date
     if (editing) {
-        const sharedClasses = "text-[15px] text-foreground text-right bg-muted/40 border border-border rounded-lg py-1.5 px-2.5 min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background transition-shadow";
+        const isLabelless = !field.label;
+        const sharedClasses = cn("text-[15px] text-foreground bg-muted/40 border border-border rounded-lg py-1.5 px-2.5 min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background transition-shadow", isLabelless ? "text-left" : "text-right");
         if (field.type === "textarea") {
             return (
                 <textarea
@@ -154,7 +155,8 @@ function EditableValue({
             type="button"
             onClick={() => setEditing(true)}
             className={cn(
-                "text-[15px] text-foreground text-right min-w-0 truncate hover:bg-muted/50 rounded-md px-1.5 py-0.5 -mr-1.5 transition-colors cursor-text",
+                "text-[15px] text-foreground min-w-0 truncate hover:bg-muted/50 rounded-md px-1.5 py-0.5 transition-colors cursor-text",
+                !field.label ? "text-left -ml-1.5" : "text-right -mr-1.5",
                 saving && "opacity-50"
             )}
         >

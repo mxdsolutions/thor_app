@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { serverError, notFoundError } from "@/app/api/_lib/errors";
+import { serverError, notFoundError, missingParamError } from "@/app/api/_lib/errors";
 import { xeroFetch } from "@/lib/xero";
 
 export const POST = withAuth(async (request: NextRequest, { supabase, tenantId }) => {
     const id = request.nextUrl.pathname.split("/").at(-2);
-    if (!id) {
-        return NextResponse.json({ error: "Invoice ID is required" }, { status: 400 });
-    }
+    if (!id) return missingParamError("Invoice ID");
 
     // Get the invoice
     const { data: invoice, error: invoiceError } = await supabase

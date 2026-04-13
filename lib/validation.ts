@@ -118,6 +118,11 @@ export const sendEmailSchema = z.object({
     subject: z.string().min(1, "Subject is required"),
     body: z.string().min(1, "Body is required"),
     contentType: z.enum(["HTML", "Text"]).optional().default("HTML"),
+    attachments: z.array(z.object({
+        name: z.string(),
+        contentType: z.string(),
+        contentBytes: z.string(), // base64
+    })).optional(),
 });
 
 export const replyEmailSchema = z.object({

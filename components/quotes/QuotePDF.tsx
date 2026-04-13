@@ -85,8 +85,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#e5e5e5",
     },
-    logo: { width: 77, height: 55, objectFit: "contain" },
-    companyName: { fontSize: 16, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+    logo: { width: 150, height: 69, objectFit: "contain", objectPosition: "left top" },
+    companyName: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#666", lineHeight: 1.5 },
     companyDetail: { fontSize: 8, color: "#666", lineHeight: 1.5 },
     // Quote title block
     titleBlock: {
@@ -274,24 +274,18 @@ export function QuotePDF({ quote, lineItems, sections = [], tenant }: QuotePDFPr
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                {/* Header — company branding (consolidated, no separate FROM block) */}
+                {/* Header — logo left, company details right */}
                 <View style={styles.header}>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 0 }}>
-                        {tenant.logo_url && (
-                            // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
-                            <Image src={tenant.logo_url} style={styles.logo} />
-                        )}
-                        <View>
-                            <Text style={styles.companyName}>{companyName}</Text>
-                            {tenant.abn && (
-                                <Text style={styles.companyDetail}>ABN {tenant.abn}</Text>
-                            )}
-                        </View>
-                    </View>
+                    {tenant.logo_url && (
+                        // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
+                        <Image src={tenant.logo_url} style={styles.logo} />
+                    )}
                     <View style={{ textAlign: "right" }}>
+                        <Text style={styles.companyName}>{companyName}</Text>
                         {tenant.address && <Text style={styles.companyDetail}>{tenant.address}</Text>}
                         {tenant.phone && <Text style={styles.companyDetail}>{tenant.phone}</Text>}
                         {tenant.email && <Text style={styles.companyDetail}>{tenant.email}</Text>}
+                        {tenant.abn && <Text style={styles.companyDetail}>ABN {tenant.abn}</Text>}
                     </View>
                 </View>
 
@@ -391,8 +385,8 @@ export function QuotePDF({ quote, lineItems, sections = [], tenant }: QuotePDFPr
                     })}
                 </View>
 
-                {/* Summary */}
-                <View style={styles.summaryContainer}>
+                {/* Summary — wrap={false} prevents splitting across pages */}
+                <View style={styles.summaryContainer} wrap={false}>
                     <View style={styles.summaryBox}>
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Subtotal</Text>
@@ -412,7 +406,7 @@ export function QuotePDF({ quote, lineItems, sections = [], tenant }: QuotePDFPr
 
                 {/* Notes / Description */}
                 {quote.description && (
-                    <View style={styles.notesSection}>
+                    <View style={styles.notesSection} wrap={false}>
                         <Text style={styles.notesLabel}>Notes</Text>
                         <Text style={styles.notesText}>{quote.description}</Text>
                     </View>

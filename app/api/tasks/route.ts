@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
-import { validationError, serverError } from "@/app/api/_lib/errors";
+import { validationError, serverError, missingParamError } from "@/app/api/_lib/errors";
 import { taskSchema, taskUpdateSchema } from "@/lib/validation";
 
 export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
@@ -61,7 +61,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const { id, ...updates } = body;
-    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+    if (!id) return missingParamError("id");
 
     const validation = taskUpdateSchema.safeParse(updates);
     if (!validation.success) return validationError(validation.error);

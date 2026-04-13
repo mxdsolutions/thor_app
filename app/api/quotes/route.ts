@@ -9,7 +9,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 
     let query = supabase
         .from("quotes")
-        .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title)", { count: "exact" })
+        .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title), job:jobs(id, title, status)", { count: "exact" })
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
@@ -73,7 +73,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
                 created_by: user.id,
                 tenant_id: tenantId,
             })
-            .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title)")
+            .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title), job:jobs(id, title, status)")
             .single();
 
         if (quoteError) return serverError();

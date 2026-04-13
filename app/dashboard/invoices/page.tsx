@@ -1,23 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
-import {
-    tableBase,
-    tableHead,
-    tableHeadCell,
-    tableRow,
-    tableCell,
-    tableCellMuted,
-    invoiceStatusDotClass,
-} from "@/lib/design-system";
+import { TablePagination } from "@/components/dashboard/TablePagination";
+import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
+import { invoiceStatusDotClass } from "@/lib/design-system";
+import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { useInvoices } from "@/lib/swr";
 import { CreateInvoiceModal } from "@/components/modals/CreateInvoiceModal";
 import { InvoiceSideSheet } from "@/components/sheets/InvoiceSideSheet";
@@ -38,17 +34,39 @@ type Invoice = {
     contact?: { id: string; first_name: string; last_name: string } | null;
 };
 
+const columns: DataTableColumn<Invoice>[] = [
+    { key: "number", label: "Invoice #", render: (inv) => <span className="font-semibold">{inv.invoice_number || inv.reference || "Draft"}</span> },
+    { key: "company", label: "Company", muted: true, className: "hidden sm:table-cell", render: (inv) => inv.company?.name || "—" },
+    {
+        key: "status",
+        label: "Status",
+        render: (inv) => (
+            <div className="flex items-center gap-2">
+                <div className={cn("w-1.5 h-1.5 rounded-full", invoiceStatusDotClass[inv.status] || "bg-gray-400")} />
+                <span className="font-medium text-muted-foreground capitalize">{inv.status}</span>
+            </div>
+        ),
+    },
+    { key: "total", label: "Total", className: "text-right", render: (inv) => <span className="font-bold">{formatCurrency(inv.total)}</span> },
+    { key: "due", label: "Due", className: "text-right hidden sm:table-cell", render: (inv) => <span className="text-muted-foreground">{formatCurrency(inv.amount_due)}</span> },
+    { key: "dueDate", label: "Due Date", muted: true, className: "hidden md:table-cell", render: (inv) => inv.due_date || "—" },
+    { key: "created", label: "Created", muted: true, className: "hidden md:table-cell", render: (inv) => timeAgo(inv.created_at) },
+];
+
 export default function InvoicesPage() {
     usePageTitle("Invoices");
+    const [createOpen, setCreateOpen] = useState(false);
+    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("All");
-    const [createOpen, setCreateOpen] = useState(false);
+    const [page, setPage] = useState(0);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
-    const { data, isLoading, mutate } = useInvoices();
-    const allInvoices: Invoice[] = data?.items || [];
+    const PAGE_SIZE = 20;
+    const { data, isLoading, mutate } = useInvoices(page * PAGE_SIZE, PAGE_SIZE);
+    const total: number = data?.total || 0;
 
-    const invoices = allInvoices.filter((inv) => {
+    const invoices = useMemo(() => (data?.items || [] as Invoice[]).filter((inv: Invoice) => {
         const matchesSearch =
             !search ||
             (inv.invoice_number || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -56,24 +74,24 @@ export default function InvoicesPage() {
             (inv.company?.name || "").toLowerCase().includes(search.toLowerCase());
         const matchesStatus = statusFilter === "All" || inv.status === statusFilter;
         return matchesSearch && matchesStatus;
-    });
+    }), [data?.items, search, statusFilter]);
 
     return (
         <>
             <ScrollableTableLayout
                 header={
-                    <>
-                        <DashboardControls>
-                            <div className="flex items-center gap-3">
-                                <div className="relative flex-1 min-w-[320px] max-w-xl">
-                                    <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        placeholder="Search invoices..."
-                                        className="pl-9 rounded-xl border-border/50"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                    />
-                                </div>
+                    <DashboardControls>
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
+                                <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search invoices..."
+                                    className="pl-9 rounded-xl border-border/50"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                />
+                            </div>
+                            <MobileFilters>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="w-[140px]">
                                         <SelectValue placeholder="Status" />
@@ -86,75 +104,23 @@ export default function InvoicesPage() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            </div>
-                            <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
-                                <PlusIcon className="w-4 h-4 mr-2" />
-                                Add Invoice
-                            </Button>
-                        </DashboardControls>
-                    </>
+                            </MobileFilters>
+                        </div>
+                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                            <PlusIcon className="w-4 h-4 mr-2" />
+                            Add Invoice
+                        </Button>
+                    </DashboardControls>
                 }
+                footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
-                {isLoading ? (
-                    <div className="p-10 text-center text-muted-foreground text-sm">Loading invoices...</div>
-                ) : (
-                    <table className={tableBase + " border-collapse min-w-full"}>
-                        <thead className={tableHead + " sticky top-0 z-10"}>
-                            <tr>
-                                <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Invoice #</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Company</th>
-                                <th className={tableHeadCell + " px-4"}>Status</th>
-                                <th className={tableHeadCell + " px-4 text-right"}>Total</th>
-                                <th className={tableHeadCell + " px-4 text-right hidden sm:table-cell"}>Due</th>
-                                <th className={tableHeadCell + " px-4 hidden md:table-cell"}>Due Date</th>
-                                <th className={tableHeadCell + " px-4 hidden md:table-cell"}>Created</th>
-                                <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {invoices.map((inv) => (
-                                <tr key={inv.id} className={tableRow + " group cursor-pointer"} onClick={() => setSelectedInvoice(inv)}>
-                                    <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
-                                        <span className="font-semibold">{inv.invoice_number || inv.reference || "Draft"}</span>
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {inv.company?.name || "—"}
-                                    </td>
-                                    <td className={tableCell + " px-4"}>
-                                        <div className="flex items-center gap-2">
-                                            <div className={cn("w-1.5 h-1.5 rounded-full", invoiceStatusDotClass[inv.status] || "bg-gray-400")} />
-                                            <span className="font-medium text-muted-foreground capitalize">{inv.status}</span>
-                                        </div>
-                                    </td>
-                                    <td className={tableCell + " px-4 text-right"}>
-                                        <span className="font-bold">{formatCurrency(inv.total)}</span>
-                                    </td>
-                                    <td className={tableCell + " px-4 text-right hidden sm:table-cell"}>
-                                        <span className="text-muted-foreground">{formatCurrency(inv.amount_due)}</span>
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
-                                        {inv.due_date || "—"}
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
-                                        {timeAgo(inv.created_at)}
-                                    </td>
-                                    <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                        <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
-                                            <ArrowUpRightIcon className="w-4 h-4" />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {invoices.length === 0 && (
-                                <tr>
-                                    <td colSpan={8} className="text-center py-10 text-muted-foreground text-sm">
-                                        {allInvoices.length === 0 ? "No invoices yet. Create your first invoice." : "No invoices match your filters."}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                )}
+                <DataTable
+                    items={invoices}
+                    columns={columns}
+                    loading={isLoading}
+                    emptyMessage={!data?.items?.length ? "No invoices yet. Create your first invoice." : "No invoices match your filters."}
+                    onRowClick={setSelectedInvoice}
+                />
             </ScrollableTableLayout>
 
             <CreateInvoiceModal

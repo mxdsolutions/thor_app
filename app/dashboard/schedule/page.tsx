@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { useScheduleEntries, useStatusConfig } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, toStatusConfig } from "@/lib/status-config";
 import { CalendarGrid } from "@/components/schedule/CalendarGrid";
@@ -199,6 +200,8 @@ function SchedulePageContent() {
         setModalOpen(true);
     };
 
+    useMobileHeaderAction(useCallback(() => handleAddEntry(), []));
+
     const handleEditEntry = (entry: ScheduleEntry) => {
         setEditingEntry(entry);
         setModalOpen(true);
@@ -315,14 +318,6 @@ function SchedulePageContent() {
                                 aria-label="Next day"
                             >
                                 <ChevronRightIcon className="w-4 h-4" />
-                            </Button>
-                            <Button
-                                size="icon"
-                                className="h-9 w-9 shrink-0"
-                                onClick={() => handleAddEntry(mobileSelectedDate)}
-                                aria-label="Schedule job"
-                            >
-                                <PlusIcon className="w-4 h-4" />
                             </Button>
                         </div>
                     </DashboardControls>

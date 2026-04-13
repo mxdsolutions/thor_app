@@ -23,7 +23,9 @@ import { NotificationSheet } from "@/features/shell/NotificationSheet";
 import { SignOutDialog } from "@/features/shell/SignOutDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
+import { MobileHeaderActionProvider, useMobileHeaderActionValue } from "@/lib/mobile-header-action-context";
 import { pageHeadingClass } from "@/lib/design-system";
+import { IconPlus as PlusIcon } from "@tabler/icons-react";
 
 function PageTitle({ companyName }: { companyName?: string | null }) {
     const title = useCurrentPageTitle();
@@ -35,6 +37,22 @@ function PageTitle({ companyName }: { companyName?: string | null }) {
                 <span className="text-muted-foreground font-bold"> | {companyName}</span>
             )}
         </h1>
+    );
+}
+
+function MobileHeaderActionButton() {
+    const action = useMobileHeaderActionValue();
+    if (!action) return <div className="w-10" />;
+    return (
+        <div className="w-10">
+            <button
+                onClick={action}
+                className="w-9 h-9 rounded-lg bg-foreground text-background flex items-center justify-center hover:bg-foreground/90 transition-colors"
+                aria-label="Create"
+            >
+                <PlusIcon className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+        </div>
     );
 }
 
@@ -198,6 +216,7 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
             {/* Main content */}
             <main className="flex-1 min-w-0 overflow-hidden md:ml-[280px]">
               <PageTitleProvider>
+              <MobileHeaderActionProvider>
                 <div className="bg-background h-dvh overflow-hidden flex flex-col">
                     {/* Desktop header — inside the container */}
                     <header className="hidden md:flex h-20 border-b border-border items-center px-6 lg:px-10 gap-4 shrink-0">
@@ -237,13 +256,14 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                         <div className="flex-1 text-center">
                             <PageTitle />
                         </div>
-                        <div className="w-10" />
+                        <MobileHeaderActionButton />
                     </header>
 
                     <div className="relative w-full pt-4 lg:pt-6 pb-16 md:pb-0 min-w-0 flex-1 min-h-0 overflow-y-auto">
                         <ErrorBoundary>{children}</ErrorBoundary>
                     </div>
                 </div>
+              </MobileHeaderActionProvider>
               </PageTitleProvider>
             </main>
 

@@ -117,3 +117,35 @@
     opacity: 0;
   }
 }
+
+/* Tiptap rich text editor */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  opacity: 0.4;
+  pointer-events: none;
+  height: 0;
+}
+
+.tiptap {
+  outline: none;
+}
+
+.tiptap p {
+  margin: 0.25em 0;
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding-left: 1.25em;
+  margin: 0.25em 0;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+}

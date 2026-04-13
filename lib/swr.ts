@@ -28,18 +28,27 @@ const defaultConfig: SWRConfiguration = {
     dedupingInterval: 10000,
 };
 
-export function useCompanies(search?: string) {
-    const params = search ? `?search=${encodeURIComponent(search)}` : "";
-    return useSWR(`/api/companies${params}`, fetcher, { ...defaultConfig, keepPreviousData: true });
+export function useCompanies(search?: string, offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/companies?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useContacts(search?: string) {
-    const params = search ? `?search=${encodeURIComponent(search)}` : "";
-    return useSWR(`/api/contacts${params}`, fetcher, { ...defaultConfig, keepPreviousData: true });
+export function useContacts(search?: string, offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/contacts?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useJobs() {
-    return useSWR("/api/jobs", fetcher, defaultConfig);
+export function useJobs(offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/jobs?${params.toString()}`, fetcher, defaultConfig);
 }
 
 export function useScopes() {
@@ -69,8 +78,12 @@ export function usePricing(search?: string, trade?: string, offset = 0, limit = 
     return useSWR(`/api/pricing?${params.toString()}`, fetcher, defaultConfig);
 }
 
-export function useQuotes() {
-    return useSWR("/api/quotes", fetcher, defaultConfig);
+export function useQuotes(search?: string, offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/quotes?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
 export function useReports() {
@@ -81,12 +94,18 @@ export function useLicenses() {
     return useSWR("/api/licenses", fetcher, defaultConfig);
 }
 
-export function useInvoices() {
-    return useSWR("/api/invoices", fetcher, defaultConfig);
+export function useInvoices(offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/invoices?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useServices() {
-    return useSWR("/api/services", fetcher, defaultConfig);
+export function useServices(offset = 0, limit = 50) {
+    const params = new URLSearchParams();
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    return useSWR(`/api/services?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
 export function useMyTasks() {
@@ -185,6 +204,10 @@ export function useContactOptions(enabled = true) {
 
 export function useServiceOptions(enabled = true) {
     return useSWR(enabled ? "/api/services?limit=200" : null, fetcher, defaultConfig);
+}
+
+export function useJobOptions(enabled = true) {
+    return useSWR(enabled ? "/api/jobs?limit=200" : null, fetcher, defaultConfig);
 }
 
 export { fetcher };

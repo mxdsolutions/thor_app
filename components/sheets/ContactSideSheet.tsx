@@ -5,7 +5,7 @@ import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
-import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 type Contact = {
     id: string;
@@ -14,6 +14,7 @@ type Contact = {
     email: string | null;
     phone: string | null;
     job_title: string | null;
+    type: string | null;
     address: string | null;
     city: string | null;
     state: string | null;
@@ -39,14 +40,16 @@ export function ContactSideSheet({ contact, open, onOpenChange, onUpdate }: Cont
 
     const handleSave = useCallback(async (column: string, value: string | number | null) => {
         if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("contacts")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
+        const res = await fetch("/api/contacts", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.id, [column]: value }),
+        });
+        if (res.ok) {
             setData((prev) => prev ? { ...prev, [column]: value } : prev);
             onUpdate?.();
+        } else {
+            toast.error("Failed to update field");
         }
     }, [data, onUpdate]);
 
@@ -86,9 +89,19 @@ export function ContactSideSheet({ contact, open, onOpenChange, onUpdate }: Cont
                             fields={[
                                 { label: "First Name", value: data.first_name, dbColumn: "first_name", type: "text", rawValue: data.first_name },
                                 { label: "Last Name", value: data.last_name, dbColumn: "last_name", type: "text", rawValue: data.last_name },
+                                {
+                                    label: "Type",
+                                    value: data.type ? data.type.charAt(0).toUpperCase() + data.type.slice(1) : null,
+                                    dbColumn: "type",
+                                    type: "select",
+                                    rawValue: data.type,
+                                    options: [
+                                        { value: "business", label: "Business" },
+                                        { value: "customer", label: "Customer" },
+                                    ],
+                                },
                                 { label: "Email", value: data.email, dbColumn: "email", type: "text", rawValue: data.email },
                                 { label: "Phone", value: data.phone, dbColumn: "phone", type: "text", rawValue: data.phone },
-                                { label: "Job Title", value: data.job_title, dbColumn: "job_title", type: "text", rawValue: data.job_title },
                                 { label: "Address", value: data.address, dbColumn: "address", type: "text", rawValue: data.address },
                                 { label: "City", value: data.city, dbColumn: "city", type: "text", rawValue: data.city },
                                 { label: "State", value: data.state, dbColumn: "state", type: "text", rawValue: data.state },

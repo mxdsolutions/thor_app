@@ -1,10 +1,13 @@
 "use client";
 
-import { Suspense, useState, useMemo } from "react";
+import { Suspense, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
+import { TablePagination } from "@/components/dashboard/TablePagination";
 import {
     tableBase,
     tableHead,
@@ -123,10 +126,14 @@ function JobsPageContent() {
     }, [filteredJobsRaw, typeFilter, assignedFilter, statusFilter, paidFilter]);
     const [showCreate, setShowCreate] = useState(false);
     const [view, setView] = useState<"table" | "kanban">("table");
+    const [page, setPage] = useState(0);
+    const PAGE_SIZE = 20;
+    const paginatedJobs = useMemo(() => filteredJobs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filteredJobs, page]);
 
     const openJob = (jobId: string) => router.push(`/dashboard/jobs/${jobId}`);
 
     usePageTitle("Jobs");
+    useMobileHeaderAction(useCallback(() => setShowCreate(true), []));
 
 
     return (
@@ -134,8 +141,8 @@ function JobsPageContent() {
             <ScrollableTableLayout
                 header={
                     <DashboardControls>
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <div className="relative flex-1 min-w-[280px] max-w-sm">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <div className="relative flex-1 min-w-0 md:min-w-[280px] md:max-w-sm">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                 <Input
                                     placeholder="Search jobs..."
@@ -144,52 +151,54 @@ function JobsPageContent() {
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
                             </div>
-                            <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="All">All Types</SelectItem>
-                                    {services.map(s => (
-                                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={assignedFilter} onValueChange={setAssignedFilter}>
-                                <SelectTrigger className="w-[150px]">
-                                    <SelectValue placeholder="Assigned" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="All">Anyone</SelectItem>
-                                    <SelectItem value="unassigned">Unassigned</SelectItem>
-                                    {users.map(u => (
-                                        <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || "—"}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="All">All Statuses</SelectItem>
-                                    {(statuses as StatusItem[]).map((s) => (
-                                        <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={paidFilter} onValueChange={setPaidFilter}>
-                                <SelectTrigger className="w-[140px]">
-                                    <SelectValue placeholder="Payment" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="All">All Payments</SelectItem>
-                                    <SelectItem value="not_paid">Not Paid</SelectItem>
-                                    <SelectItem value="partly_paid">Partly Paid</SelectItem>
-                                    <SelectItem value="paid_in_full">Paid</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <div className="flex gap-1 p-1 rounded-lg bg-secondary">
+                            <MobileFilters>
+                                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Types</SelectItem>
+                                        {services.map(s => (
+                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={assignedFilter} onValueChange={setAssignedFilter}>
+                                    <SelectTrigger className="w-[150px]">
+                                        <SelectValue placeholder="Assigned" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">Anyone</SelectItem>
+                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                        {users.map(u => (
+                                            <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || "—"}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Statuses</SelectItem>
+                                        {(statuses as StatusItem[]).map((s) => (
+                                            <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={paidFilter} onValueChange={setPaidFilter}>
+                                    <SelectTrigger className="w-[140px]">
+                                        <SelectValue placeholder="Payment" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="All">All Payments</SelectItem>
+                                        <SelectItem value="not_paid">Not Paid</SelectItem>
+                                        <SelectItem value="partly_paid">Partly Paid</SelectItem>
+                                        <SelectItem value="paid_in_full">Paid</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </MobileFilters>
+                            <div className="hidden md:flex gap-1 p-1 rounded-lg bg-secondary">
                                 <button
                                     onClick={() => setView("kanban")}
                                     className={cn(
@@ -212,12 +221,13 @@ function JobsPageContent() {
                                 </button>
                             </div>
                         </div>
-                        <Button className="px-6 shrink-0" onClick={() => setShowCreate(true)}>
+                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Add Job
                         </Button>
                     </DashboardControls>
                 }
+                footer={view === "table" ? <TablePagination page={page} pageSize={PAGE_SIZE} total={filteredJobs.length} onPageChange={setPage} /> : undefined}
             >
                 {view === "kanban" ? (
                     <Kanban
@@ -298,7 +308,7 @@ function JobsPageContent() {
                                     <td colSpan={8} className="text-center py-12 text-sm text-muted-foreground">No jobs found.</td>
                                 </tr>
                             ) : (
-                                filteredJobs.map((job) => (
+                                paginatedJobs.map((job) => (
                                     <tr key={job.id} className={tableRow + " group cursor-pointer"} onClick={() => openJob(job.id)}>
                                         <td className={tableCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
                                             <div className="flex flex-col min-w-0">

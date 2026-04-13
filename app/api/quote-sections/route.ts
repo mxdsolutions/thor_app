@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { serverError, missingParamError, notFoundError } from "@/app/api/_lib/errors";
+import { serverError, missingParamError, notFoundError, validationError } from "@/app/api/_lib/errors";
 import { z } from "zod";
 
 const sectionCreateSchema = z.object({
@@ -33,8 +33,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 export const POST = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const validation = sectionCreateSchema.safeParse(body);
-    if (!validation.success)
-        return NextResponse.json({ error: validation.error.flatten() }, { status: 400 });
+    if (!validation.success) return validationError(validation.error);
 
     const d = validation.data;
 
@@ -56,8 +55,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
 export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const validation = sectionUpdateSchema.safeParse(body);
-    if (!validation.success)
-        return NextResponse.json({ error: validation.error.flatten() }, { status: 400 });
+    if (!validation.success) return validationError(validation.error);
 
     const { id, ...updates } = validation.data;
 
