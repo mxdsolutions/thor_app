@@ -71,6 +71,14 @@ async function refreshAccessToken(refreshToken: string) {
     }>;
 }
 
+export class OutlookReauthRequired extends Error {
+    code = "OUTLOOK_REAUTH_REQUIRED" as const;
+    constructor(message: string) {
+        super(message);
+        this.name = "OutlookReauthRequired";
+    }
+}
+
 export async function getValidToken(supabase: SupabaseClient, userId: string): Promise<string> {
     const { data: connection, error } = await supabase
         .from("email_connections")
@@ -80,24 +88,52 @@ export async function getValidToken(supabase: SupabaseClient, userId: string): P
         .single();
 
     if (error || !connection) {
-        throw new Error("No Outlook connection found");
+        throw new OutlookReauthRequired("No Outlook connection found. Please reconnect your account.");
     }
 
     const expiresAt = new Date(connection.token_expires_at);
     const now = new Date();
     const fiveMinutes = 5 * 60 * 1000;
 
-    // Token is still valid
+    // Token is still valid — return immediately
     if (expiresAt.getTime() - now.getTime() > fiveMinutes) {
         return connection.access_token;
     }
 
-    // Refresh the token
-    const tokens = await refreshAccessToken(connection.refresh_token);
+    // Token needs refresh — use optimistic locking on the refresh_token column
+    // to ensure only one concurrent caller wins the refresh race.
+    const oldRefreshToken = connection.refresh_token;
+
+    let tokens;
+    try {
+        tokens = await refreshAccessToken(oldRefreshToken);
+    } catch {
+        // Refresh failed — could be revoked, expired, or a race loser.
+        // Re-read to check if another request already refreshed successfully.
+        const { data: updated } = await supabase
+            .from("email_connections")
+            .select("access_token, refresh_token, token_expires_at")
+            .eq("user_id", userId)
+            .eq("provider", "outlook")
+            .single();
+
+        if (updated && updated.refresh_token !== oldRefreshToken) {
+            // Another request already refreshed — use the new token
+            return updated.access_token;
+        }
+
+        // Genuinely revoked/expired — user must re-authenticate
+        throw new OutlookReauthRequired(
+            "Your Outlook connection has expired or been revoked. Please reconnect your account."
+        );
+    }
 
     const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-    await supabase
+    // Optimistic lock: only update if refresh_token still matches what we used.
+    // If another request already refreshed, this update affects 0 rows — that's fine,
+    // the other request's tokens are already persisted.
+    const { error: updateError, count } = await supabase
         .from("email_connections")
         .update({
             access_token: tokens.access_token,
@@ -105,7 +141,21 @@ export async function getValidToken(supabase: SupabaseClient, userId: string): P
             token_expires_at: newExpiresAt,
             updated_at: new Date().toISOString(),
         })
-        .eq("id", connection.id);
+        .eq("id", connection.id)
+        .eq("refresh_token", oldRefreshToken);
+
+    if (updateError) {
+        // Critical: we got new tokens from Microsoft but failed to persist them.
+        // Log loudly — but we can still return the access token for this request.
+        console.error(
+            "[microsoft-graph] CRITICAL: Failed to persist refreshed tokens for user",
+            userId,
+            updateError.message
+        );
+    } else if (count === 0) {
+        // Another request won the race and already persisted newer tokens.
+        // Our access token is still valid for this request — Microsoft issued it.
+    }
 
     return tokens.access_token;
 }

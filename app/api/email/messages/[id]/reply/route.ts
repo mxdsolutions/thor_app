@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { graphFetch } from "@/lib/microsoft-graph";
+import { graphFetch, OutlookReauthRequired } from "@/lib/microsoft-graph";
 import { replyEmailSchema } from "@/lib/validation";
 
 export async function POST(
@@ -39,6 +39,9 @@ export async function POST(
 
         return NextResponse.json({ success: true });
     } catch (err: unknown) {
+        if (err instanceof OutlookReauthRequired) {
+            return NextResponse.json({ error: err.message, code: "OUTLOOK_REAUTH_REQUIRED" }, { status: 401 });
+        }
         const message = err instanceof Error ? err.message : "Failed to send reply";
         return NextResponse.json({ error: message }, { status: 500 });
     }

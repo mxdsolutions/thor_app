@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { validationError } from "@/app/api/_lib/errors";
-import { graphFetch } from "@/lib/microsoft-graph";
+import { graphFetch, OutlookReauthRequired } from "@/lib/microsoft-graph";
 import { sendEmailSchema } from "@/lib/validation";
 
 export const POST = withAuth(async (request, { supabase, user }) => {
@@ -50,6 +50,9 @@ export const POST = withAuth(async (request, { supabase, user }) => {
 
         return NextResponse.json({ success: true });
     } catch (err: unknown) {
+        if (err instanceof OutlookReauthRequired) {
+            return NextResponse.json({ error: err.message, code: "OUTLOOK_REAUTH_REQUIRED" }, { status: 401 });
+        }
         const message = err instanceof Error ? err.message : "Failed to send email";
         return NextResponse.json({ error: message }, { status: 500 });
     }

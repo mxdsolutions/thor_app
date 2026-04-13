@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell } from "@/lib/design-system";
-import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconMail as EnvelopeIcon, IconLink as LinkIcon } from "@tabler/icons-react";
+import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconMail as EnvelopeIcon, IconLink as LinkIcon, IconSignature } from "@tabler/icons-react";
 import { ComposeEmailModal } from "@/components/modals/ComposeEmailModal";
+import { EmailSignatureModal } from "@/components/modals/EmailSignatureModal";
 import { EmailSideSheet } from "@/components/sheets/EmailSideSheet";
 import { toast } from "sonner";
 
@@ -39,6 +40,8 @@ export default function EmailsPage() {
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [showCompose, setShowCompose] = useState(false);
+    const [showSignature, setShowSignature] = useState(false);
+    const [signatureHtml, setSignatureHtml] = useState<string | null>(null);
     const [selectedEmailId, setSelectedEmailId] = useState<string | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -47,6 +50,9 @@ export default function EmailsPage() {
             const res = await fetch("/api/integrations/outlook");
             const data = await res.json();
             setConnected(data.connected);
+            if (data.connection?.signature_html) {
+                setSignatureHtml(data.connection.signature_html);
+            }
             return data.connected;
         } catch {
             setConnected(false);
@@ -65,6 +71,10 @@ export default function EmailsPage() {
             const res = await fetch(`/api/email/messages?${params}`);
             if (!res.ok) {
                 const data = await res.json();
+                if (data.code === "OUTLOOK_REAUTH_REQUIRED") {
+                    setConnected(false);
+                    return;
+                }
                 throw new Error(data.error || "Failed to fetch emails");
             }
 
@@ -181,10 +191,14 @@ export default function EmailsPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
-                                <Button variant="outline" size="sm" className="" onClick={() => fetchEmails(0, search)}>
+                                <Button variant="outline" size="sm" onClick={() => setShowSignature(true)}>
+                                    <IconSignature className="w-4 h-4 mr-1.5" />
+                                    Signature
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => fetchEmails(0, search)}>
                                     Refresh
                                 </Button>
-                                <Button size="sm" className="" onClick={() => setShowCompose(true)}>
+                                <Button size="sm" onClick={() => setShowCompose(true)}>
                                     <PlusIcon className="w-4 h-4 mr-1.5" />
                                     Compose
                                 </Button>
@@ -296,6 +310,14 @@ export default function EmailsPage() {
                 open={showCompose}
                 onOpenChange={setShowCompose}
                 onSent={() => fetchEmails(0, search)}
+                signatureHtml={signatureHtml}
+            />
+
+            <EmailSignatureModal
+                open={showSignature}
+                onOpenChange={setShowSignature}
+                signatureHtml={signatureHtml}
+                onSaved={setSignatureHtml}
             />
 
             <EmailSideSheet

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { graphFetch } from "@/lib/microsoft-graph";
+import { graphFetch, OutlookReauthRequired } from "@/lib/microsoft-graph";
 
 export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
     const searchParams = request.nextUrl.searchParams;
@@ -74,6 +74,9 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
             hasMore: !!data["@odata.nextLink"],
         });
     } catch (err: unknown) {
+        if (err instanceof OutlookReauthRequired) {
+            return NextResponse.json({ error: err.message, code: "OUTLOOK_REAUTH_REQUIRED" }, { status: 401 });
+        }
         const message = err instanceof Error ? err.message : "Failed to fetch emails";
         return NextResponse.json({ error: message }, { status: 500 });
     }

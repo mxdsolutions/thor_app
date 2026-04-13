@@ -23,16 +23,27 @@ interface ComposeEmailModalProps {
     defaultSubject?: string;
     defaultBody?: string;
     defaultAttachments?: EmailAttachment[];
+    signatureHtml?: string | null;
 }
 
 const fetcher = (url: string) => fetch(url).then(r => r.json());
 
-export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defaultSubject, defaultBody, defaultAttachments }: ComposeEmailModalProps) {
+function buildInitialBody(defaultBody?: string, signatureHtml?: string | null): string {
+    const parts: string[] = [];
+    if (defaultBody) parts.push(defaultBody);
+    if (signatureHtml) {
+        parts.push('<p></p><p>--</p>');
+        parts.push(signatureHtml);
+    }
+    return parts.join("");
+}
+
+export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defaultSubject, defaultBody, defaultAttachments, signatureHtml }: ComposeEmailModalProps) {
     const [sending, setSending] = useState(false);
     const [to, setTo] = useState(defaultTo || "");
     const [cc, setCc] = useState("");
     const [subject, setSubject] = useState(defaultSubject || "");
-    const [body, setBody] = useState(defaultBody || "");
+    const [body, setBody] = useState(() => buildInitialBody(defaultBody, signatureHtml));
     const [showCc, setShowCc] = useState(false);
     const [attachments, setAttachments] = useState<EmailAttachment[]>(defaultAttachments || []);
 
@@ -45,10 +56,10 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defau
         if (open) {
             setTo(defaultTo || "");
             setSubject(defaultSubject || "");
-            setBody(defaultBody || "");
+            setBody(buildInitialBody(defaultBody, signatureHtml));
             setAttachments(defaultAttachments || []);
         }
-    }, [open, defaultTo, defaultSubject, defaultBody, defaultAttachments]);
+    }, [open, defaultTo, defaultSubject, defaultBody, defaultAttachments, signatureHtml]);
 
     const removeAttachment = (idx: number) => {
         setAttachments(prev => prev.filter((_, i) => i !== idx));
@@ -76,7 +87,7 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defau
         setTo(defaultTo || "");
         setCc("");
         setSubject("");
-        setBody("");
+        setBody(buildInitialBody(undefined, signatureHtml));
         setShowCc(false);
         setAttachments([]);
     };

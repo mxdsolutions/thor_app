@@ -10,7 +10,7 @@ export async function GET() {
 
     const { data: connection } = await supabase
         .from("email_connections")
-        .select("id, email_address, provider, created_at")
+        .select("id, email_address, provider, created_at, signature_html")
         .eq("user_id", user.id)
         .eq("provider", "outlook")
         .single();
@@ -20,6 +20,32 @@ export async function GET() {
     }
 
     return NextResponse.json({ connected: true, connection });
+}
+
+export async function PATCH(request: Request) {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const signatureHtml = typeof body.signature_html === "string" ? body.signature_html : null;
+
+    const { error } = await supabase
+        .from("email_connections")
+        .update({
+            signature_html: signatureHtml,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+        .eq("provider", "outlook");
+
+    if (error) {
+        return NextResponse.json({ error: "Failed to save signature" }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
 }
 
 export async function DELETE() {
