@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect } from "react";
 import { usePlatformReportTemplate } from "@/lib/swr";
 import { BuilderShell } from "@/components/platform-admin/builder/BuilderShell";
 import type { TemplateSchema } from "@/lib/report-templates/types";
@@ -11,6 +11,12 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
     const { data, isLoading, mutate } = usePlatformReportTemplate(id);
 
     const template = data?.item;
+
+    useEffect(() => {
+        if (template?.name) {
+            document.title = `${template.name} | MXD Admin`;
+        }
+    }, [template?.name]);
 
     const handleSave = async (
         schema: TemplateSchema,

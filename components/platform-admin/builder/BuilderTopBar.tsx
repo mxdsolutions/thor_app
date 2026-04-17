@@ -29,7 +29,7 @@ export function BuilderTopBar({ templateId, templateName, saving, hasChanges, on
 
             {/* Centre */}
             <div className="flex-1 flex items-center justify-center min-w-0">
-                <h1 className="text-sm font-semibold truncate">{templateName}</h1>
+                <h1 className="text-lg font-semibold truncate">{templateName}</h1>
             </div>
 
             {/* Right */}
@@ -46,7 +46,7 @@ export function BuilderTopBar({ templateId, templateName, saving, hasChanges, on
                 <Link
                     href={`/platform-admin/report-templates/${templateId}/preview`}
                     target="_blank"
-                    className="inline-flex items-center gap-1.5 rounded-full px-4 h-8 text-xs font-medium border border-border hover:bg-secondary transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-4 h-8 text-xs font-medium border border-border hover:bg-secondary transition-colors"
                 >
                     <EyeIcon className="w-3.5 h-3.5" />
                     Preview
@@ -54,7 +54,7 @@ export function BuilderTopBar({ templateId, templateName, saving, hasChanges, on
                 <Button
                     onClick={onSave}
                     disabled={saving || !hasChanges}
-                    className="rounded-full px-5 h-8 text-xs"
+                    className="px-5 h-8 text-xs"
                 >
                     {saving ? "Saving..." : "Save"}
                 </Button>

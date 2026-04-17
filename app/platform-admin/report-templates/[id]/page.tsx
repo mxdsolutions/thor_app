@@ -62,7 +62,7 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
                 <Link
                     href={`/platform-admin/builder/${id}`}
                     target="_blank"
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-xs font-medium hover:bg-foreground/90 transition-colors shrink-0"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-foreground text-background text-xs font-medium hover:bg-foreground/90 transition-colors shrink-0"
                 >
                     <WrenchScrewdriverIcon className="w-3.5 h-3.5" />
                     Open Builder

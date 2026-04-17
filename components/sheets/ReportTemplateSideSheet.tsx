@@ -145,7 +145,7 @@ export function ReportTemplateSideSheet({ templateId, open, onOpenChange, onUpda
                                             <Link
                                                 href={`/platform-admin/builder/${data.id}`}
                                                 target="_blank"
-                                                className="inline-flex items-center gap-1.5 rounded-full px-4 h-9 text-xs font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
+                                                className="inline-flex items-center gap-1.5 rounded-lg px-4 h-9 text-xs font-medium bg-foreground text-background hover:bg-foreground/90 transition-colors"
                                             >
                                                 <WrenchScrewdriverIcon className="w-3.5 h-3.5" />
                                                 Open Builder
@@ -153,7 +153,7 @@ export function ReportTemplateSideSheet({ templateId, open, onOpenChange, onUpda
                                             <Link
                                                 href={`/platform-admin/report-templates/${data.id}/preview`}
                                                 target="_blank"
-                                                className="inline-flex items-center gap-1.5 rounded-full px-4 h-9 text-xs font-medium border border-border hover:bg-secondary transition-colors"
+                                                className="inline-flex items-center gap-1.5 rounded-lg px-4 h-9 text-xs font-medium border border-border hover:bg-secondary transition-colors"
                                             >
                                                 <EyeIcon className="w-3.5 h-3.5" />
                                                 Preview

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { IconPlus as PlusIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -140,7 +139,7 @@ export function RepeaterSection({ section, items, onChange, readOnly, reportId, 
         <div className="space-y-3">
             <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-sm font-semibold">{section.title}</h3>
+                    <h3 className="text-lg font-semibold">{section.title}</h3>
                     {section.description && (
                         <p className="text-xs text-muted-foreground mt-0.5">{section.description}</p>
                     )}
@@ -163,7 +162,7 @@ export function RepeaterSection({ section, items, onChange, readOnly, reportId, 
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="rounded-full text-xs"
+                                    className="text-xs"
                                     onClick={() => bulkInputRef.current?.click()}
                                     disabled={bulkUploading}
                                 >
@@ -228,26 +227,26 @@ export function RepeaterSection({ section, items, onChange, readOnly, reportId, 
                             )}
                         </div>
                         <div className="p-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {section.fields.map((field) => (
-                                    <div
-                                        key={field.id}
-                                        className={cn(
-                                            field.width === "half" ? "sm:col-span-1" : "sm:col-span-2",
-                                            field.type === "heading" && "sm:col-span-2"
-                                        )}
-                                    >
-                                        <FormField
-                                            field={field}
-                                            value={item[field.id]}
-                                            onChange={(value) => handleFieldChange(index, field.id, value)}
-                                            readOnly={readOnly}
-                                            reportId={reportId}
-                                            sectionId={`${section.id}_${index}`}
-                                            tenantId={tenantId}
-                                        />
-                                    </div>
-                                ))}
+                            <div className="grid grid-cols-2 gap-4">
+                                {section.fields.map((field) => {
+                                    const isHalf = field.width === "half" && field.type !== "heading";
+                                    return (
+                                        <div
+                                            key={field.id}
+                                            className={isHalf ? "col-span-1" : "col-span-2"}
+                                        >
+                                            <FormField
+                                                field={field}
+                                                value={item[field.id]}
+                                                onChange={(value) => handleFieldChange(index, field.id, value)}
+                                                readOnly={readOnly}
+                                                reportId={reportId}
+                                                sectionId={`${section.id}_${index}`}
+                                                tenantId={tenantId}
+                                            />
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

@@ -19,11 +19,13 @@ export type AutoPopulateKey =
     | "job.status"
     | "job.amount"
     | "job.scheduled_date"
-    | "job.company.name"
-    | "job.company.email"
-    | "job.company.phone"
-    | "job.company.address"
-    | "job.company.postcode";
+    | "job.contact.name"
+    | "job.contact.first_name"
+    | "job.contact.last_name"
+    | "job.contact.email"
+    | "job.contact.phone"
+    | "job.contact.address"
+    | "job.contact.postcode";
 
 export interface FieldDef {
     id: string;
@@ -100,11 +102,13 @@ export const AUTO_POPULATE_KEYS: { value: AutoPopulateKey; label: string; fieldT
     { value: "job.status", label: "Job Status", fieldTypes: ["text", "select"] },
     { value: "job.amount", label: "Job Amount", fieldTypes: ["number", "currency"] },
     { value: "job.scheduled_date", label: "Job Scheduled Date", fieldTypes: ["date", "text"] },
-    { value: "job.company.name", label: "Company Name", fieldTypes: ["text"] },
-    { value: "job.company.email", label: "Company Email", fieldTypes: ["text"] },
-    { value: "job.company.phone", label: "Company Phone", fieldTypes: ["text"] },
-    { value: "job.company.address", label: "Company Address", fieldTypes: ["text", "textarea"] },
-    { value: "job.company.postcode", label: "Company Postcode", fieldTypes: ["text"] },
+    { value: "job.contact.name", label: "Contact Full Name", fieldTypes: ["text"] },
+    { value: "job.contact.first_name", label: "Contact First Name", fieldTypes: ["text"] },
+    { value: "job.contact.last_name", label: "Contact Last Name", fieldTypes: ["text"] },
+    { value: "job.contact.email", label: "Contact Email", fieldTypes: ["text"] },
+    { value: "job.contact.phone", label: "Contact Phone", fieldTypes: ["text"] },
+    { value: "job.contact.address", label: "Contact Address", fieldTypes: ["text", "textarea"] },
+    { value: "job.contact.postcode", label: "Contact Postcode", fieldTypes: ["text"] },
 ];
 
 export const TEMPLATE_CATEGORIES = [

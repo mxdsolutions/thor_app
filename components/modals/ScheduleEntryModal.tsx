@@ -10,11 +10,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { JobSearchSelect } from "@/components/ui/job-search-select";
 import { toast } from "sonner";
-import { useJobs } from "@/lib/swr";
 import type { ScheduleEntry } from "@/components/schedule/types";
-
-type JobOption = { id: string; description: string };
 
 interface ScheduleEntryModalProps {
     open: boolean;
@@ -40,9 +38,6 @@ export function ScheduleEntryModal({
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
     const [notes, setNotes] = useState("");
-
-    const { data: jobsData } = useJobs();
-    const jobs: JobOption[] = (jobsData?.items || []) as JobOption[];
 
     const reset = () => {
         setJobId("");
@@ -137,19 +132,11 @@ export function ScheduleEntryModal({
                     {!isEditing && (
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium">Job</label>
-                            <select
+                            <JobSearchSelect
                                 value={jobId}
-                                onChange={(e) => setJobId(e.target.value)}
-                                className="w-full rounded-xl border border-border/50 bg-background px-3 py-2.5 text-sm"
-                                aria-label="Select a job"
-                            >
-                                <option value="">Select a job...</option>
-                                {jobs.map((j) => (
-                                    <option key={j.id} value={j.id}>
-                                        {j.description}
-                                    </option>
-                                ))}
-                            </select>
+                                onChange={setJobId}
+                                placeholder="Search jobs..."
+                            />
                         </div>
                     )}
 

@@ -3,8 +3,11 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { IconLoader2 as LoaderIcon } from "@tabler/icons-react";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 import { computeAllSectionValidations } from "@/lib/reports/validation";
+import { ROUTES } from "@/lib/routes";
 import { WizardTopBar } from "./WizardTopBar";
 import { WizardStepContent } from "./WizardStepContent";
 
@@ -101,9 +104,9 @@ export function ReportWizardShell({
 
     // --- Navigation ---
     const goToStep = useCallback(
-        async (index: number) => {
+        (index: number) => {
             if (index === currentStep || index < 0 || index >= schema.sections.length) return;
-            await saveNow();
+            void saveNow();
             setDirection(index > currentStep ? 1 : -1);
             setCurrentStep(index);
         },
@@ -122,7 +125,7 @@ export function ReportWizardShell({
             hasUnsavedRef.current = false;
             setStatus("submitted");
             toast.success("Report submitted");
-            router.push(`/dashboard/operations/reports?report=${reportId}`);
+            router.push(`${ROUTES.OPS_REPORTS}?report=${reportId}`);
         } catch {
             toast.error("Failed to submit report");
         } finally {
@@ -166,6 +169,34 @@ export function ReportWizardShell({
                 submitting={submitting}
                 reportStatus={status}
             />
+
+            <AnimatePresence>
+                {submitting && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 8 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-8 py-6 shadow-lg"
+                        >
+                            <LoaderIcon className="w-6 h-6 text-primary animate-spin" />
+                            <div className="text-center">
+                                <p className="text-sm font-semibold">Submitting report…</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">
+                                    Finalising your report. This may take a moment.
+                                </p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -163,7 +163,7 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                             <select
                                 value={form.type}
                                 onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as FieldType }))}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 {FIELD_TYPES.map(([value, label]) => (
                                     <option key={value} value={value}>{label}</option>
@@ -175,7 +175,7 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                             <select
                                 value={form.width || "full"}
                                 onChange={(e) => setForm((f) => ({ ...f, width: e.target.value as "full" | "half" }))}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="full">Full Width</option>
                                 <option value="half">Half Width</option>
@@ -189,7 +189,7 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                             <select
                                 value={form.entityType || ""}
                                 onChange={(e) => setForm((f) => ({ ...f, entityType: (e.target.value || undefined) as EntityType | undefined }))}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">Select...</option>
                                 {(Object.entries(ENTITY_TYPE_LABELS) as [EntityType, string][]).map(([value, label]) => (
@@ -205,7 +205,7 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                             <select
                                 value={form.autoPopulateKey || ""}
                                 onChange={(e) => setForm((f) => ({ ...f, autoPopulateKey: (e.target.value || undefined) as AutoPopulateKey | undefined }))}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">None</option>
                                 {compatibleKeys.map((k) => (

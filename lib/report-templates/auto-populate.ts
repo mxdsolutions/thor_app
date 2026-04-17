@@ -7,9 +7,10 @@ export interface JobContext {
     status: string;
     amount: number | null;
     scheduled_date: string | null;
-    company: {
+    contact: {
         id: string;
-        name: string;
+        first_name: string | null;
+        last_name: string | null;
         email?: string | null;
         phone?: string | null;
         address?: string | null;
@@ -18,17 +19,24 @@ export interface JobContext {
 }
 
 function resolveValue(key: AutoPopulateKey, job: JobContext): unknown {
+    const contact = job.contact;
+    const fullName = contact
+        ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || null
+        : null;
+
     const map: Record<AutoPopulateKey, unknown> = {
         "job.job_title": job.job_title,
         "job.description": job.description,
         "job.status": job.status,
         "job.amount": job.amount,
         "job.scheduled_date": job.scheduled_date,
-        "job.company.name": job.company?.name ?? null,
-        "job.company.email": job.company?.email ?? null,
-        "job.company.phone": job.company?.phone ?? null,
-        "job.company.address": job.company?.address ?? null,
-        "job.company.postcode": job.company?.postcode ?? null,
+        "job.contact.name": fullName,
+        "job.contact.first_name": contact?.first_name ?? null,
+        "job.contact.last_name": contact?.last_name ?? null,
+        "job.contact.email": contact?.email ?? null,
+        "job.contact.phone": contact?.phone ?? null,
+        "job.contact.address": contact?.address ?? null,
+        "job.contact.postcode": contact?.postcode ?? null,
     };
     return map[key] ?? null;
 }

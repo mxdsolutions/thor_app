@@ -14,7 +14,7 @@ process.chdir(webAdminRoot);
 
 const child = spawn(
   "npx",
-  ["next", "dev", "--port", "8005", "--hostname", "127.0.0.1"],
+  ["next", "dev", "--turbopack", "--port", "8005", "--hostname", "127.0.0.1"],
   {
     stdio: "inherit",
     shell: true,

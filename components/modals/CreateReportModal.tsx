@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { JobSearchSelect } from "@/components/ui/job-search-select";
 import { toast } from "sonner";
 import { useReportTemplates } from "@/lib/swr";
 import type { ReportTemplate } from "@/lib/report-templates/types";
@@ -15,7 +16,6 @@ interface CreateReportModalProps {
     defaultValues?: { job_id?: string; company_id?: string };
 }
 
-type JobOption = { id: string; description: string };
 type ProjectOption = { id: string; title: string };
 
 const REPORT_TYPES = [
@@ -39,7 +39,6 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
     const [jobId, setJobId] = useState(defaultValues?.job_id || "");
     const [projectId, setProjectId] = useState("");
     const [notes, setNotes] = useState("");
-    const [jobs, setJobs] = useState<JobOption[]>([]);
     const [projects, setProjects] = useState<ProjectOption[]>([]);
     const { data: templatesData } = useReportTemplates();
 
@@ -47,7 +46,6 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
 
     useEffect(() => {
         if (open) {
-            fetch("/api/jobs").then(r => r.json()).then(d => setJobs(d.items || [])).catch(() => {});
             fetch("/api/scopes").then(r => r.json()).then(d => setProjects(d.items || [])).catch(() => {});
         }
     }, [open]);
@@ -121,7 +119,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                             <select
                                 value={templateId}
                                 onChange={(e) => handleTemplateChange(e.target.value)}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">No template (blank report)</option>
                                 {templates.map(t => (
@@ -147,7 +145,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                         <select
                             value={type}
                             onChange={(e) => setType(e.target.value)}
-                            className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             <option value="">Select type...</option>
                             {REPORT_TYPES.map(t => (
@@ -156,33 +154,27 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                         </select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Job</label>
-                            <select
-                                value={jobId}
-                                onChange={(e) => setJobId(e.target.value)}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <option value="">None</option>
-                                {jobs.map(j => (
-                                    <option key={j.id} value={j.id}>{j.description}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Scope</label>
-                            <select
-                                value={projectId}
-                                onChange={(e) => setProjectId(e.target.value)}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <option value="">None</option>
-                                {projects.map(p => (
-                                    <option key={p.id} value={p.id}>{p.title}</option>
-                                ))}
-                            </select>
-                        </div>
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-muted-foreground">Job</label>
+                        <JobSearchSelect
+                            value={jobId}
+                            onChange={setJobId}
+                            placeholder="Search jobs..."
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-muted-foreground">Scope</label>
+                        <select
+                            value={projectId}
+                            onChange={(e) => setProjectId(e.target.value)}
+                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            <option value="">None</option>
+                            {projects.map(p => (
+                                <option key={p.id} value={p.id}>{p.title}</option>
+                            ))}
+                        </select>
                     </div>
 
                     <div className="space-y-1.5">
@@ -192,7 +184,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             rows={3}
-                            className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                            className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                         />
                     </div>
 

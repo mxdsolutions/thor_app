@@ -103,7 +103,7 @@ export function CreateReportTemplateModal({ open, onOpenChange, onCreated }: Cre
                         <select
                             value={form.category}
                             onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}
-                            className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             <option value="">Select a category...</option>
                             {TEMPLATE_CATEGORIES.map((c) => (
@@ -119,7 +119,7 @@ export function CreateReportTemplateModal({ open, onOpenChange, onCreated }: Cre
                             value={form.description}
                             onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                             rows={2}
-                            className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                            className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                         />
                     </div>
 

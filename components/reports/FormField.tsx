@@ -20,7 +20,7 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
     if (field.type === "heading") {
         return (
             <div className="col-span-2 pt-2">
-                <h4 className="text-sm font-semibold text-foreground">{field.label}</h4>
+                <h4 className="text-lg font-semibold text-foreground">{field.label}</h4>
                 {field.helpText && <p className="text-xs text-muted-foreground mt-0.5">{field.helpText}</p>}
             </div>
         );
@@ -63,7 +63,7 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         onChange={(e) => onChange(e.target.value)}
                         rows={4}
                         readOnly={readOnly}
-                        className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y min-h-[80px]"
+                        className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y min-h-[80px]"
                     />
                     {helpText}
                 </div>
@@ -128,7 +128,7 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         value={(value as string) || ""}
                         onChange={(e) => onChange(e.target.value)}
                         disabled={readOnly}
-                        className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <option value="">{field.placeholder || "Select..."}</option>
                         {(field.options || []).map((opt) => (

@@ -43,7 +43,7 @@ export function BuilderRightPanel({
                     <select
                         value={category}
                         onChange={(e) => onUpdateMeta({ category: e.target.value })}
-                        className="flex h-8 w-full rounded-xl border border-input bg-background px-3 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-8 w-full rounded-xl border border-input bg-background px-3 text-base mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <option value="">Select...</option>
                         {TEMPLATE_CATEGORIES.map((c) => (
@@ -58,7 +58,7 @@ export function BuilderRightPanel({
                         onChange={(e) => onUpdateMeta({ description: e.target.value })}
                         placeholder="Optional..."
                         rows={2}
-                        className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                        className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                     />
                 </div>
             </div>

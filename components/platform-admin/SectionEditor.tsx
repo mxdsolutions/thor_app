@@ -69,7 +69,7 @@ export function SectionEditor({ section, onUpdate }: SectionEditorProps) {
                         <select
                             value={section.type}
                             onChange={(e) => onUpdate({ ...section, type: e.target.value as "standard" | "repeater" })}
-                            className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                             <option value="standard">Standard</option>
                             <option value="repeater">Repeater</option>

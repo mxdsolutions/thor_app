@@ -452,7 +452,7 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                                 ))}
                             </div>
                             <select
-                                className="w-full rounded-xl border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring"
                                 value=""
                                 onChange={async (e) => {
                                     const userId = e.target.value;

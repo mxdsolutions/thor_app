@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { IconMenu2 as Bars3Icon, IconX as XMarkIcon } from "@tabler/icons-react";
+import { ROUTES } from "@/lib/routes";
+import { IconMenu2 as Bars3Icon, IconX as XMarkIcon, IconArrowLeft as ArrowLeftIcon } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { SectionDef } from "@/lib/report-templates/types";
 import type { SectionStatus } from "@/lib/reports/validation";
@@ -19,10 +20,22 @@ interface WizardTopBarProps {
     onStepClick: (index: number) => void;
 }
 
-function StatusDot({ status }: { status: SectionStatus }) {
-    if (status === "complete") return <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />;
-    if (status === "incomplete") return <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />;
-    return <div className="w-1.5 h-1.5 rounded-full bg-gray-200" />;
+function StatusPill({ status }: { status: SectionStatus }) {
+    if (status === "complete") {
+        return (
+            <span className="text-[10px] font-medium text-emerald-700 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                Complete
+            </span>
+        );
+    }
+    if (status === "incomplete") {
+        return (
+            <span className="text-[10px] font-medium text-amber-700 bg-amber-500/10 px-1.5 py-0.5 rounded-md">
+                Incomplete
+            </span>
+        );
+    }
+    return null;
 }
 
 export function WizardTopBar({
@@ -57,9 +70,9 @@ export function WizardTopBar({
                 />
             </div>
 
-            <div className="h-12 border-b border-border bg-background flex items-center px-3 sm:px-4 shrink-0">
+            <div className="relative h-12 border-b border-border bg-background flex items-center justify-between px-3 sm:px-4 shrink-0">
                 {/* Left */}
-                <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+                <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative z-10">
                     <button
                         onClick={() => setDrawerOpen(!drawerOpen)}
                         className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -67,41 +80,36 @@ export function WizardTopBar({
                         <Bars3Icon className="w-4.5 h-4.5" />
                     </button>
                     <Link
-                        href="/dashboard/operations/reports"
+                        href={ROUTES.OPS_REPORTS}
                         className="hidden sm:flex items-center text-xs text-muted-foreground hover:text-foreground transition-colors shrink-0"
                     >
                         Reports
                     </Link>
                 </div>
 
-                {/* Centre */}
-                <div className="flex-1 flex items-center justify-center min-w-0 px-2">
-                    <h1 className="text-xs sm:text-sm font-semibold truncate max-w-full">{reportTitle}</h1>
+                {/* Centre — absolutely positioned so it stays fixed regardless of left/right widths */}
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-24">
+                    <h1 className="text-base sm:text-lg font-semibold truncate">{reportTitle}</h1>
                 </div>
 
                 {/* Right */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 relative z-10">
                     {isSubmitted ? (
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                            <span className="text-xs font-medium text-muted-foreground">Submitted</span>
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-purple-700 bg-purple-500/10 px-2 py-1 rounded-md">
+                            <div className="w-2 h-2 rounded-full bg-purple-500" />
+                            Submitted
                         </div>
-                    ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <div
-                                className={cn(
-                                    "w-1.5 h-1.5 rounded-full",
-                                    saveStatus === "saving"
-                                        ? "bg-amber-400"
-                                        : saveStatus === "saved"
-                                          ? "bg-emerald-400"
-                                          : "bg-gray-300"
-                                )}
-                            />
-                            {saveStatus === "saving" && "Saving..."}
-                            {saveStatus === "saved" && "Saved"}
+                    ) : saveStatus === "saving" ? (
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700 bg-amber-500/10 px-2 py-1 rounded-md">
+                            <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                            Saving…
                         </div>
-                    )}
+                    ) : saveStatus === "saved" ? (
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-500/10 px-2 py-1 rounded-md">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            Saved
+                        </div>
+                    ) : null}
                 </div>
             </div>
 
@@ -125,7 +133,7 @@ export function WizardTopBar({
                             className="fixed inset-y-0 left-0 z-50 w-72 bg-background border-r border-border shadow-lg flex flex-col"
                         >
                             <div className="h-14 flex items-center justify-between px-4 border-b border-border shrink-0">
-                                <h2 className="text-sm font-semibold">Sections</h2>
+                                <h2 className="text-lg font-semibold">Sections</h2>
                                 <button
                                     onClick={() => setDrawerOpen(false)}
                                     className="flex items-center justify-center w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
@@ -136,7 +144,7 @@ export function WizardTopBar({
                             <nav className="flex-1 overflow-y-auto py-2">
                                 {sections.map((section, index) => (
                                     <button
-                                        key={section.id}
+                                        key={`${section.id}-${index}`}
                                         onClick={() => handleStepClick(index)}
                                         className={cn(
                                             "w-full flex items-center gap-3 px-4 py-3 text-left text-xs transition-colors",
@@ -156,10 +164,22 @@ export function WizardTopBar({
                                             {String(index + 1).padStart(2, "0")}
                                         </span>
                                         <span className="flex-1 truncate">{section.title}</span>
-                                        <StatusDot status={validations[index] ?? "empty"} />
+                                        <StatusPill status={validations[index] ?? "empty"} />
                                     </button>
                                 ))}
                             </nav>
+                            {isSubmitted && (
+                                <div className="border-t border-border p-3 shrink-0">
+                                    <Link
+                                        href={ROUTES.OPS_REPORTS}
+                                        onClick={() => setDrawerOpen(false)}
+                                        className="flex items-center justify-center gap-2 w-full h-10 rounded-lg bg-foreground text-background text-xs font-semibold hover:bg-foreground/90 transition-colors"
+                                    >
+                                        <ArrowLeftIcon className="w-3.5 h-3.5" />
+                                        Return to Dashboard
+                                    </Link>
+                                </div>
+                            )}
                         </motion.div>
                     </>
                 )}

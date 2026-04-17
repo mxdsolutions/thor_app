@@ -86,7 +86,7 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ id: 
                 </div>
                 <div className="flex items-center gap-2">
                     {/* View mode toggle */}
-                    <div className="flex items-center rounded-full border border-border overflow-hidden">
+                    <div className="flex items-center rounded-lg border border-border overflow-hidden">
                         <button
                             onClick={() => setViewMode("steps")}
                             className={cn(
@@ -115,7 +115,7 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ id: 
                     <Button
                         variant="outline"
                         size="sm"
-                        className="rounded-full h-8 text-xs gap-1.5"
+                        className="h-8 text-xs gap-1.5"
                         onClick={handleReset}
                     >
                         <ArrowPathIcon className="w-3.5 h-3.5" />
@@ -152,7 +152,7 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ id: 
                                     <Button
                                         variant="outline"
                                         onClick={() => goToStep(currentStep - 1)}
-                                        className="rounded-full gap-2 text-xs"
+                                        className="gap-2 text-xs"
                                     >
                                         <ArrowLeftIcon className="w-3.5 h-3.5" />
                                         Back
@@ -163,7 +163,7 @@ export default function TemplatePreviewPage({ params }: { params: Promise<{ id: 
                                 {!isLast && (
                                     <Button
                                         onClick={() => goToStep(currentStep + 1)}
-                                        className="rounded-full gap-2 text-xs"
+                                        className="gap-2 text-xs"
                                     >
                                         Continue
                                         <ArrowRightIcon className="w-3.5 h-3.5" />

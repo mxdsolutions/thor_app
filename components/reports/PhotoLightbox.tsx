@@ -166,7 +166,7 @@ export function PhotoLightbox({
                             value={photo.caption || ""}
                             onChange={(e) => onCaptionChange(currentIndex, e.target.value)}
                             className={cn(
-                                "rounded-xl border-border/50 text-sm resize-none min-h-[60px]",
+                                "rounded-xl border-border/50 text-base resize-none min-h-[60px]",
                                 "focus-visible:ring-1 focus-visible:ring-ring"
                             )}
                             rows={2}

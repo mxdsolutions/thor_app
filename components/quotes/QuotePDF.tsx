@@ -6,8 +6,8 @@ import {
     Text,
     View,
     StyleSheet,
-    Image,
 } from "@react-pdf/renderer";
+import { PdfLetterhead, LETTERHEAD_PAGE_PADDING_TOP } from "@/components/pdf/PdfLetterhead";
 
 type LineItem = {
     id: string;
@@ -70,24 +70,13 @@ const GST_RATE = 0.1;
 
 const styles = StyleSheet.create({
     page: {
-        padding: 40,
+        paddingTop: LETTERHEAD_PAGE_PADDING_TOP,
+        paddingBottom: 40,
+        paddingHorizontal: 40,
         fontFamily: "Helvetica",
         fontSize: 9,
         color: "#1a1a1a",
     },
-    // Header — single consolidated row with logo/company on left, address on right
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 20,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "#e5e5e5",
-    },
-    logo: { width: 150, height: 69, objectFit: "contain", objectPosition: "left top" },
-    companyName: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#666", lineHeight: 1.5 },
-    companyDetail: { fontSize: 8, color: "#666", lineHeight: 1.5 },
     // Quote title block
     titleBlock: {
         marginBottom: 16,
@@ -274,20 +263,7 @@ export function QuotePDF({ quote, lineItems, sections = [], tenant }: QuotePDFPr
     return (
         <Document>
             <Page size="A4" style={styles.page}>
-                {/* Header — logo left, company details right */}
-                <View style={styles.header}>
-                    {tenant.logo_url && (
-                        // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
-                        <Image src={tenant.logo_url} style={styles.logo} />
-                    )}
-                    <View style={{ textAlign: "right" }}>
-                        <Text style={styles.companyName}>{companyName}</Text>
-                        {tenant.address && <Text style={styles.companyDetail}>{tenant.address}</Text>}
-                        {tenant.phone && <Text style={styles.companyDetail}>{tenant.phone}</Text>}
-                        {tenant.email && <Text style={styles.companyDetail}>{tenant.email}</Text>}
-                        {tenant.abn && <Text style={styles.companyDetail}>ABN {tenant.abn}</Text>}
-                    </View>
-                </View>
+                <PdfLetterhead tenant={tenant} />
 
                 {/* Title */}
                 <View style={styles.titleBlock}>

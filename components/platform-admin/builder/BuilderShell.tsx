@@ -36,6 +36,31 @@ function deduplicateFieldId(id: string, existingIds: Set<string>): string {
     return `${id}_${suffix}`;
 }
 
+function dedupeSchemaIds(schema: TemplateSchema): { schema: TemplateSchema; renamed: number } {
+    let renamed = 0;
+    const sectionIds = new Set<string>();
+    const newSections = schema.sections.map((section) => {
+        const sectionId = deduplicateFieldId(section.id, sectionIds);
+        if (sectionId !== section.id) renamed++;
+        sectionIds.add(sectionId);
+
+        const fieldIds = new Set<string>();
+        const newFields = section.fields.map((field) => {
+            const fieldId = deduplicateFieldId(field.id, fieldIds);
+            if (fieldId !== field.id) renamed++;
+            fieldIds.add(fieldId);
+            return fieldId === field.id ? field : { ...field, id: fieldId };
+        });
+
+        if (sectionId === section.id && newFields.every((f, i) => f === section.fields[i])) {
+            return section;
+        }
+        return { ...section, id: sectionId, fields: newFields };
+    });
+
+    return { schema: { ...schema, sections: newSections }, renamed };
+}
+
 export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }: BuilderShellProps) {
     const [schema, setSchema] = useState<TemplateSchema>(initialSchema);
     const [meta, setMeta] = useState(initialMeta);
@@ -172,7 +197,14 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
     const handleSave = async () => {
         setSaving(true);
         try {
-            await onSave(schema, meta);
+            const { schema: dedupedSchema, renamed } = dedupeSchemaIds(schema);
+            if (renamed > 0) {
+                setSchema(dedupedSchema);
+                toast.warning(
+                    `${renamed} duplicate ID${renamed === 1 ? "" : "s"} renamed to prevent conflicts`
+                );
+            }
+            await onSave(dedupedSchema, meta);
             setHasChanges(false);
         } catch {
             toast.error("Failed to save template");

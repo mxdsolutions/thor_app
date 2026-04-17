@@ -44,7 +44,7 @@ export function WizardStepBar({
                 size="sm"
                 onClick={onPrev}
                 disabled={isFirst}
-                className="rounded-full shrink-0 h-9 w-9 p-0"
+                className="shrink-0 h-9 w-9 p-0"
             >
                 <ChevronLeftIcon className="w-4 h-4" />
             </Button>
@@ -84,7 +84,7 @@ export function WizardStepBar({
                 size="sm"
                 onClick={onNext}
                 disabled={isLast}
-                className="rounded-full shrink-0 h-9 w-9 p-0"
+                className="shrink-0 h-9 w-9 p-0"
             >
                 <ChevronRightIcon className="w-4 h-4" />
             </Button>

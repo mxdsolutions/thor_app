@@ -527,7 +527,6 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
                                         <div className="pt-2">
                                             <Button
                                                 variant={data.status === "suspended" ? "default" : "destructive"}
-                                                className="rounded-full"
                                                 onClick={handleSuspendToggle}
                                                 disabled={suspending}
                                             >
@@ -706,7 +705,6 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
 
                                                 <div className="pt-2">
                                                     <Button
-                                                        className="rounded-full"
                                                         onClick={saveStatuses}
                                                         disabled={statusesSaving || statusesDirty.size === 0}
                                                     >
@@ -776,7 +774,6 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
 
                                                 <div className="pt-2">
                                                     <Button
-                                                        className="rounded-full"
                                                         onClick={saveModules}
                                                         disabled={modulesSaving}
                                                     >

@@ -9,11 +9,13 @@ import {
     Image,
 } from "@react-pdf/renderer";
 import type { TemplateSchema, SectionDef, FieldDef } from "@/lib/report-templates/types";
+import { PdfLetterhead, LETTERHEAD_PAGE_PADDING_TOP } from "@/components/pdf/PdfLetterhead";
 
 type TenantInfo = {
     company_name: string | null;
     name: string;
     logo_url: string | null;
+    report_cover_url?: string | null;
     address: string | null;
     phone: string | null;
     email: string | null;
@@ -31,12 +33,20 @@ type ReportData = {
     data: Record<string, unknown>;
     job?: { id: string; job_title: string; description?: string | null } | null;
     company?: { id: string; name: string } | null;
+    creator?: { id: string; full_name: string } | null;
 };
 
 interface ReportPDFProps {
     report: ReportData;
     template: { name: string; schema: TemplateSchema };
     tenant: TenantInfo;
+    /** Name shown under "Assessed by" on the generated cover. Falls back to report.creator. */
+    assessorName?: string | null;
+    /** Date shown on the generated cover. Falls back to report.created_at. */
+    completedAt?: string | null;
+    /** When true, no cover page is rendered at all. Used when a PDF cover will be
+     *  prepended by pdf-lib after render — react-pdf's <Image> can't embed PDFs. */
+    skipCover?: boolean;
 }
 
 const fmt = (n: number) =>
@@ -56,46 +66,110 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const styles = StyleSheet.create({
-    page: { padding: 40, fontFamily: "Helvetica", fontSize: 9, color: "#1a1a1a" },
-    // Header (same as QuotePDF)
-    header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 30 },
-    logo: { width: 80, height: 36, objectFit: "contain", objectPosition: "left" },
-    companyName: { fontSize: 16, fontFamily: "Helvetica-Bold", marginBottom: 2 },
-    companyDetail: { fontSize: 8, color: "#666", lineHeight: 1.5 },
-    // Title block
+    // Extra top padding leaves room for the fixed letterhead on every page.
+    page: { paddingTop: LETTERHEAD_PAGE_PADDING_TOP, paddingBottom: 60, paddingHorizontal: 40, fontFamily: "Helvetica", fontSize: 11, color: "#1a1a1a" },
+
+    // --- Cover page ---
+    coverPage: { padding: 0, margin: 0 },
+    coverImage: { width: "100%", height: "100%", objectFit: "cover" },
+    // Fallback / generated cover
+    coverFallback: {
+        flex: 1,
+        paddingHorizontal: 60,
+        paddingTop: 160,
+        paddingBottom: 80,
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    coverLogoWrap: { alignItems: "center", justifyContent: "center" },
+    coverLogo: { maxWidth: 240, maxHeight: 120, objectFit: "contain" },
+    coverBody: { alignItems: "center", width: "100%" },
+    coverTitle: {
+        fontSize: 32,
+        fontFamily: "Helvetica-Bold",
+        textAlign: "center",
+        marginBottom: 28,
+        lineHeight: 1.2,
+    },
+    coverMetaRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        flexWrap: "wrap",
+        gap: 0,
+    },
+    coverMetaItem: { fontSize: 11, color: "#444" },
+    coverMetaBullet: { fontSize: 11, color: "#999", marginHorizontal: 8 },
+    coverFooter: { fontSize: 9, color: "#888", textAlign: "center" },
+
+    // --- Content page title block ---
     titleBlock: { marginBottom: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#e5e5e5" },
-    reportTitle: { fontSize: 18, fontFamily: "Helvetica-Bold" },
-    reportSubtitle: { fontSize: 9, color: "#666", marginTop: 2 },
-    // Info row
+    reportTitle: { fontSize: 20, fontFamily: "Helvetica-Bold" },
+    reportSubtitle: { fontSize: 10, color: "#666", marginTop: 4 },
+
+    // --- Info row ---
     infoRow: { flexDirection: "row", gap: 30, marginBottom: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: "#e5e5e5" },
-    infoLabel: { fontSize: 7, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
-    infoValue: { fontSize: 9, color: "#444" },
-    // Sections
-    section: { marginBottom: 16 },
-    sectionTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 8, paddingBottom: 4, borderBottomWidth: 0.5, borderBottomColor: "#e5e5e5" },
-    sectionDesc: { fontSize: 8, color: "#666", marginBottom: 8 },
-    // Fields
-    fieldGrid: { flexDirection: "row", flexWrap: "wrap" },
-    fieldFull: { width: "100%", marginBottom: 8 },
-    fieldHalf: { width: "50%", marginBottom: 8, paddingRight: 8 },
-    fieldLabel: { fontSize: 7, color: "#999", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 2 },
-    fieldValue: { fontSize: 9, color: "#1a1a1a", lineHeight: 1.5 },
-    fieldEmpty: { fontSize: 9, color: "#ccc", fontStyle: "italic" },
-    // Repeater
-    repeaterItem: { marginBottom: 10, paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: "#e5e5e5" },
-    repeaterLabel: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#666", marginBottom: 4 },
-    // Photos
+    infoLabel: { fontSize: 8, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 },
+    infoValue: { fontSize: 11, color: "#444" },
+
+    // --- Sections ---
+    section: { marginBottom: 18 },
+    sectionTitleBar: {
+        backgroundColor: "#f2f2f2",
+        marginLeft: -40,
+        marginRight: -40,
+        paddingVertical: 8,
+        paddingHorizontal: 40,
+        marginBottom: 10,
+    },
+    sectionTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", color: "#1a1a1a" },
+    sectionDesc: { fontSize: 10, color: "#666", marginBottom: 10 },
+
+    // --- Fields — row layout: bold label on the left, value on the right,
+    //     with a faint grey divider between each row.
+    fieldGrid: { flexDirection: "column" },
+    fieldRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        paddingVertical: 7,
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#e5e5e5",
+        gap: 16,
+    },
+    fieldLabel: { fontSize: 11, fontFamily: "Helvetica-Bold", color: "#1a1a1a", width: "40%" },
+    fieldValue: { fontSize: 11, color: "#1a1a1a", lineHeight: 1.5, flex: 1 },
+    fieldEmpty: { fontSize: 11, color: "#ccc", fontStyle: "italic", flex: 1 },
+    // Photo fields keep a vertical layout (label on top, photo grid beneath)
+    photoField: {
+        paddingVertical: 7,
+        borderBottomWidth: 0.5,
+        borderBottomColor: "#e5e5e5",
+    },
+    photoFieldLabel: {
+        fontSize: 11,
+        fontFamily: "Helvetica-Bold",
+        color: "#1a1a1a",
+        marginBottom: 6,
+    },
+
+    // --- Repeater ---
+    repeaterItem: { marginBottom: 12, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: "#e5e5e5" },
+    repeaterLabel: { fontSize: 10, fontFamily: "Helvetica-Bold", color: "#666", marginBottom: 6 },
+
+    // --- Photos ---
     photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
-    photoContainer: { width: 120, marginBottom: 4 },
-    photo: { width: 120, height: 90, objectFit: "cover", borderRadius: 2 },
-    photoCaption: { fontSize: 7, color: "#666", marginTop: 2 },
-    // Notes
+    photoContainer: { width: 140, marginBottom: 6 },
+    photo: { width: 140, height: 105, objectFit: "cover", borderRadius: 2 },
+    photoCaption: { fontSize: 8, color: "#666", marginTop: 2 },
+
+    // --- Notes ---
     notesSection: { marginTop: 24, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#e5e5e5" },
-    notesLabel: { fontSize: 7, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
-    notesText: { fontSize: 8.5, color: "#444", lineHeight: 1.6 },
-    // Footer (same as QuotePDF)
+    notesLabel: { fontSize: 8, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 },
+    notesText: { fontSize: 10.5, color: "#444", lineHeight: 1.6 },
+
+    // --- Footer ---
     footer: { position: "absolute", bottom: 30, left: 40, right: 40, flexDirection: "row", justifyContent: "space-between", borderTopWidth: 0.5, borderTopColor: "#e0e0e0", paddingTop: 8 },
-    footerText: { fontSize: 7, color: "#999" },
+    footerText: { fontSize: 8, color: "#999" },
 });
 
 function formatFieldValue(field: FieldDef, value: unknown): string {
@@ -132,14 +206,12 @@ function formatFieldValue(field: FieldDef, value: unknown): string {
 function FieldRenderer({ field, value }: { field: FieldDef; value: unknown }) {
     if (field.type === "heading") return null;
 
-    const width = field.width === "half" ? styles.fieldHalf : styles.fieldFull;
-
     if (field.type === "photo_upload") {
         const photos = Array.isArray(value) ? value : [];
         if (photos.length === 0) return null;
         return (
-            <View style={styles.fieldFull}>
-                <Text style={styles.fieldLabel}>{field.label}</Text>
+            <View style={styles.photoField}>
+                <Text style={styles.photoFieldLabel}>{field.label}</Text>
                 <View style={styles.photoGrid}>
                     {photos.map((photo: { url: string; caption?: string; filename: string }, i: number) => (
                         <View key={i} style={styles.photoContainer}>
@@ -156,7 +228,7 @@ function FieldRenderer({ field, value }: { field: FieldDef; value: unknown }) {
     const display = formatFieldValue(field, value);
 
     return (
-        <View style={width}>
+        <View style={styles.fieldRow}>
             <Text style={styles.fieldLabel}>{field.label}</Text>
             {display ? (
                 <Text style={styles.fieldValue}>{display}</Text>
@@ -168,15 +240,19 @@ function FieldRenderer({ field, value }: { field: FieldDef; value: unknown }) {
 }
 
 function SectionRenderer({ section, data }: { section: SectionDef; data: Record<string, unknown> }) {
-    const sectionData = data[section.id];
+    const sectionData = data?.[section.id];
 
     if (section.type === "repeater") {
         const items = Array.isArray(sectionData) ? sectionData : [];
         if (items.length === 0) return null;
 
         return (
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
+            // wrap={false} keeps the whole section on a single page; if it won't fit,
+            // react-pdf moves it to the next page instead of splitting mid-section.
+            <View style={styles.section} wrap={false}>
+                <View style={styles.sectionTitleBar}>
+                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                </View>
                 {section.description && <Text style={styles.sectionDesc}>{section.description}</Text>}
                 {items.map((item: Record<string, unknown>, idx: number) => (
                     <View key={idx} style={styles.repeaterItem}>
@@ -197,8 +273,10 @@ function SectionRenderer({ section, data }: { section: SectionDef; data: Record<
         : {}) as Record<string, unknown>;
 
     return (
-        <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
+        <View style={styles.section} wrap={false}>
+            <View style={styles.sectionTitleBar}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+            </View>
             {section.description && <Text style={styles.sectionDesc}>{section.description}</Text>}
             <View style={styles.fieldGrid}>
                 {section.fields.map((field) => (
@@ -209,32 +287,91 @@ function SectionRenderer({ section, data }: { section: SectionDef; data: Record<
     );
 }
 
-export function ReportPDF({ report, template, tenant }: ReportPDFProps) {
+function GeneratedCoverPage({
+    tenant,
+    report,
+    assessorName,
+    completedAt,
+}: {
+    tenant: TenantInfo;
+    report: ReportData;
+    assessorName?: string | null;
+    completedAt?: string | null;
+}) {
+    const companyName = tenant.company_name || tenant.name;
+    const assessor = assessorName || report.creator?.full_name || null;
+    const completedDate = completedAt || report.created_at;
+    const formattedDate = new Date(completedDate).toLocaleDateString("en-AU", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+    });
+    const reportNumber = report.id.slice(0, 8).toUpperCase();
+
+    const metaParts: string[] = [];
+    if (assessor) metaParts.push(`Assessed by ${assessor}`);
+    metaParts.push(`Completed ${formattedDate}`);
+    metaParts.push(`Report #${reportNumber}`);
+
+    return (
+        <Page size="A4" style={styles.coverPage}>
+            <View style={styles.coverFallback}>
+                <View style={styles.coverLogoWrap}>
+                    {tenant.logo_url && (
+                        // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
+                        <Image src={tenant.logo_url} style={styles.coverLogo} />
+                    )}
+                </View>
+
+                <View style={styles.coverBody}>
+                    <Text style={styles.coverTitle}>{report.title}</Text>
+                    <View style={styles.coverMetaRow}>
+                        {metaParts.map((part, i) => (
+                            <View key={i} style={{ flexDirection: "row", alignItems: "center" }}>
+                                {i > 0 && <Text style={styles.coverMetaBullet}>•</Text>}
+                                <Text style={styles.coverMetaItem}>{part}</Text>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+
+                <Text style={styles.coverFooter}>{companyName}</Text>
+            </View>
+        </Page>
+    );
+}
+
+function CustomCoverPage({ coverUrl }: { coverUrl: string }) {
+    return (
+        <Page size="A4" style={styles.coverPage}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt */}
+            <Image src={coverUrl} style={styles.coverImage} />
+        </Page>
+    );
+}
+
+export function ReportPDF({ report, template, tenant, assessorName, completedAt, skipCover }: ReportPDFProps) {
     const companyName = tenant.company_name || tenant.name;
 
     return (
         <Document>
+            {/* --- Cover: uploaded image if provided, otherwise generated --- */}
+            {!skipCover && (
+                tenant.report_cover_url ? (
+                    <CustomCoverPage coverUrl={tenant.report_cover_url} />
+                ) : (
+                    <GeneratedCoverPage
+                        tenant={tenant}
+                        report={report}
+                        assessorName={assessorName}
+                        completedAt={completedAt}
+                    />
+                )
+            )}
+
+            {/* --- Content --- */}
             <Page size="A4" style={styles.page}>
-                {/* Header: Company branding (same as QuotePDF) */}
-                <View style={styles.header}>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        {tenant.logo_url && (
-                            // eslint-disable-next-line jsx-a11y/alt-text -- @react-pdf/renderer Image does not support alt
-                            <Image src={tenant.logo_url} style={[styles.logo, { marginRight: 10 }]} />
-                        )}
-                        <View>
-                            <Text style={styles.companyName}>{companyName}</Text>
-                            {tenant.abn && (
-                                <Text style={styles.companyDetail}>ABN {tenant.abn}</Text>
-                            )}
-                        </View>
-                    </View>
-                    <View style={{ textAlign: "right" }}>
-                        {tenant.address && <Text style={styles.companyDetail}>{tenant.address}</Text>}
-                        {tenant.phone && <Text style={styles.companyDetail}>{tenant.phone}</Text>}
-                        {tenant.email && <Text style={styles.companyDetail}>{tenant.email}</Text>}
-                    </View>
-                </View>
+                <PdfLetterhead tenant={tenant} />
 
                 {/* Title */}
                 <View style={styles.titleBlock}>
@@ -271,13 +408,17 @@ export function ReportPDF({ report, template, tenant }: ReportPDFProps) {
                 </View>
 
                 {/* Sections */}
-                {template.schema.sections.map((section) => (
-                    <SectionRenderer key={section.id} section={section} data={report.data} />
+                {template.schema.sections.map((section, i) => (
+                    <SectionRenderer
+                        key={`${section.id}-${i}`}
+                        section={section}
+                        data={(report.data || {}) as Record<string, unknown>}
+                    />
                 ))}
 
                 {/* Notes */}
                 {report.notes && (
-                    <View style={styles.notesSection}>
+                    <View style={styles.notesSection} wrap={false}>
                         <Text style={styles.notesLabel}>Notes</Text>
                         <Text style={styles.notesText}>{report.notes}</Text>
                     </View>

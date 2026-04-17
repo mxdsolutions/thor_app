@@ -213,7 +213,22 @@
       "Bash(curl -sI 'http://127.0.0.1:8005/_next/static/css/app/layout.css?v=1775860452482')",
       "Bash(kill 43010 70041)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(find app/api/pricing app/dashboard/pricing components/modals/CreateQuoteModal* -name \"*.test.*\")"
+      "Bash(find app/api/pricing app/dashboard/pricing components/modals/CreateQuoteModal* -name \"*.test.*\")",
+      "Bash(ls \"/Users/dylanj/projects/ventures/MXD Solutions/MXD/MXD Admin/.git/\"*.lock)",
+      "Bash(ls \"/Users/dylanj/projects/ventures/MXD Solutions/MXD/MXD Admin/.git/refs/\"*.lock)",
+      "Bash(grep -r \"job_id\" \"/Users/dylanj/projects/ventures/MXD Solutions/MXD/MXD Admin/app\" \\\\\\( -path \"./.next\" -o -path \"./node_modules\" \\\\\\) -prune -o -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -print)",
+      "Bash(grep -l \"PATCH\" app/api/*/route.ts)",
+      "Bash(xargs -I {} sh -c 'echo \"=== {} ===\"; head -40 {}')",
+      "Bash(xargs basename:*)",
+      "Bash(find app/dashboard -name \"page.tsx\" -exec wc -l {} +)",
+      "Bash(find ./features -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec basename {} \\\\;)",
+      "Bash(curl -sI http://localhost:8005)",
+      "Bash(curl -s http://localhost:8005/api/quotes?offset=0\\\\&limit=20)",
+      "Bash(curl -s \"http://localhost:8005/api/quotes?offset=0&limit=20\")",
+      "Read(//dev/**)",
+      "Bash(curl -s \"http://localhost:8005/api/quotes?offset=0&limit=20\" -H \"Cookie: $\\(cat /dev/null\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(python3)"
     ]
   }
 }

@@ -96,7 +96,7 @@ export function TemplateBuilder({ initialSchema, onSave }: TemplateBuilderProps)
                 <Button
                     onClick={handleSave}
                     disabled={saving || !hasChanges}
-                    className="rounded-full px-6"
+                    className="px-6"
                 >
                     {saving ? "Saving..." : hasChanges ? "Save Changes" : "Saved"}
                 </Button>

@@ -1,18 +1,21 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
+import { FormSection } from "@/components/reports/FormSection";
 import { createClient } from "@/lib/supabase/client";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "@/lib/status-config";
 import type { ReportTemplate, TemplateSchema } from "@/lib/report-templates/types";
+
+const noop = () => {};
 
 type Report = {
     id: string;
@@ -40,20 +43,95 @@ const statusConfig = REPORT_STATUS_CONFIG;
 const TYPE_LABELS = REPORT_TYPE_LABELS;
 
 export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: ReportSideSheetProps) {
-    const router = useRouter();
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<Report | null>(report);
     const [downloading, setDownloading] = useState(false);
+    const [template, setTemplate] = useState<ReportTemplate | null>(null);
+    const [freshData, setFreshData] = useState<Record<string, unknown> | null>(null);
+    const [loadingData, setLoadingData] = useState(false);
+    const [activeSectionId, setActiveSectionId] = useState<string>("");
 
     const tenant = useTenantOptional();
 
     useEffect(() => { setData(report); }, [report]);
-    useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);
+    useEffect(() => {
+        if (data?.id) {
+            setActiveTab("details");
+            setTemplate(null);
+            setFreshData(null);
+            setActiveSectionId("");
+        }
+    }, [data?.id]);
+
+    // Lazy-load the template + freshest data when the Data tab is opened
+    useEffect(() => {
+        if (activeTab !== "data" || !data?.id || !data.template_id) return;
+        if (template && freshData !== null) return;
+
+        let cancelled = false;
+        setLoadingData(true);
+        (async () => {
+            try {
+                const supabase = createClient();
+                const [tplRes, rowRes] = await Promise.all([
+                    fetch("/api/report-templates").then((r) => r.json()),
+                    supabase.from("reports").select("data").eq("id", data.id).single(),
+                ]);
+                if (cancelled) return;
+                const tpl = (tplRes.items || []).find((t: ReportTemplate) => t.id === data.template_id);
+                if (tpl) setTemplate(tpl);
+                setFreshData(
+                    (rowRes.data?.data && typeof rowRes.data.data === "object"
+                        ? (rowRes.data.data as Record<string, unknown>)
+                        : {})
+                );
+            } finally {
+                if (!cancelled) setLoadingData(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [activeTab, data?.id, data?.template_id, template, freshData]);
+
+    const schema: TemplateSchema | null = useMemo(() => {
+        if (!template?.schema || template.schema.version !== 1) return null;
+        return template.schema;
+    }, [template]);
+
+    // Default the active sub-tab to the first section once schema loads
+    useEffect(() => {
+        if (!activeSectionId && schema?.sections.length) {
+            setActiveSectionId(schema.sections[0].id);
+        }
+    }, [schema, activeSectionId]);
+
+    const activeSection = useMemo(
+        () => schema?.sections.find((s) => s.id === activeSectionId) ?? null,
+        [schema, activeSectionId]
+    );
 
     const handleDownloadPDF = useCallback(async () => {
         if (!data || !data.template_id || !tenant) return;
         setDownloading(true);
         try {
+            // Fetch the freshest report row directly — the SWR list can lag
+            // behind the most recent save, which left the PDF with empty data.
+            const supabase = createClient();
+            const [{ data: fresh, error: freshError }, { data: freshTenant }] = await Promise.all([
+                supabase
+                    .from("reports")
+                    .select("*, job:jobs(id, job_title, description), company:companies(id, name), creator:profiles!reports_created_by_fkey(id, full_name)")
+                    .eq("id", data.id)
+                    .single(),
+                // Also read the tenant row fresh so a just-uploaded cover doesn't
+                // get missed because the React context is still holding stale data.
+                supabase
+                    .from("tenants")
+                    .select("report_cover_url")
+                    .eq("id", tenant.id)
+                    .single(),
+            ]);
+            if (freshError || !fresh) throw new Error("Failed to load report");
+
             const res = await fetch("/api/report-templates");
             const templatesData = await res.json();
             const tpl = (templatesData.items || []).find((t: ReportTemplate) => t.id === data.template_id);
@@ -62,6 +140,14 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             const schema: TemplateSchema = tpl.schema && tpl.schema.version === 1
                 ? tpl.schema : { version: 1, sections: [] };
 
+            // Prefer the freshly-fetched cover URL over the React context value
+            // — the context is only refreshed on server re-render, so uploads
+            // in the current session would otherwise appear missing.
+            const coverUrl = freshTenant?.report_cover_url ?? tenant.report_cover_url ?? null;
+            const coverIsPdf = coverUrl
+                ? coverUrl.split("?")[0].toLowerCase().endsWith(".pdf")
+                : false;
+
             const [{ pdf }, { ReportPDF }] = await Promise.all([
                 import("@react-pdf/renderer"),
                 import("@/components/reports/ReportPDF"),
@@ -69,22 +155,57 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             const { createElement } = await import("react");
 
             const element = createElement(ReportPDF, {
-                report: data,
+                report: {
+                    ...fresh,
+                    data: (fresh.data && typeof fresh.data === "object") ? fresh.data : {},
+                } as Parameters<typeof ReportPDF>[0]["report"],
                 template: { name: tpl.name, schema },
                 tenant: {
                     company_name: tenant.company_name,
                     name: tenant.name,
                     logo_url: tenant.logo_url,
+                    // Only pass image covers through to react-pdf; PDF covers are
+                    // merged separately below.
+                    report_cover_url: coverIsPdf ? null : coverUrl,
                     address: tenant.address,
                     phone: tenant.phone,
                     email: tenant.email,
                     abn: tenant.abn,
                     primary_color: tenant.primary_color || "#000000",
                 },
+                skipCover: coverIsPdf,
             });
             // react-pdf's pdf() has strict DocumentProps typing that clashes with
             // a dynamically-imported component's inferred type; cast through unknown.
-            const blob = await pdf(element as unknown as Parameters<typeof pdf>[0]).toBlob();
+            let blob = await pdf(element as unknown as Parameters<typeof pdf>[0]).toBlob();
+
+            // If the tenant's cover is a PDF, prepend its pages to the content PDF.
+            if (coverIsPdf && coverUrl) {
+                try {
+                    const [{ PDFDocument }, contentBytes, coverRes] = await Promise.all([
+                        import("pdf-lib"),
+                        blob.arrayBuffer(),
+                        fetch(coverUrl),
+                    ]);
+                    if (!coverRes.ok) throw new Error("Failed to fetch cover PDF");
+                    const coverBytes = await coverRes.arrayBuffer();
+
+                    const merged = await PDFDocument.create();
+                    const coverDoc = await PDFDocument.load(coverBytes);
+                    const contentDoc = await PDFDocument.load(contentBytes);
+
+                    const coverPages = await merged.copyPages(coverDoc, coverDoc.getPageIndices());
+                    coverPages.forEach((p) => merged.addPage(p));
+                    const contentPages = await merged.copyPages(contentDoc, contentDoc.getPageIndices());
+                    contentPages.forEach((p) => merged.addPage(p));
+
+                    const mergedBytes = await merged.save();
+                    blob = new Blob([mergedBytes as unknown as BlobPart], { type: "application/pdf" });
+                } catch (err) {
+                    console.error("Failed to merge PDF cover", err);
+                    toast.warning("Couldn't prepend PDF cover — opened report without it");
+                }
+            }
 
             const url = URL.createObjectURL(blob);
             window.open(url, "_blank");
@@ -113,6 +234,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
     const status = statusConfig[data.status] || statusConfig.draft;
     const tabs = [
         { id: "details", label: "Details" },
+        ...(data.template_id ? [{ id: "data", label: "Data" }] : []),
         { id: "notes", label: "Notes" },
         { id: "activity", label: "Activity" },
     ];
@@ -133,35 +255,32 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            actions={
+                data.template_id ? (
+                    <>
+                        <Button asChild variant="outline" size="sm" className="rounded-lg">
+                            <a href={`/report/${data.id}`} target="_blank" rel="noopener noreferrer">
+                                <DocumentTextIcon className="w-4 h-4 mr-2" />
+                                Open Report Form
+                            </a>
+                        </Button>
+                        {data.status === "submitted" && (
+                            <Button
+                                size="sm"
+                                className="rounded-lg"
+                                onClick={handleDownloadPDF}
+                                disabled={downloading}
+                            >
+                                <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                                {downloading ? "Generating..." : "View PDF"}
+                            </Button>
+                        )}
+                    </>
+                ) : undefined
+            }
         >
             {activeTab === "details" && (
                 <div className="space-y-4">
-                    {data.template_id && (
-                        <div className="space-y-2">
-                            <Button
-                                variant="outline"
-                                className="w-full rounded-xl"
-                                onClick={() => {
-                                    onOpenChange(false);
-                                    router.push(`/report/${data.id}`);
-                                }}
-                            >
-                                <DocumentTextIcon className="w-4 h-4 mr-2" />
-                                Open Report Form
-                            </Button>
-                            {data.status === "submitted" && (
-                                <Button
-                                    variant="outline"
-                                    className="w-full rounded-xl"
-                                    onClick={handleDownloadPDF}
-                                    disabled={downloading}
-                                >
-                                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
-                                    {downloading ? "Generating..." : "View PDF"}
-                                </Button>
-                            )}
-                        </div>
-                    )}
                     <div className="rounded-xl border border-border bg-card p-5">
                         <DetailFields
                             onSave={handleSave}
@@ -248,6 +367,65 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                                 </span>
                             }
                         />
+                    )}
+                </div>
+            )}
+
+            {activeTab === "data" && (
+                <div className="space-y-4">
+                    {loadingData && !schema && (
+                        <div className="text-center py-10 text-xs text-muted-foreground">
+                            Loading report data…
+                        </div>
+                    )}
+
+                    {!loadingData && schema && schema.sections.length === 0 && (
+                        <div className="text-center py-10 text-xs text-muted-foreground">
+                            This template has no sections.
+                        </div>
+                    )}
+
+                    {schema && schema.sections.length > 0 && (
+                        <>
+                            {/* Section sub-tabs — horizontal scrollable pills */}
+                            <div className="-mx-2 overflow-x-auto">
+                                <div className="flex gap-1.5 px-2 pb-1 min-w-max">
+                                    {schema.sections.map((section, i) => (
+                                        <button
+                                            key={`${section.id}-${i}`}
+                                            type="button"
+                                            onClick={() => setActiveSectionId(section.id)}
+                                            className={cn(
+                                                "shrink-0 px-3 h-8 rounded-lg text-xs font-medium transition-colors",
+                                                activeSectionId === section.id
+                                                    ? "bg-foreground text-background"
+                                                    : "bg-secondary text-muted-foreground hover:text-foreground"
+                                            )}
+                                        >
+                                            {section.title}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Active section only — keeps photo-heavy sections lazy */}
+                            {activeSection && (
+                                <FormSection
+                                    key={activeSection.id}
+                                    section={activeSection}
+                                    data={
+                                        (freshData?.[activeSection.id] as
+                                            | Record<string, unknown>
+                                            | Record<string, unknown>[]) ??
+                                        (activeSection.type === "repeater" ? [] : {})
+                                    }
+                                    onChange={noop}
+                                    readOnly
+                                    reportId={data.id}
+                                    tenantId={tenant?.id}
+                                />
+                            )}
+                        </>
                     )}
                 </div>
             )}

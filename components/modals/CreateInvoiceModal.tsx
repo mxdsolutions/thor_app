@@ -131,7 +131,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValue
                         </div>
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Company</label>
-                            <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm">
+                            <select value={companyId} onChange={(e) => setCompanyId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-base">
                                 <option value="">Select company...</option>
                                 {companies.map((c: { id: string; name: string }) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
@@ -143,7 +143,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValue
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Contact</label>
-                            <select value={contactId} onChange={(e) => setContactId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm">
+                            <select value={contactId} onChange={(e) => setContactId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-base">
                                 <option value="">Select contact...</option>
                                 {contacts.map((c: { id: string; first_name: string; last_name: string }) => (
                                     <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
@@ -152,7 +152,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValue
                         </div>
                         <div>
                             <label className="text-sm font-medium text-muted-foreground mb-1 block">Job</label>
-                            <select value={jobId} onChange={(e) => setJobId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-sm">
+                            <select value={jobId} onChange={(e) => setJobId(e.target.value)} className="w-full h-10 px-3 rounded-xl border border-input bg-background text-base">
                                 <option value="">Select job...</option>
                                 {jobs.map((j: { id: string; description: string }) => (
                                     <option key={j.id} value={j.id}>{j.description}</option>
@@ -220,7 +220,7 @@ export function CreateInvoiceModal({ open, onOpenChange, onCreated, defaultValue
                         <textarea
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
-                            className="w-full min-h-[60px] px-3 py-2 rounded-xl border border-input bg-background text-sm resize-none"
+                            className="w-full min-h-[60px] px-3 py-2 rounded-xl border border-input bg-background text-base resize-none"
                             placeholder="Optional notes..."
                         />
                     </div>

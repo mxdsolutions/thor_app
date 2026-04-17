@@ -23,6 +23,7 @@ const topTabs = [
             { href: "/dashboard/settings/company/details", label: "Info" },
             { href: "/dashboard/settings/company/licenses", label: "Licenses" },
             { href: "/dashboard/settings/company/branding", label: "Branding" },
+            { href: "/dashboard/settings/company/reports", label: "Reports" },
         ],
     },
     {

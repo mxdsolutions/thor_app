@@ -345,7 +345,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows={3}
-                                className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
+                                className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                             />
                         </div>
 
@@ -378,7 +378,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                                         setAssigneeIds(prev => [...prev, e.target.value]);
                                     }
                                 }}
-                                className="flex h-9 w-full rounded-xl border border-input bg-background px-3 py-1 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">Add assignee...</option>
                                 {users.filter(u => !assigneeIds.includes(u.id)).map((u) => (

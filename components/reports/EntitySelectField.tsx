@@ -85,7 +85,7 @@ export function EntitySelectField({
                         aria-expanded={open}
                         aria-controls={listboxId}
                         className={cn(
-                            "flex h-9 w-full items-center justify-between rounded-xl border border-input bg-background px-3 text-sm transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                            "flex h-10 w-full items-center justify-between rounded-xl border border-input bg-background px-3 text-base transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             !value && "text-muted-foreground"
                         )}
                     >

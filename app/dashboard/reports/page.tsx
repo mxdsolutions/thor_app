@@ -1,9 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/routes";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
+import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import {
     tableBase,
@@ -55,23 +58,30 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 export default function ReportsPage() {
+    usePageTitle("Reports");
     const searchParams = useSearchParams();
+    const router = useRouter();
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState<string>("All");
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
 
     const { data, isLoading, mutate } = useReports();
     const allReports: Report[] = useMemo(() => data?.items || [], [data]);
 
-    // Auto-open side sheet from ?report=<id> query param
+    // Auto-open side sheet from ?report=<id> query param, then strip the param so
+    // closing the sheet doesn't re-trigger the effect and re-open it.
     useEffect(() => {
         const reportId = searchParams.get("report");
         if (reportId && allReports.length > 0 && !selectedReport) {
             const found = allReports.find((r) => r.id === reportId);
-            if (found) setSelectedReport(found);
+            if (found) {
+                setSelectedReport(found);
+                router.replace(ROUTES.OPS_REPORTS, { scroll: false });
+            }
         }
-    }, [searchParams, allReports, selectedReport]);
+    }, [searchParams, allReports, selectedReport, router]);
 
     const reports = allReports.filter(r => {
         const matchesSearch = !search || r.title.toLowerCase().includes(search.toLowerCase());
@@ -79,15 +89,13 @@ export default function ReportsPage() {
         return matchesSearch && matchesType;
     });
 
-    usePageTitle("Reports");
-
     return (
     <>
         <ScrollableTableLayout
             header={
                 <DashboardControls>
-                    <div className="flex items-center gap-3">
-                        <div className="relative flex-1 min-w-[320px] max-w-xl">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                             <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 placeholder="Search reports..."
@@ -96,20 +104,22 @@ export default function ReportsPage() {
                                 onChange={(e) => setSearch(e.target.value)}
                             />
                         </div>
-                        <Select value={typeFilter} onValueChange={setTypeFilter}>
-                            <SelectTrigger className="w-[140px]">
-                                <SelectValue placeholder="Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {REPORT_TYPES.map((t) => (
-                                    <SelectItem key={t} value={t}>
-                                        {t === "All" ? "All Types" : TYPE_LABELS[t] || t}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <MobileFilters>
+                            <Select value={typeFilter} onValueChange={setTypeFilter}>
+                                <SelectTrigger className="w-[140px]">
+                                    <SelectValue placeholder="Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {REPORT_TYPES.map((t) => (
+                                        <SelectItem key={t} value={t}>
+                                            {t === "All" ? "All Types" : TYPE_LABELS[t] || t}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </MobileFilters>
                     </div>
-                    <Button className="px-6 shrink-0" onClick={() => setCreateOpen(true)}>
+                    <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
                         <PlusIcon className="w-4 h-4 mr-2" />
                         New Report
                     </Button>

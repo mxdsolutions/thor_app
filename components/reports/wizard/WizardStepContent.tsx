@@ -67,7 +67,7 @@ export function WizardStepContent({
                             <Button
                                 variant="outline"
                                 onClick={onPrev}
-                                className="rounded-full gap-2 text-xs"
+                                className="gap-2 text-sm"
                             >
                                 <ArrowLeftIcon className="w-3.5 h-3.5" />
                                 Back
@@ -80,7 +80,7 @@ export function WizardStepContent({
                                 <Button
                                     onClick={onSubmit}
                                     disabled={submitting}
-                                    className="rounded-full gap-2 text-xs"
+                                    className="gap-2 text-sm"
                                 >
                                     {submitting ? "Submitting..." : "Submit"}
                                     <PaperAirplaneIcon className="w-3.5 h-3.5" />
@@ -89,7 +89,7 @@ export function WizardStepContent({
                         ) : (
                             <Button
                                 onClick={onNext}
-                                className="rounded-full gap-2 text-xs"
+                                className="gap-2 text-sm"
                             >
                                 Continue
                                 <ArrowRightIcon className="w-3.5 h-3.5" />

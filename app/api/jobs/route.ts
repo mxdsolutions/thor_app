@@ -32,7 +32,9 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
             contact:contacts (
                 id,
                 first_name,
-                last_name
+                last_name,
+                address,
+                postcode
             ),
             service:products!jobs_service_id_fkey (
                 id,

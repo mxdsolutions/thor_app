@@ -8,6 +8,7 @@ import {
     IconCash as BanknotesIcon,
     IconCalendar as CalendarDaysIcon,
     IconChartBar as ChartBarIcon,
+    IconFileText as FileTextIcon,
 } from "@tabler/icons-react";
 import type { Icon } from "@tabler/icons-react";
 import { ROUTES } from "@/lib/routes";
@@ -36,6 +37,7 @@ export const ANALYTICS_ITEM: NavItem = {
 export const NAV_ITEMS: NavItem[] = [
     { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs" },
     { href: ROUTES.OPS_SCHEDULE, label: "Schedule", icon: CalendarDaysIcon, moduleId: "operations.schedule" },
+    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: FileTextIcon, moduleId: "operations.reports" },
     { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes" },
     { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices" },
     { href: ROUTES.CRM_CLIENTS, label: "Clients", icon: UserGroupIcon, moduleId: "crm.contacts" },

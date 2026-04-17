@@ -9,6 +9,7 @@ export type TenantContextData = {
     company_name: string | null;
     logo_url: string | null;
     logo_dark_url: string | null;
+    report_cover_url: string | null;
     primary_color: string;
     plan: string;
     address: string | null;

@@ -164,13 +164,13 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                         {/* Tabs */}
                         <div className="flex flex-col flex-1 min-h-0 bg-secondary/20">
                             <div className="flex gap-1 px-6 py-3 border-b border-border bg-background">
-                                <div className="flex gap-1 p-1 rounded-full bg-secondary">
+                                <div className="flex gap-1 p-1 rounded-lg bg-secondary">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
                                             onClick={() => setActiveTab(tab.id)}
                                             className={cn(
-                                                "px-4 py-1.5 text-sm font-medium rounded-full transition-colors",
+                                                "px-4 py-1.5 text-sm font-medium rounded-md transition-colors",
                                                 activeTab === tab.id
                                                     ? "bg-background text-foreground shadow-sm"
                                                     : "text-muted-foreground hover:text-foreground"
@@ -204,7 +204,6 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="rounded-full"
                                                     onClick={() => setShowReply(true)}
                                                 >
                                                     Reply
@@ -213,7 +212,7 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                                         ) : (
                                             <div className="pt-4 border-t border-border space-y-3">
                                                 <textarea
-                                                    className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-sm min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
+                                                    className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base min-h-[120px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y"
                                                     placeholder="Write your reply..."
                                                     value={replyText}
                                                     onChange={(e) => setReplyText(e.target.value)}
@@ -222,7 +221,6 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                                                 <div className="flex gap-2">
                                                     <Button
                                                         size="sm"
-                                                        className="rounded-full"
                                                         onClick={handleReply}
                                                         disabled={replying || !replyText.trim()}
                                                     >
@@ -231,7 +229,6 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
-                                                        className="rounded-full"
                                                         onClick={() => { setShowReply(false); setReplyText(""); }}
                                                     >
                                                         Cancel

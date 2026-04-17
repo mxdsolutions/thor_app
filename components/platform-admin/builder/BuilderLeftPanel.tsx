@@ -82,7 +82,7 @@ export function BuilderLeftPanel({
                     <select
                         value={section.type}
                         onChange={(e) => onUpdateSection({ type: e.target.value as "standard" | "repeater" })}
-                        className="flex h-8 w-full rounded-xl border border-input bg-background px-3 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        className="flex h-8 w-full rounded-xl border border-input bg-background px-3 text-base mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
                         <option value="standard">Standard</option>
                         <option value="repeater">Repeater</option>
