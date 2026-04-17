@@ -188,7 +188,8 @@ export function EntitySearchDropdown({
                         onOpenChange={setShowCreate}
                         onCreated={(job: Record<string, unknown>) => {
                             onCreated?.();
-                            onChange(job.id as string, { id: job.id as string, label: job.title as string });
+                            const label = (job.job_title as string) || (job.title as string) || "";
+                            onChange(job.id as string, { id: job.id as string, label });
                             setSearch("");
                         }}
                     />

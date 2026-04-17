@@ -10,6 +10,8 @@ export type JobSearchOption = {
     title?: string | null;
     reference_id?: string | null;
     contact?: {
+        first_name?: string | null;
+        last_name?: string | null;
         address?: string | null;
         postcode?: string | null;
     } | null;

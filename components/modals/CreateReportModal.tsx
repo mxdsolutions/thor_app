@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { JobSearchSelect } from "@/components/ui/job-search-select";
+import { JobSearchSelect, type JobSearchOption } from "@/components/ui/job-search-select";
 import { toast } from "sonner";
-import { useReportTemplates } from "@/lib/swr";
+import { useReportTemplates, useJobs } from "@/lib/swr";
 import type { ReportTemplate } from "@/lib/report-templates/types";
 
 interface CreateReportModalProps {
@@ -15,8 +15,6 @@ interface CreateReportModalProps {
     onCreated?: (report: Record<string, unknown>) => void;
     defaultValues?: { job_id?: string; company_id?: string };
 }
-
-type ProjectOption = { id: string; title: string };
 
 const REPORT_TYPES = [
     { value: "assessment", label: "Assessment" },
@@ -31,43 +29,71 @@ const REPORT_TYPES = [
     { value: "other", label: "Other" },
 ];
 
+function buildAutoTitle(template: ReportTemplate | null, job: JobSearchOption | null): string {
+    if (!template || !job) return "";
+    const contactName = job.contact
+        ? [job.contact.first_name, job.contact.last_name].filter(Boolean).join(" ").trim()
+        : "";
+    const parts = [template.name, contactName, job.reference_id].filter((p): p is string => !!p);
+    return parts.join(" - ");
+}
+
 export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues }: CreateReportModalProps) {
     const [saving, setSaving] = useState(false);
     const [title, setTitle] = useState("");
     const [type, setType] = useState("");
     const [templateId, setTemplateId] = useState("");
     const [jobId, setJobId] = useState(defaultValues?.job_id || "");
-    const [projectId, setProjectId] = useState("");
     const [notes, setNotes] = useState("");
-    const [projects, setProjects] = useState<ProjectOption[]>([]);
+
     const { data: templatesData } = useReportTemplates();
+    const { data: jobsData, mutate: mutateJobs } = useJobs();
 
-    const templates: ReportTemplate[] = templatesData?.items || [];
+    const templates: ReportTemplate[] = useMemo(() => templatesData?.items || [], [templatesData]);
+    const jobs: JobSearchOption[] = useMemo(() => (jobsData?.items || []) as JobSearchOption[], [jobsData]);
 
+    const selectedTemplate = useMemo(
+        () => templates.find((t) => t.id === templateId) ?? null,
+        [templates, templateId]
+    );
+    const selectedJob = useMemo(
+        () => jobs.find((j) => j.id === jobId) ?? null,
+        [jobs, jobId]
+    );
+
+    // Tracks the last auto-generated title. If the current title matches it,
+    // the user hasn't customized — safe to re-fill as template/job change.
+    const lastAutoTitleRef = useRef("");
+
+    // Auto-populate title whenever template or job changes.
     useEffect(() => {
-        if (open) {
-            fetch("/api/scopes").then(r => r.json()).then(d => setProjects(d.items || [])).catch(() => {});
-        }
-    }, [open]);
-
-    const handleTemplateChange = (id: string) => {
-        setTemplateId(id);
-        if (id) {
-            const template = templates.find((t) => t.id === id);
-            if (template) {
-                if (!title) setTitle(template.name);
-                if (template.category) setType(template.category);
+        if (!open) return;
+        const autoTitle = buildAutoTitle(selectedTemplate, selectedJob);
+        if (!autoTitle) return;
+        setTitle((current) => {
+            if (current === "" || current === lastAutoTitleRef.current) {
+                lastAutoTitleRef.current = autoTitle;
+                return autoTitle;
             }
+            return current;
+        });
+    }, [selectedTemplate, selectedJob, open]);
+
+    // Adopt the template's category as the default type on template select.
+    useEffect(() => {
+        if (selectedTemplate?.category && !type) {
+            setType(selectedTemplate.category);
         }
-    };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedTemplate?.id]);
 
     const reset = () => {
         setTitle("");
         setType("");
         setTemplateId("");
         setJobId("");
-        setProjectId("");
         setNotes("");
+        lastAutoTitleRef.current = "";
     };
 
     useEffect(() => { if (!open) reset(); }, [open]);
@@ -87,7 +113,6 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                     type,
                     template_id: templateId || null,
                     job_id: jobId || null,
-                    project_id: projectId || null,
                     notes: notes.trim() || null,
                     status: "draft",
                 }),
@@ -118,7 +143,7 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                             <label className="text-sm font-medium text-muted-foreground">Template</label>
                             <select
                                 value={templateId}
-                                onChange={(e) => handleTemplateChange(e.target.value)}
+                                onChange={(e) => setTemplateId(e.target.value)}
                                 className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                             >
                                 <option value="">No template (blank report)</option>
@@ -130,9 +155,19 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                     )}
 
                     <div className="space-y-1.5">
+                        <label className="text-sm font-medium text-muted-foreground">Job</label>
+                        <JobSearchSelect
+                            value={jobId}
+                            onChange={setJobId}
+                            placeholder="Search or create job..."
+                            allowCreate
+                            onCreated={() => mutateJobs()}
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
                         <label className="text-sm font-medium text-muted-foreground">Title *</label>
                         <Input
-                            autoFocus
                             placeholder="Report title..."
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -150,29 +185,6 @@ export function CreateReportModal({ open, onOpenChange, onCreated, defaultValues
                             <option value="">Select type...</option>
                             {REPORT_TYPES.map(t => (
                                 <option key={t.value} value={t.value}>{t.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-muted-foreground">Job</label>
-                        <JobSearchSelect
-                            value={jobId}
-                            onChange={setJobId}
-                            placeholder="Search jobs..."
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-muted-foreground">Scope</label>
-                        <select
-                            value={projectId}
-                            onChange={(e) => setProjectId(e.target.value)}
-                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                            <option value="">None</option>
-                            {projects.map(p => (
-                                <option key={p.id} value={p.id}>{p.title}</option>
                             ))}
                         </select>
                     </div>
