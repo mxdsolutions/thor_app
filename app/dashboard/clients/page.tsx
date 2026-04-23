@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
 import {
@@ -106,10 +107,13 @@ function ClientsPageContent() {
     const [showCreateCompany, setShowCreateCompany] = useState(false);
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
 
+    const canWriteClients = usePermissionOptional("crm.clients", "write", true);
+
     useMobileHeaderAction(useCallback(() => {
+        if (!canWriteClients) return;
         if (tab === "contacts") setShowCreateContact(true);
         else setShowCreateCompany(true);
-    }, [tab]));
+    }, [tab, canWriteClients]));
 
     const tabSwitcher = (
         <SegmentedControl
@@ -136,10 +140,12 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateContact(true)}>
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Add Contact
-            </Button>
+            {canWriteClients && (
+                <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateContact(true)}>
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Add Contact
+                </Button>
+            )}
         </DashboardControls>
     );
 
@@ -157,10 +163,12 @@ function ClientsPageContent() {
                 </div>
                 {tabSwitcher}
             </div>
-            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateCompany(true)}>
-                <PlusIcon className="w-4 h-4 mr-2" />
-                Add Company
-            </Button>
+            {canWriteClients && (
+                <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreateCompany(true)}>
+                    <PlusIcon className="w-4 h-4 mr-2" />
+                    Add Company
+                </Button>
+            )}
         </DashboardControls>
     );
 

@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
@@ -56,7 +57,10 @@ const columns: DataTableColumn<Invoice>[] = [
 export default function InvoicesPage() {
     usePageTitle("Invoices");
     const [createOpen, setCreateOpen] = useState(false);
-    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
+    const canWriteInvoices = usePermissionOptional("finance.invoices", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWriteInvoices) setCreateOpen(true);
+    }, [canWriteInvoices]));
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("All");
     const [page, setPage] = useState(0);
@@ -106,10 +110,12 @@ export default function InvoicesPage() {
                                 </Select>
                             </MobileFilters>
                         </div>
-                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Add Invoice
-                        </Button>
+                        {canWriteInvoices && (
+                            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Invoice
+                            </Button>
+                        )}
                     </DashboardControls>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}

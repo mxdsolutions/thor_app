@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
@@ -53,7 +54,10 @@ const columns: DataTableColumn<Quote>[] = [
 export default function QuotesPage() {
     usePageTitle("Quotes");
     const [createOpen, setCreateOpen] = useState(false);
-    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
+    const canWriteQuotes = usePermissionOptional("finance.quotes", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWriteQuotes) setCreateOpen(true);
+    }, [canWriteQuotes]));
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebouncedValue(search);
     const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -99,10 +103,12 @@ export default function QuotesPage() {
                                 </Select>
                             </MobileFilters>
                         </div>
-                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Add Quote
-                        </Button>
+                        {canWriteQuotes && (
+                            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Quote
+                            </Button>
+                        )}
                     </DashboardControls>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}

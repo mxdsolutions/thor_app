@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
 import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
@@ -61,7 +62,10 @@ const columns: DataTableColumn<Service>[] = [
 export default function ServicesPage() {
     usePageTitle("Services");
     const [showCreate, setShowCreate] = useState(false);
-    useMobileHeaderAction(useCallback(() => setShowCreate(true), []));
+    const canWriteServices = usePermissionOptional("ops.services", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWriteServices) setShowCreate(true);
+    }, [canWriteServices]));
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 20;
@@ -95,10 +99,12 @@ export default function ServicesPage() {
                                 />
                             </div>
                         </div>
-                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Add Service
-                        </Button>
+                        {canWriteServices && (
+                            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Service
+                            </Button>
+                        )}
                     </DashboardControls>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}

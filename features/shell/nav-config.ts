@@ -20,6 +20,12 @@ export type NavItem = {
     moduleId?: string;
     /** When set, active state matches on this prefix instead of `href`. */
     matchPrefix?: string;
+    /**
+     * Permission resource key from lib/permissions.ts. When set, the item is
+     * only shown to users with `read` on that resource. Items without a key
+     * are always visible (e.g. Overview / Analytics).
+     */
+    permissionKey?: string;
 };
 
 export const OVERVIEW_ITEM: NavItem = {
@@ -35,14 +41,14 @@ export const ANALYTICS_ITEM: NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs" },
-    { href: ROUTES.OPS_SCHEDULE, label: "Schedule", icon: CalendarDaysIcon, moduleId: "operations.schedule" },
-    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: FileTextIcon, moduleId: "operations.reports" },
-    { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes" },
-    { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices" },
-    { href: ROUTES.CRM_CLIENTS, label: "Clients", icon: UserGroupIcon, moduleId: "crm.contacts" },
-    { href: ROUTES.OPS_SERVICES, label: "Services", icon: CubeIcon, moduleId: "operations.services" },
-    { href: ROUTES.FINANCE_PRICING, label: "Materials", icon: CurrencyDollarIcon, moduleId: "finance.pricing" },
+    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs", permissionKey: "ops.jobs" },
+    { href: ROUTES.OPS_SCHEDULE, label: "Schedule", icon: CalendarDaysIcon, moduleId: "operations.schedule", permissionKey: "ops.schedule" },
+    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: FileTextIcon, moduleId: "operations.reports", permissionKey: "ops.reports" },
+    { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes", permissionKey: "finance.quotes" },
+    { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices", permissionKey: "finance.invoices" },
+    { href: ROUTES.CRM_CLIENTS, label: "Clients", icon: UserGroupIcon, moduleId: "crm.contacts", permissionKey: "crm.clients" },
+    { href: ROUTES.OPS_SERVICES, label: "Services", icon: CubeIcon, moduleId: "operations.services", permissionKey: "ops.services" },
+    { href: ROUTES.FINANCE_PRICING, label: "Materials", icon: CurrencyDollarIcon, moduleId: "finance.pricing", permissionKey: "finance.pricing" },
     { href: ROUTES.ANALYTICS, label: "Analytics", icon: ChartBarIcon },
 ];
 

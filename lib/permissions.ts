@@ -59,6 +59,34 @@ export function getResourcesByGroup(): Record<ResourceGroup, ResourceDefinition[
     return out;
 }
 
+/**
+ * Maps a dashboard URL pathname to the resource whose `read` permission
+ * should gate it. Used by the client-side route guard in the dashboard
+ * shell. Longest prefix wins. Routes absent from this map are considered
+ * ungated (e.g. Overview, Settings — those have their own handling).
+ */
+const ROUTE_TO_RESOURCE: Array<{ prefix: string; resource: string }> = [
+    { prefix: "/dashboard/jobs", resource: "ops.jobs" },
+    { prefix: "/dashboard/schedule", resource: "ops.schedule" },
+    { prefix: "/dashboard/reports", resource: "ops.reports" },
+    { prefix: "/dashboard/services", resource: "ops.services" },
+    { prefix: "/dashboard/scopes", resource: "ops.jobs" },
+    { prefix: "/dashboard/quotes", resource: "finance.quotes" },
+    { prefix: "/dashboard/invoices", resource: "finance.invoices" },
+    { prefix: "/dashboard/pricing", resource: "finance.pricing" },
+    { prefix: "/dashboard/clients", resource: "crm.clients" },
+    { prefix: "/dashboard/companies", resource: "crm.clients" },
+    { prefix: "/dashboard/contacts", resource: "crm.clients" },
+    { prefix: "/dashboard/emails", resource: "crm.clients" },
+];
+
+export function resolveRouteResource(pathname: string): string | null {
+    const match = ROUTE_TO_RESOURCE
+        .filter((r) => pathname === r.prefix || pathname.startsWith(r.prefix + "/"))
+        .sort((a, b) => b.prefix.length - a.prefix.length)[0];
+    return match?.resource ?? null;
+}
+
 export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
     owner: {
         "crm.clients": { read: true, write: true, delete: true },

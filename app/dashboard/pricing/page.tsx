@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
@@ -51,7 +52,10 @@ const PAGE_SIZE = 20;
 export default function PricingPage() {
     usePageTitle("Materials");
     const [createOpen, setCreateOpen] = useState(false);
-    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
+    const canWritePricing = usePermissionOptional("finance.pricing", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWritePricing) setCreateOpen(true);
+    }, [canWritePricing]));
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [page, setPage] = useState(0);
@@ -99,10 +103,12 @@ export default function PricingPage() {
                                 />
                             </div>
                         </div>
-                        <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Add Material
-                        </Button>
+                        {canWritePricing && (
+                            <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Material
+                            </Button>
+                        )}
                     </DashboardControls>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { IconLink as LinkIcon, IconRefresh as ArrowPathIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { usePermissionOptional } from "@/lib/tenant-context";
 
 export default function IntegrationsPage() {
     return (
@@ -28,6 +29,10 @@ function IntegrationsContent() {
     const [outlookDisconnecting, setOutlookDisconnecting] = useState(false);
 
     // Xero state
+    const canManageOutlook = usePermissionOptional("integrations.outlook.connect", "write", true);
+    const canManageXero = usePermissionOptional("integrations.xero.connect", "write", true);
+    const canSyncXero = usePermissionOptional("integrations.xero.sync", "write", true);
+
     const [xeroConnection, setXeroConnection] = useState<{ xero_tenant_name: string; last_sync_at: string | null; created_at: string } | null>(null);
     const [xeroLoading, setXeroLoading] = useState(true);
     const [xeroDisconnecting, setXeroDisconnecting] = useState(false);
@@ -201,7 +206,7 @@ function IntegrationsContent() {
                             <div className="shrink-0">
                                 {outlookLoading ? (
                                     <Button variant="outline" size="sm" disabled className="">Loading...</Button>
-                                ) : outlookConnection ? (
+                                ) : !canManageOutlook ? null : outlookConnection ? (
                                     <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleOutlookDisconnect} disabled={outlookDisconnecting}>
                                         {outlookDisconnecting ? "Disconnecting..." : "Disconnect"}
                                     </Button>
@@ -262,20 +267,24 @@ function IntegrationsContent() {
                                     <Button variant="outline" size="sm" disabled className="">Loading...</Button>
                                 ) : xeroConnection ? (
                                     <>
-                                        <Button variant="outline" size="sm" className="" onClick={handleXeroSync} disabled={xeroSyncing}>
-                                            <ArrowPathIcon className={`w-4 h-4 mr-1.5 ${xeroSyncing ? "animate-spin" : ""}`} />
-                                            {xeroSyncing ? "Syncing..." : "Sync Now"}
-                                        </Button>
-                                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleXeroDisconnect} disabled={xeroDisconnecting}>
-                                            {xeroDisconnecting ? "Disconnecting..." : "Disconnect"}
-                                        </Button>
+                                        {canSyncXero && (
+                                            <Button variant="outline" size="sm" className="" onClick={handleXeroSync} disabled={xeroSyncing}>
+                                                <ArrowPathIcon className={`w-4 h-4 mr-1.5 ${xeroSyncing ? "animate-spin" : ""}`} />
+                                                {xeroSyncing ? "Syncing..." : "Sync Now"}
+                                            </Button>
+                                        )}
+                                        {canManageXero && (
+                                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={handleXeroDisconnect} disabled={xeroDisconnecting}>
+                                                {xeroDisconnecting ? "Disconnecting..." : "Disconnect"}
+                                            </Button>
+                                        )}
                                     </>
-                                ) : (
+                                ) : canManageXero ? (
                                     <Button size="sm" className="" onClick={() => { window.location.href = "/api/integrations/xero/authorize"; }}>
                                         <LinkIcon className="w-4 h-4 mr-1.5" />
                                         Connect
                                     </Button>
-                                )}
+                                ) : null}
                             </div>
                         </div>
                     </CardContent>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
@@ -133,7 +134,10 @@ function JobsPageContent() {
     const openJob = (jobId: string) => router.push(`/dashboard/jobs/${jobId}`);
 
     usePageTitle("Jobs");
-    useMobileHeaderAction(useCallback(() => setShowCreate(true), []));
+    const canWriteJobs = usePermissionOptional("ops.jobs", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWriteJobs) setShowCreate(true);
+    }, [canWriteJobs]));
 
 
     return (
@@ -221,10 +225,12 @@ function JobsPageContent() {
                                 </button>
                             </div>
                         </div>
-                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            Add Job
-                        </Button>
+                        {canWriteJobs && (
+                            <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                Add Job
+                            </Button>
+                        )}
                     </DashboardControls>
                 }
                 footer={view === "table" ? <TablePagination page={page} pageSize={PAGE_SIZE} total={filteredJobs.length} onPageChange={setPage} /> : undefined}

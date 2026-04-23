@@ -6,6 +6,7 @@ import { ROUTES } from "@/lib/routes";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { JobSearchSelect } from "@/components/ui/job-search-select";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
@@ -69,7 +70,10 @@ export default function ReportsPage() {
     const [jobFilter, setJobFilter] = useState<string>("");
     const [createOpen, setCreateOpen] = useState(false);
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-    useMobileHeaderAction(useCallback(() => setCreateOpen(true), []));
+    const canWriteReports = usePermissionOptional("ops.reports", "write", true);
+    useMobileHeaderAction(useCallback(() => {
+        if (canWriteReports) setCreateOpen(true);
+    }, [canWriteReports]));
 
     const { data, isLoading, mutate } = useReports();
     const allReports: Report[] = useMemo(() => data?.items || [], [data]);
@@ -142,10 +146,12 @@ export default function ReportsPage() {
                             />
                         </MobileFilters>
                     </div>
-                    <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
-                        <PlusIcon className="w-4 h-4 mr-2" />
-                        New Report
-                    </Button>
+                    {canWriteReports && (
+                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                            <PlusIcon className="w-4 h-4 mr-2" />
+                            New Report
+                        </Button>
+                    )}
                 </DashboardControls>
             }
         >

@@ -22,6 +22,7 @@ import { useUserProfile } from "@/features/shell/use-user-profile";
 import { NotificationSheet } from "@/features/shell/NotificationSheet";
 import { SignOutDialog } from "@/features/shell/SignOutDialog";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { RouteGuard } from "@/app/dashboard/RouteGuard";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
 import { MobileHeaderActionProvider, useMobileHeaderActionValue } from "@/lib/mobile-header-action-context";
 import { pageHeadingClass } from "@/lib/design-system";
@@ -116,9 +117,17 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
         enabledModules,
         modulesLoaded,
     });
+    const permissions = tenant?.permissions;
+    const role = tenant?.role;
+    const visibleNavItems = baseNavItems.filter((item) => {
+        if (!item.permissionKey) return true;
+        if (!tenant) return true; // fail-open while tenant context loads
+        if (role === "owner") return true;
+        return permissions?.[item.permissionKey]?.read === true;
+    });
     const navItems: NavItem[] = hasSettingsAccess
-        ? [...baseNavItems, { href: ROUTES.SETTINGS_USERS, label: "Settings", icon: CogIcon, matchPrefix: "/dashboard/settings" }]
-        : baseNavItems;
+        ? [...visibleNavItems, { href: ROUTES.SETTINGS_USERS, label: "Settings", icon: CogIcon, matchPrefix: "/dashboard/settings" }]
+        : visibleNavItems;
 
     return (
         <div className="min-h-screen bg-black flex">
@@ -260,7 +269,7 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                     </header>
 
                     <div className="relative w-full pt-4 lg:pt-6 pb-16 md:pb-0 min-w-0 flex-1 min-h-0 overflow-y-auto">
-                        <ErrorBoundary>{children}</ErrorBoundary>
+                        <ErrorBoundary><RouteGuard>{children}</RouteGuard></ErrorBoundary>
                     </div>
                 </div>
               </MobileHeaderActionProvider>

@@ -21,10 +21,10 @@
 
 ## Phase 3 — UI enforcement
 
-- [ ] **T8** — Use `usePermission(resource, "read")` in sidebar nav to hide inaccessible items
-- [ ] **T9** — Use `usePermission(resource, "write")` on "Add/Create" action buttons across pages
-- [ ] **T10** — Add route-level guard that redirects to Overview when user lacks read access
-- [ ] **T11** — Hide Connect/Disconnect/Sync buttons on integrations page for users without `integrations.xero.connect` or `integrations.xero.sync` write
+- [x] **T8** — `NavItem.permissionKey` added to [features/shell/nav-config.ts](../../features/shell/nav-config.ts); [DashboardShell](../../app/dashboard/DashboardShell.tsx) filters sidebar items by `read` permission with owner bypass
+- [x] **T9** — Add/Create buttons gated by `usePermissionOptional(resource, "write")` on clients, jobs, quotes, invoices, reports, services, pricing. Mobile header FAB is also no-op when the user lacks write.
+- [x] **T10** — [app/dashboard/RouteGuard.tsx](../../app/dashboard/RouteGuard.tsx) redirects to Overview when the pathname maps to a resource the user can't read; wired into DashboardShell. `resolveRouteResource()` in [lib/permissions.ts](../../lib/permissions.ts) owns the route-to-resource map.
+- [x] **T11** — [Integrations settings page](../../app/dashboard/settings/company/integrations/page.tsx) hides Connect / Disconnect / Sync Now buttons when the user lacks the matching write permission.
 
 ## Phase 4 — Settings UI
 
