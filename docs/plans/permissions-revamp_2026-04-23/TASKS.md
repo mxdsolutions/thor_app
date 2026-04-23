@@ -17,7 +17,7 @@
 - [x] **T4** — [app/api/_lib/permissions.ts](../../app/api/_lib/permissions.ts) ships `requirePermission` and `requireOwner` helpers
 - [x] **T5** — Xero authorize/disconnect/select-tenant/sync routes now call `requirePermission` with the new resource keys
 - [x] **T6** — Audited other sensitive routes: `PATCH /api/tenant` now gates on `settings.company`, `PATCH /api/users` gates on `settings.users`. Other routes inherit tenant isolation via `withAuth` + RLS and don't need per-role gating at this stage.
-- [ ] **T7** — Owner-only gate for role editing. `requireOwner` helper exists for API use, but the roles settings page currently writes `tenant_roles` via the Supabase client directly — the real enforcement needs to happen at the RLS layer (follow-up migration) or the UI needs to go through an API route.
+- [x] **T7** — Migration `013_restrict_tenant_roles_writes_to_owner.sql` locks `tenant_roles` INSERT/UPDATE/DELETE to the tenant owner via a `current_user_tenant_role()` SECURITY DEFINER helper. `requireOwner` in `app/api/_lib/permissions.ts` is ready for when Phase 4 rebuilds the editor behind an API route.
 
 ## Phase 3 — UI enforcement
 
