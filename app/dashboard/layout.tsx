@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTenantId, getTenantBranding, getTenantMembership } from "@/lib/tenant";
 import { createClient } from "@/lib/supabase/server";
 import { TenantProvider, type TenantContextData } from "@/lib/tenant-context";
@@ -67,12 +68,12 @@ export default async function DashboardLayout({
                         isn&apos;t linked to an active tenant. Try signing out and back in, or
                         contact support if the problem persists.
                     </p>
-                    <a
+                    <Link
                         href="/"
                         className="inline-block text-sm font-medium underline underline-offset-4"
                     >
                         Return to sign in
-                    </a>
+                    </Link>
                 </div>
             </div>
         );
