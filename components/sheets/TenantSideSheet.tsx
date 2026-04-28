@@ -73,9 +73,7 @@ type Tenant = {
     name: string;
     company_name: string | null;
     slug: string;
-    plan: string;
     status: string;
-    max_users: number;
     member_count: number;
     owner: { full_name: string; email: string } | null;
     owner_id: string | null;
@@ -88,7 +86,6 @@ type Tenant = {
     phone: string | null;
     email: string | null;
     abn: string | null;
-    trial_ends_at: string | null;
     created_at: string;
     members?: TenantMember[];
     notes: string | null;
@@ -581,25 +578,7 @@ export function TenantSideSheet({ tenantId, open, onOpenChange, onUpdate }: Tena
                                             <DetailFields
                                                 onSave={handleSave}
                                                 fields={[
-                                                    {
-                                                        label: "Plan",
-                                                        value: data.plan ? data.plan.charAt(0).toUpperCase() + data.plan.slice(1) : null,
-                                                        dbColumn: "plan",
-                                                        type: "select",
-                                                        rawValue: data.plan,
-                                                        options: [
-                                                            { value: "trial", label: "Trial" },
-                                                            { value: "paid", label: "Paid" },
-                                                        ],
-                                                    },
-                                                    { label: "Max Users", value: String(data.max_users), dbColumn: "max_users", type: "number", rawValue: data.max_users },
-                                                    { label: "Current Users", value: String(data.member_count) },
-                                                    {
-                                                        label: "Trial Ends",
-                                                        value: data.trial_ends_at
-                                                            ? new Date(data.trial_ends_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-                                                            : "N/A",
-                                                    },
+                                                    { label: "Active Members", value: String(data.member_count) },
                                                 ]}
                                             />
                                         </div>

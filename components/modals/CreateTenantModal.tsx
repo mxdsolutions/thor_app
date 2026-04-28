@@ -20,8 +20,6 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
         slug: "",
         owner_name: "",
         owner_email: "",
-        plan: "trial" as "trial" | "paid",
-        max_users: 5,
     });
 
     const handleSlugify = (name: string) => {
@@ -39,8 +37,6 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
             slug: "",
             owner_name: "",
             owner_email: "",
-            plan: "trial",
-            max_users: 5,
         });
     };
 
@@ -128,48 +124,6 @@ export function CreateTenantModal({ open, onOpenChange, onCreated }: CreateTenan
                             placeholder="john@acmeconstruction.com"
                             value={form.owner_email}
                             onChange={(e) => setForm((f) => ({ ...f, owner_email: e.target.value }))}
-                            className="rounded-xl"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-muted-foreground">Plan</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setForm((f) => ({ ...f, plan: "trial" }))}
-                                className={`p-3 rounded-xl border text-left transition-all text-sm ${
-                                    form.plan === "trial"
-                                        ? "border-foreground bg-secondary font-medium"
-                                        : "border-border hover:border-foreground/30"
-                                }`}
-                            >
-                                Trial
-                                <span className="block text-[11px] text-muted-foreground mt-0.5">14-day free trial</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setForm((f) => ({ ...f, plan: "paid" }))}
-                                className={`p-3 rounded-xl border text-left transition-all text-sm ${
-                                    form.plan === "paid"
-                                        ? "border-foreground bg-secondary font-medium"
-                                        : "border-border hover:border-foreground/30"
-                                }`}
-                            >
-                                Paid
-                                <span className="block text-[11px] text-muted-foreground mt-0.5">No trial period</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-muted-foreground">Max Users</label>
-                        <Input
-                            type="number"
-                            min={1}
-                            max={1000}
-                            value={form.max_users}
-                            onChange={(e) => setForm((f) => ({ ...f, max_users: parseInt(e.target.value) || 5 }))}
                             className="rounded-xl"
                         />
                     </div>

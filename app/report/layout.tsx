@@ -31,7 +31,6 @@ export default async function ReportLayout({
                     logo_dark_url: branding.logo_dark_url,
                     report_cover_url: branding.report_cover_url,
                     primary_color: branding.primary_color,
-                    plan: branding.plan,
                     address: branding.address,
                     phone: branding.phone,
                     email: branding.email,

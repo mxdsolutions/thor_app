@@ -9,7 +9,6 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
     const { limit, offset, search } = parsePagination(request);
     const url = new URL(request.url);
     const status = url.searchParams.get("status");
-    const plan = url.searchParams.get("plan");
 
     let query = adminClient
         .from("tenants")
@@ -22,9 +21,6 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
     }
     if (status) {
         query = query.eq("status", status);
-    }
-    if (plan) {
-        query = query.eq("plan", plan);
     }
 
     const { data, error, count } = await query;
@@ -71,18 +67,17 @@ export const POST = withPlatformAuth(async (request, { adminClient, user }) => {
     const validation = platformTenantCreateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
 
-    const { company_name, slug, owner_email, owner_name, plan, max_users } = validation.data;
+    const { company_name, slug, owner_email, owner_name } = validation.data;
 
-    // Create the tenant (slug has a UNIQUE constraint — handle conflicts)
+    // Create the tenant (slug has a UNIQUE constraint — handle conflicts).
+    // Subscription is set up separately by the owner via Stripe Checkout —
+    // no plan / seat fields live on the tenant row anymore.
     const { data: tenant, error: tenantError } = await adminClient
         .from("tenants")
         .insert({
             name: company_name,
             slug,
             company_name,
-            plan: plan || "trial",
-            max_users: max_users || 5,
-            trial_ends_at: plan === "paid" ? null : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
             status: "active",
         })
         .select()

@@ -3,7 +3,7 @@
 import { DashboardPage, DashboardMetrics, type DashboardMetric } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { usePlatformStats } from "@/lib/swr";
-import { IconBuildingSkyscraper as BuildingOffice2Icon, IconUsersGroup as UserGroupIcon, IconClock as ClockIcon, IconAlertTriangle as ExclamationTriangleIcon, IconSparkles as SparklesIcon, IconCircleX as XCircleIcon } from "@tabler/icons-react";
+import { IconBuildingSkyscraper as BuildingOffice2Icon, IconUsersGroup as UserGroupIcon, IconSparkles as SparklesIcon, IconCircleX as XCircleIcon } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PlatformDashboardPage() {
@@ -40,13 +40,6 @@ export default function PlatformDashboardPage() {
             bg: "bg-emerald-500/10",
         },
         {
-            label: "Trial Tenants",
-            value: stats.trial_tenants,
-            icon: ClockIcon,
-            color: "text-amber-500",
-            bg: "bg-amber-500/10",
-        },
-        {
             label: "Suspended",
             value: stats.suspended_tenants,
             icon: XCircleIcon,
@@ -59,16 +52,6 @@ export default function PlatformDashboardPage() {
             icon: UserGroupIcon,
             color: "text-violet-500",
             bg: "bg-violet-500/10",
-        },
-        {
-            label: "Expiring Trials",
-            value: stats.expiring_trials,
-            change: stats.expiring_trials > 0 ? "Action needed" : undefined,
-            trend: stats.expiring_trials > 0 ? "down" : undefined,
-            changeLabel: "next 7 days",
-            icon: ExclamationTriangleIcon,
-            color: "text-orange-500",
-            bg: "bg-orange-500/10",
         },
     ];
 

@@ -340,18 +340,13 @@ export const platformTenantCreateSchema = z.object({
         .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$/, "Slug must be lowercase letters, numbers, and hyphens only"),
     owner_email: z.string().email("Invalid owner email"),
     owner_name: z.string().min(1, "Owner name is required"),
-    plan: z.enum(["trial", "paid"]).optional(),
-    max_users: z.number().min(1).max(1000).optional(),
 });
 
 export const platformTenantUpdateSchema = z.object({
     name: z.string().min(1).optional(),
     company_name: z.string().min(1).optional(),
-    plan: z.enum(["trial", "paid"]).optional(),
-    max_users: z.number().min(1).max(1000).optional(),
     status: z.enum(["active", "suspended"]).optional(),
     notes: z.string().max(5000).optional().nullable(),
-    trial_ends_at: z.string().datetime().optional().nullable(),
 }).refine(data => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
 });
@@ -359,6 +354,23 @@ export const platformTenantUpdateSchema = z.object({
 export const platformTenantSuspendSchema = z.object({
     action: z.enum(["suspend", "reactivate"]),
 });
+
+// --- Stripe Schemas ---
+
+export const stripeCheckoutSchema = z.object({
+    price_id: z.string().min(1, "price_id is required"),
+});
+
+export type StripeCheckoutInput = z.infer<typeof stripeCheckoutSchema>;
+
+export const stripeSeatsUpdateSchema = z.object({
+    delta: z
+        .number()
+        .int("delta must be an integer")
+        .refine((v) => v !== 0, { message: "delta must be non-zero" }),
+});
+
+export type StripeSeatsUpdateInput = z.infer<typeof stripeSeatsUpdateSchema>;
 
 export type PlatformTenantCreateInput = z.infer<typeof platformTenantCreateSchema>;
 export type PlatformTenantUpdateInput = z.infer<typeof platformTenantUpdateSchema>;

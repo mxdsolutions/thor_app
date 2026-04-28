@@ -27,9 +27,7 @@ type Tenant = {
     name: string;
     company_name: string | null;
     slug: string;
-    plan: string;
     status: string;
-    max_users: number;
     member_count: number;
     owner: { full_name: string; email: string } | null;
     created_at: string;
@@ -93,7 +91,6 @@ export default function TenantsPage() {
                         <tr>
                             <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Company</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Slug</th>
-                            <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Plan</th>
                             <th className={tableHeadCell + " px-4"}>Status</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Users</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Owner</th>
@@ -102,10 +99,10 @@ export default function TenantsPage() {
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <TableSkeleton rows={8} columns={7} />
+                            <TableSkeleton rows={8} columns={6} />
                         ) : tenants.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="text-center py-12 text-sm text-muted-foreground">No tenants found.</td>
+                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No tenants found.</td>
                             </tr>
                         ) : (
                             tenants.map((tenant) => (
@@ -128,9 +125,6 @@ export default function TenantsPage() {
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                         <code className="text-xs">{tenant.slug}</code>
                                     </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell capitalize"}>
-                                        {tenant.plan}
-                                    </td>
                                     <td className={tableCell + " px-4"}>
                                         <div className="flex items-center gap-2">
                                             <div className={cn(
@@ -143,7 +137,7 @@ export default function TenantsPage() {
                                         </div>
                                     </td>
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {tenant.member_count} / {tenant.max_users}
+                                        {tenant.member_count}
                                     </td>
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                         {tenant.owner?.full_name || "—"}

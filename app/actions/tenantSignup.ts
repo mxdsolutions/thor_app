@@ -37,16 +37,15 @@ export async function tenantSignup(formData: FormData) {
             return { error: "This company URL is already taken. Try a different one." };
         }
 
-        // Create the tenant
+        // Create the tenant. No subscription is created here — the new owner
+        // lands on the subscription settings page and chooses a plan via Stripe
+        // Checkout (CLM-77), which starts a 30-day trial via the Checkout Session.
         const { data: tenant, error: tenantError } = await admin
             .from("tenants")
             .insert({
                 name: companyName,
                 slug,
                 company_name: companyName,
-                plan: "trial",
-                max_users: 5,
-                trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days
                 status: "active",
             })
             .select()
