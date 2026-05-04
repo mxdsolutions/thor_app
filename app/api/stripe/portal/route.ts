@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError } from "@/app/api/_lib/errors";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export const POST = withAuth(async (_request, { supabase, user, tenantId }) => {
     const denied = await requirePermission(
@@ -57,7 +57,7 @@ export const POST = withAuth(async (_request, { supabase, user, tenantId }) => {
     }
 
     try {
-        const session = await stripe.billingPortal.sessions.create({
+        const session = await getStripe().billingPortal.sessions.create({
             customer: row.stripe_customer_id,
             return_url: `${appUrl}/dashboard/settings/company/subscription`,
         });

@@ -1,23 +1,24 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type Stripe from "stripe";
 
-// The route reads STRIPE_SECRET_KEY at module init (in lib/stripe.ts). Set it
-// before anything imports the module.
-process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
+// The route only constructs Stripe lazily inside getStripe(), but
+// STRIPE_WEBHOOK_SECRET is read in the request handler — set it for the tests
+// that exercise verification.
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_dummy";
 
 // --- Mocks --------------------------------------------------------------
 
 const constructEventMock = vi.fn();
-vi.mock("@/lib/stripe", () => ({
-    stripe: {
-        webhooks: {
-            constructEvent: (...args: unknown[]) => constructEventMock(...args),
-        },
-        subscriptions: {
-            retrieve: vi.fn(),
-        },
+const stripeStub = {
+    webhooks: {
+        constructEvent: (...args: unknown[]) => constructEventMock(...args),
     },
+    subscriptions: {
+        retrieve: vi.fn(),
+    },
+};
+vi.mock("@/lib/stripe", () => ({
+    getStripe: () => stripeStub,
 }));
 
 type StubState = {

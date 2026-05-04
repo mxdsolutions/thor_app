@@ -3,7 +3,7 @@ import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError, validationError } from "@/app/api/_lib/errors";
 import { stripeCheckoutSchema } from "@/lib/validation";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { isAllowedPriceId } from "@/lib/plans";
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
@@ -108,7 +108,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         : `${appUrl}/dashboard/settings/company/subscription?checkout=cancelled`;
 
     try {
-        const session = await stripe.checkout.sessions.create({
+        const session = await getStripe().checkout.sessions.create({
             mode: "subscription",
             client_reference_id: tenantId,
             ...(existing?.stripe_customer_id

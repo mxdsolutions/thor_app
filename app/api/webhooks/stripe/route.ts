@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
+
+export const dynamic = "force-dynamic";
 
 type SupabaseAdmin = Awaited<ReturnType<typeof createAdminClient>>;
 
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     let event: Stripe.Event;
     try {
-        event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+        event = getStripe().webhooks.constructEvent(payload, signature, webhookSecret);
     } catch (err) {
         console.error("Stripe webhook signature verification failed:", err);
         return new NextResponse(null, { status: 400 });
@@ -139,7 +141,7 @@ async function handleCheckoutCompleted(
 
     // The Checkout Session's subscription field often isn't expanded, so fetch
     // the full subscription to get items, status, period end, etc.
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await getStripe().subscriptions.retrieve(subscriptionId);
     await upsertSubscriptionRow(supabase, tenantId, customerId, subscription);
 }
 

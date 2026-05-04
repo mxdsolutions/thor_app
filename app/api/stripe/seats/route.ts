@@ -3,7 +3,7 @@ import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError, validationError } from "@/app/api/_lib/errors";
 import { stripeSeatsUpdateSchema } from "@/lib/validation";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { getSeatUsage } from "@/lib/stripe-seats";
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
@@ -79,7 +79,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     }
 
     try {
-        await stripe.subscriptions.update(sub.stripe_subscription_id, {
+        await getStripe().subscriptions.update(sub.stripe_subscription_id, {
             items: [{ id: sub.stripe_item_id, quantity: newQuantity }],
             proration_behavior: "create_prorations",
         });
