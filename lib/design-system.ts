@@ -1,5 +1,5 @@
 /**
- * MXD Web Template Design System
+ * THOR: Tradie OS Design System
  * ─────────────────────────
  * Central file for shared styles, typography, spacing, and component patterns.
  */
@@ -10,6 +10,13 @@
  *  Renders in Antonio via the base `h1`–`h6` rule in globals.css, so
  *  this class string should be applied to semantic heading elements. */
 export const pageHeadingClass = "text-3xl font-bold uppercase";
+
+/** Top-of-card / in-card section title.
+ *  Renders in Antonio via the base `h1`–`h6` rule, so apply to a
+ *  semantic heading element (`<h2>` / `<h3>`). Use this for the primary
+ *  title at the top of a settings card, plan summary card, etc. — not
+ *  for list-item headings or banner alert titles (those stay smaller). */
+export const sectionHeadingClass = "text-xl font-bold uppercase tracking-wide text-foreground";
 
 // --- Stats ---
 

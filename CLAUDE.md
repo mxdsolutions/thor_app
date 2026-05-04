@@ -397,6 +397,22 @@ Each audit has:
 - **Watch mode:** `npx vitest`
 - Test files go next to source: `route.test.ts`, `component.test.tsx`
 
+### Manual integration testing (Linear)
+
+For large integration work (Stripe, Xero, Outlook, etc.), discrete frontend test cases that the user runs by hand live as Linear issues — not as a checklist inside a single issue's description. The hierarchy is:
+
+```
+Testing (parent issue)
+  └── {Integration Name} testing (sub-issue)
+        ├── Test case 1 (sub-sub-issue)
+        ├── Test case 2 (sub-sub-issue)
+        └── ...
+```
+
+Each test sub-issue should be self-contained, frontend-verifiable, and have a clear pass/fail outcome with explicit setup steps and expected behaviour. This lets the user track each test independently, comment on specific failures in their own thread, and re-run only the affected scenarios when something changes.
+
+After the core code lands for any new integration, create the corresponding sub-tree under the **Testing** parent issue.
+
 ---
 
 ## Known Issues

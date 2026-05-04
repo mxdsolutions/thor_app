@@ -61,7 +61,7 @@ function getAddress(addresses?: XeroAddress[]): { address?: string; postcode?: s
     return { address: lines || undefined, postcode: street.PostalCode || undefined };
 }
 
-// --- Xero -> MXD Mapping ---
+// --- Xero -> THOR Mapping ---
 
 export function mapXeroContactToCompany(xc: XeroContact) {
     const { address, postcode } = getAddress(xc.Addresses);
@@ -89,7 +89,7 @@ export function mapXeroContactPersonsToContacts(
     }));
 }
 
-// --- MXD -> Xero Mapping ---
+// --- THOR -> Xero Mapping ---
 
 export function mapCompanyToXeroContact(
     company: {
@@ -286,7 +286,7 @@ export async function pullContactsFromXero(
 
         for (const xc of contacts) {
             try {
-                const result = await upsertXeroContactToMXD(supabase, tenantId, userId, xc);
+                const result = await upsertXeroContactToThor(supabase, tenantId, userId, xc);
                 if (result === "created") created++;
                 else if (result === "updated") updated++;
             } catch {
@@ -307,7 +307,7 @@ export async function pullContactsFromXero(
     return { created, updated, errors };
 }
 
-async function upsertXeroContactToMXD(
+async function upsertXeroContactToThor(
     supabase: SupabaseClient,
     tenantId: string,
     userId: string,

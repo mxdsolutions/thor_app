@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { xeroFetch } from "@/lib/xero";
 import {
     mapXeroContactToCompany,
-    mapXeroInvoiceToMXD,
+    mapXeroInvoiceToThor,
     mapXeroInvoiceLineItems,
 } from "@/lib/xero-sync";
 
@@ -60,7 +60,7 @@ async function processWebhookEvents(
     const supabase = await createAdminClient();
 
     for (const event of events) {
-        // Resolve MXD tenant from xero_tenant_id
+        // Resolve THOR tenant from xero_tenant_id
         const { data: connection } = await supabase
             .from("xero_connections")
             .select("tenant_id, user_id")
@@ -70,20 +70,20 @@ async function processWebhookEvents(
 
         if (!connection) continue;
 
-        const mxdTenantId = connection.tenant_id;
+        const thorTenantId = connection.tenant_id;
 
         try {
             if (event.eventCategory === "CONTACT") {
                 await handleContactWebhook(
                     supabase,
-                    mxdTenantId,
+                    thorTenantId,
                     connection.user_id,
                     event.resourceId
                 );
             } else if (event.eventCategory === "INVOICE") {
                 await handleInvoiceWebhook(
                     supabase,
-                    mxdTenantId,
+                    thorTenantId,
                     connection.user_id,
                     event.resourceId
                 );
@@ -91,7 +91,7 @@ async function processWebhookEvents(
         } catch (err) {
             console.error(`Webhook processing error for ${event.eventCategory}:`, err);
             await supabase.from("xero_sync_log").insert({
-                tenant_id: mxdTenantId,
+                tenant_id: thorTenantId,
                 entity_type: event.eventCategory.toLowerCase(),
                 operation: "webhook",
                 status: "error",
@@ -171,7 +171,7 @@ async function handleInvoiceWebhook(
     const xi = data.Invoices?.[0];
     if (!xi) return;
 
-    const invoiceData = mapXeroInvoiceToMXD(xi);
+    const invoiceData = mapXeroInvoiceToThor(xi);
 
     // Resolve company
     let companyId: string | null = null;

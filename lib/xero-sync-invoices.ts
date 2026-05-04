@@ -33,7 +33,7 @@ export type XeroInvoice = {
     UpdatedDateUTC?: string;
 };
 
-// --- Xero Invoice -> MXD Invoice ---
+// --- Xero Invoice -> THOR Invoice ---
 
 const XERO_STATUS_MAP: Record<string, string> = {
     DRAFT: "draft",
@@ -44,7 +44,7 @@ const XERO_STATUS_MAP: Record<string, string> = {
     DELETED: "voided",
 };
 
-export function mapXeroInvoiceToMXD(xi: XeroInvoice) {
+export function mapXeroInvoiceToThor(xi: XeroInvoice) {
     return {
         invoice_number: xi.InvoiceNumber || null,
         reference: xi.Reference || null,
@@ -73,9 +73,9 @@ export function mapXeroInvoiceLineItems(xi: XeroInvoice) {
     }));
 }
 
-// --- MXD Invoice -> Xero Invoice ---
+// --- THOR Invoice -> Xero Invoice ---
 
-const MXD_STATUS_MAP: Record<string, string> = {
+const THOR_STATUS_MAP: Record<string, string> = {
     draft: "DRAFT",
     submitted: "SUBMITTED",
     authorised: "AUTHORISED",
@@ -83,7 +83,7 @@ const MXD_STATUS_MAP: Record<string, string> = {
     voided: "VOIDED",
 };
 
-export function mapMXDInvoiceToXero(
+export function mapThorInvoiceToXero(
     invoice: {
         status: string;
         type: string;
@@ -104,7 +104,7 @@ export function mapMXDInvoiceToXero(
     return {
         Type: invoice.type || "ACCREC",
         Contact: { ContactID: xeroContactId },
-        Status: MXD_STATUS_MAP[invoice.status] || "DRAFT",
+        Status: THOR_STATUS_MAP[invoice.status] || "DRAFT",
         Date: invoice.issue_date || undefined,
         DueDate: invoice.due_date || undefined,
         Reference: invoice.reference || undefined,
@@ -125,9 +125,9 @@ export async function pushInvoiceToXero(
     supabase: SupabaseClient,
     tenantId: string,
     invoiceId: string,
-    invoice: Parameters<typeof mapMXDInvoiceToXero>[0],
+    invoice: Parameters<typeof mapThorInvoiceToXero>[0],
     companyId: string,
-    lineItems: Parameters<typeof mapMXDInvoiceToXero>[2],
+    lineItems: Parameters<typeof mapThorInvoiceToXero>[2],
     contactId?: string | null
 ) {
     const connection = await getXeroConnection(supabase, tenantId);
@@ -184,7 +184,7 @@ export async function pushInvoiceToXero(
         .eq("mxd_id", invoiceId)
         .single();
 
-    const xeroPayload = mapMXDInvoiceToXero(invoice, xeroContactId, lineItems);
+    const xeroPayload = mapThorInvoiceToXero(invoice, xeroContactId, lineItems);
     let res: Response;
 
     if (invoiceMapping?.xero_id) {
@@ -279,7 +279,7 @@ export async function pullInvoicesFromXero(
 
         for (const xi of invoices) {
             try {
-                const result = await upsertXeroInvoiceToMXD(supabase, tenantId, userId, xi);
+                const result = await upsertXeroInvoiceToThor(supabase, tenantId, userId, xi);
                 if (result === "created") created++;
                 else if (result === "updated") updated++;
             } catch {
@@ -294,13 +294,13 @@ export async function pullInvoicesFromXero(
     return { created, updated, errors };
 }
 
-async function upsertXeroInvoiceToMXD(
+async function upsertXeroInvoiceToThor(
     supabase: SupabaseClient,
     tenantId: string,
     userId: string,
     xi: XeroInvoice
 ): Promise<"created" | "updated" | "skipped"> {
-    const invoiceData = mapXeroInvoiceToMXD(xi);
+    const invoiceData = mapXeroInvoiceToThor(xi);
 
     // Resolve company_id from Xero contact mapping
     let companyId: string | null = null;

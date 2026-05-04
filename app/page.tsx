@@ -140,7 +140,7 @@ function AuthContent() {
         </div>
       </div>
 
-      {/* Right Panel - MXD */}
+      {/* Right Panel - THOR */}
       <div className="hidden lg:flex flex-1 bg-black relative items-center justify-center p-12 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom_right,rgba(240,90,40,0.08),transparent_50%)]" />
 

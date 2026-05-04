@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useLicenses } from "@/lib/swr";
 import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
-import { tableBase, tableHead, tableHeadCell, tableRow, tableCell } from "@/lib/design-system";
+import { tableBase, tableHead, tableHeadCell, tableRow, tableCell, sectionHeadingClass } from "@/lib/design-system";
 
 type License = {
     id: string;
@@ -116,7 +116,7 @@ export default function LicensesPage() {
             {/* Add / Edit Form */}
             {showForm && (
                 <div className="border border-border rounded-2xl p-5 bg-card shadow-sm space-y-4">
-                    <h3 className="text-sm font-semibold">
+                    <h3 className={sectionHeadingClass}>
                         {editingId ? "Edit License" : "New License"}
                     </h3>
                     <div className="grid grid-cols-2 gap-4">

@@ -32,6 +32,36 @@ function setCachedTenant(key: string, tenantId: string, slug: string) {
     tenantCache.set(key, { tenantId, slug, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
+// Lock-state cache: keyed by tenantId, same 60s TTL as tenant cache.
+// Webhook-driven status flips will be visible within 60s.
+const lockCache = new Map<string, { locked: boolean; expiresAt: number }>();
+
+async function getTenantLockState(
+    supabase: SupabaseMiddlewareClient,
+    tenantId: string,
+): Promise<boolean> {
+    const cached = lockCache.get(tenantId);
+    if (cached && cached.expiresAt > Date.now()) return cached.locked;
+
+    const [{ data: tenant }, { data: sub }] = await Promise.all([
+        supabase.from('tenants').select('billing_exempt').eq('id', tenantId).maybeSingle(),
+        supabase.from('tenant_subscriptions').select('status').eq('tenant_id', tenantId).maybeSingle(),
+    ]);
+
+    const billingExempt = tenant?.billing_exempt === true;
+    const status = sub?.status;
+    const locked = !billingExempt && (status === 'unpaid' || status === 'incomplete_expired');
+
+    lockCache.set(tenantId, { locked, expiresAt: Date.now() + CACHE_TTL_MS });
+    if (lockCache.size >= CACHE_MAX_SIZE) {
+        const now = Date.now();
+        for (const [k, v] of lockCache) {
+            if (v.expiresAt <= now) lockCache.delete(k);
+        }
+    }
+    return locked;
+}
+
 // Platform domains that are NOT tenant custom domains
 const PLATFORM_DOMAINS = [
     process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'admin.mxdsolutions.com.au',
@@ -229,10 +259,42 @@ export async function middleware(request: NextRequest) {
             // Note: /reset-password is intentionally excluded — after PKCE code exchange the
             // user is temporarily authenticated as a recovery session and must reach the page.
 
-        if (isAuthenticated && isAuthRoute) {
+        // The signup wizard signs the user in mid-flow, then bounces to Stripe
+        // and back. Let already-authenticated users stay on /signup when a
+        // resume marker is present so they can finish onboarding (post-checkout
+        // invite step or post-cancel retry).
+        const isSignupResume =
+            request.nextUrl.pathname.startsWith('/signup') &&
+            request.nextUrl.searchParams.has('step');
+
+        if (isAuthenticated && isAuthRoute && !isSignupResume) {
             const url = request.nextUrl.clone()
             url.pathname = '/dashboard'
             return NextResponse.redirect(url)
+        }
+
+        // --- Tenant billing lock ---
+        // When a tenant's subscription is `unpaid` or `incomplete_expired` (and the
+        // tenant is not billing-exempt), redirect dashboard pages to the subscription
+        // page so the owner can fix billing. Settings pages stay accessible so they
+        // can actually pay; platform-admin and onboarding sit outside /dashboard so
+        // they're naturally exempt; API routes are not redirected here.
+        const isLockExemptDashboard =
+            request.nextUrl.pathname.startsWith('/dashboard/settings/');
+
+        if (
+            isAuthenticated &&
+            isDashboard &&
+            !isLockExemptDashboard &&
+            tenantId
+        ) {
+            const locked = await getTenantLockState(supabase, tenantId);
+            if (locked) {
+                const url = request.nextUrl.clone();
+                url.pathname = '/dashboard/settings/company/subscription';
+                url.search = '';
+                return NextResponse.redirect(url);
+            }
         }
     } catch (e) {
         console.error('Middleware error:', e)

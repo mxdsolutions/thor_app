@@ -1,4 +1,4 @@
-# Code Review Audit — MXD Admin
+# Code Review Audit — THOR: Tradie OS
 
 **Date:** 2026-03-26
 **Type:** Code Review

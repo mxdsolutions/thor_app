@@ -1,6 +1,6 @@
 # Plans
 
-Structured planning docs for MXD Admin. Each plan gets its own folder with a plan document and linked task list.
+Structured planning docs for THOR: Tradie OS. Each plan gets its own folder with a plan document and linked task list.
 
 ## Conventions
 
@@ -84,4 +84,6 @@ Task IDs use a simple `T{n}` prefix. Group tasks by phase or priority. Check off
 
 | Plan | Status | Date |
 |------|--------|------|
-| *(none yet)* | | |
+| [Permissions Revamp](./permissions-revamp_2026-04-23/PLAN.md) | approved | 2026-04-23 |
+| [Stripe Integration](./stripe-integration_2026-04-25/PLAN.md) | in-progress | 2026-04-25 |
+| [AI Assistant](./ai-assistant_2026-05-04/PLAN.md) | in-progress | 2026-05-04 |

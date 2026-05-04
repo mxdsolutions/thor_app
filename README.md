@@ -1,4 +1,4 @@
-# MXD Admin
+# THOR: Tradie OS
 
 Multi-tenant CRM + operations dashboard for trade and service businesses.
 

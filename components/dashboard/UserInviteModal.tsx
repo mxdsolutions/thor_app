@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { IconX as XMarkIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { inviteUser } from "@/app/actions/inviteUser";
+import { useTenantSubscription } from "@/lib/swr";
 
 export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     const [email, setEmail] = useState("");
@@ -12,6 +14,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
     const [role, setRole] = useState<"admin" | "member">("member");
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const { data: subData, mutate: mutateSub } = useTenantSubscription();
 
     useEffect(() => {
         if (open) {
@@ -25,17 +28,26 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
 
     if (!open) return null;
 
+    // null in `usage.available` means unlimited (billing-exempt). 0 means
+    // capped and full — block invites and route to the subscription page.
+    const available = subData?.usage.available;
+    const noSubscription = subData?.subscription == null && !subData?.billing_exempt;
+    const seatsFull = !subData?.billing_exempt && available === 0;
+    const blocked = noSubscription || seatsFull;
+
     const handleInvite = async () => {
         if (!email.trim() || !firstName.trim() || !lastName.trim()) return;
         setLoading(true);
         const res = await inviteUser(email.trim(), firstName.trim(), lastName.trim(), role);
         setLoading(false);
-        if (res.error) {
+        if (!res.success) {
             toast.error(res.error);
-        } else {
-            toast.success(`Invitation sent to ${email}`);
-            onClose();
+            return;
         }
+        toast.success(`Invitation sent to ${email}`);
+        // The new pending invite consumes a seat — refresh the usage line.
+        mutateSub();
+        onClose();
     };
 
     return (
@@ -108,6 +120,49 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                         </select>
                     </div>
 
+                    {blocked && (
+                        <div className="rounded-xl border border-border bg-muted/40 p-3 text-xs">
+                            {noSubscription ? (
+                                <>
+                                    <p className="font-medium text-foreground">Subscribe to invite teammates.</p>
+                                    <p className="text-muted-foreground mt-0.5">
+                                        Pick a plan in{" "}
+                                        <Link
+                                            href="/dashboard/settings/company/subscription"
+                                            className="underline underline-offset-4"
+                                            onClick={onClose}
+                                        >
+                                            Settings → Subscription
+                                        </Link>
+                                        {" "}before sending invites.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="font-medium text-foreground">All seats are in use.</p>
+                                    <p className="text-muted-foreground mt-0.5">
+                                        <Link
+                                            href="/dashboard/settings/company/subscription"
+                                            className="underline underline-offset-4"
+                                            onClick={onClose}
+                                        >
+                                            Add a seat
+                                        </Link>
+                                        {" "}before inviting another teammate.
+                                    </p>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {!blocked && available != null && (
+                        <p className="text-xs text-muted-foreground">
+                            {available === 1
+                                ? "1 seat available."
+                                : `${available} seats available.`}
+                        </p>
+                    )}
+
                     <div className="flex gap-3 pt-1">
                         <Button
                             variant="outline"
@@ -119,7 +174,13 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                         <Button
                             className="flex-1 rounded-xl"
                             onClick={handleInvite}
-                            disabled={loading || !email.trim() || !firstName.trim() || !lastName.trim()}
+                            disabled={
+                                loading ||
+                                blocked ||
+                                !email.trim() ||
+                                !firstName.trim() ||
+                                !lastName.trim()
+                            }
                         >
                             {loading ? "Sending..." : "Send Invitation"}
                         </Button>

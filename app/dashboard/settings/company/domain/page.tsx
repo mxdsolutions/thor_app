@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { IconCircleCheck as CheckCircleIcon, IconClock as ClockIcon } from "@tabler/icons-react";
+import { sectionHeadingClass } from "@/lib/design-system";
 
 export default function DomainPage() {
     const [domain, setDomain] = useState("");
@@ -129,7 +130,7 @@ export default function DomainPage() {
             {/* DNS Instructions */}
             {currentDomain && !verified && (
                 <div className="border border-border rounded-xl p-4 space-y-4">
-                    <h3 className="text-sm font-semibold">DNS Configuration</h3>
+                    <h3 className={sectionHeadingClass}>DNS Configuration</h3>
                     <p className="text-xs text-muted-foreground">
                         Add the following DNS record at your domain registrar:
                     </p>

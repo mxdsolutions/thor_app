@@ -1,4 +1,4 @@
-# MXD Admin — Full Code Review
+# THOR: Tradie OS — Full Code Review
 
 **Date:** 2026-03-28
 **Reviewer:** Claude Code
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-MXD Admin is a CRM + operations dashboard with solid foundations — Supabase for auth and data, Radix UI for accessible primitives, Zod for validation, and a clean App Router structure. The codebase is well-organised but has security gaps that must be addressed before production, performance issues that will surface at scale, and significant code duplication that increases maintenance burden.
+THOR: Tradie OS is a CRM + operations dashboard with solid foundations — Supabase for auth and data, Radix UI for accessible primitives, Zod for validation, and a clean App Router structure. The codebase is well-organised but has security gaps that must be addressed before production, performance issues that will surface at scale, and significant code duplication that increases maintenance burden.
 
 **Finding count:** 6 critical, 12 high, 14 medium, 10 low
 

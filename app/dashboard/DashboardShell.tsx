@@ -20,7 +20,12 @@ import { buildEnabledSet } from "@/lib/module-config";
 import { useNotifications } from "@/features/shell/use-notifications";
 import { useUserProfile } from "@/features/shell/use-user-profile";
 import { NotificationSheet } from "@/features/shell/NotificationSheet";
+import { SetupChecklist } from "@/features/shell/SetupChecklist";
 import { SignOutDialog } from "@/features/shell/SignOutDialog";
+import { AssistantProvider } from "@/features/assistant/AssistantContext";
+import { AssistantPanel } from "@/features/assistant/AssistantPanel";
+import { AssistantTrigger } from "@/features/assistant/AssistantTrigger";
+import { AssistantFab } from "@/features/assistant/AssistantFab";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteGuard } from "@/app/dashboard/RouteGuard";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
@@ -92,7 +97,15 @@ function SidebarNav({ items, pathname, onNavigate }: { items: NavItem[]; pathnam
     );
 }
 
-export function DashboardShell({ children, showPlatformAdminLink = false }: { children: React.ReactNode; showPlatformAdminLink?: boolean }) {
+export function DashboardShell(props: { children: React.ReactNode; showPlatformAdminLink?: boolean }) {
+    return (
+        <AssistantProvider>
+            <DashboardShellInner {...props} />
+        </AssistantProvider>
+    );
+}
+
+function DashboardShellInner({ children, showPlatformAdminLink = false }: { children: React.ReactNode; showPlatformAdminLink?: boolean }) {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
@@ -241,6 +254,7 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                                     Go to Admin
                                 </Link>
                             )}
+                            {tenant?.role === "owner" && <SetupChecklist />}
                             <button
                                 title="Notifications"
                                 onClick={() => { setNotifOpen(true); refreshNotifs(); }}
@@ -254,6 +268,7 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
                             <Link href={ROUTES.CRM_EMAILS} title="Emails" className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                                 <EnvelopeIcon className="w-[26px] h-[26px]" />
                             </Link>
+                            <AssistantTrigger />
                         </div>
                     </header>
 
@@ -279,6 +294,9 @@ export function DashboardShell({ children, showPlatformAdminLink = false }: { ch
               </MobileHeaderActionProvider>
               </PageTitleProvider>
             </main>
+
+            <AssistantPanel />
+            <AssistantFab />
 
             <NotificationSheet
                 open={notifOpen}

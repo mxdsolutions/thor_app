@@ -1,7 +1,7 @@
-# MXD Design System
+# THOR: Tradie OS Design System
 `@/lib/design-system.ts`
 
-This document outlines the core tokens, utility classes, and design philosophy driving the **MXD** premium UI template. Our goal is extreme modularity, high performance, and consistent, sleek aesthetics, primarily anchored around a black/white/gray color palette with sharp typography.
+This document outlines the core tokens, utility classes, and design philosophy driving the **THOR** premium UI template. Our goal is extreme modularity, high performance, and consistent, sleek aesthetics, primarily anchored around a black/white/gray color palette with sharp typography.
 
 > **Agent-readable reference.** Import shared constants and components to ensure visual consistency across the entire app.
 

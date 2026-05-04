@@ -359,6 +359,9 @@ export const platformTenantSuspendSchema = z.object({
 
 export const stripeCheckoutSchema = z.object({
     price_id: z.string().min(1, "price_id is required"),
+    // When true, post-checkout redirects return to the signup wizard's invite
+    // step (success) or plan step (cancel) instead of the settings page.
+    from_signup: z.boolean().optional(),
 });
 
 export type StripeCheckoutInput = z.infer<typeof stripeCheckoutSchema>;

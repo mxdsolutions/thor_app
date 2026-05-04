@@ -179,6 +179,49 @@ export function usePlatformStats() {
     });
 }
 
+// --- Subscription Hooks ---
+
+export type TenantSubscription = {
+    status: "trialing" | "active" | "past_due" | "unpaid" | "canceled" | "incomplete" | "incomplete_expired" | "paused";
+    quantity: number;
+    stripe_price_id: string | null;
+    trial_end: string | null;
+    current_period_end: string | null;
+    cancel_at_period_end: boolean;
+};
+
+export type SubscriptionPlanCycle = { price_id: string; amount_cents: number };
+export type SubscriptionPlan = {
+    id: "iron_ore" | "iron_oak" | "forged";
+    name: string;
+    monthly: SubscriptionPlanCycle;
+    annual: SubscriptionPlanCycle;
+};
+
+export type SeatUsageJson = {
+    used: number;
+    /** Paid seats (null = unlimited / billing-exempt). */
+    quantity: number | null;
+    /** Seats available for invite (null = unlimited / billing-exempt). */
+    available: number | null;
+};
+
+export type TenantSubscriptionResponse = {
+    subscription: TenantSubscription | null;
+    plans: SubscriptionPlan[];
+    eligible_for_trial: boolean;
+    billing_exempt: boolean;
+    usage: SeatUsageJson;
+};
+
+export function useTenantSubscription() {
+    return useSWR<TenantSubscriptionResponse>(
+        "/api/tenant/subscription",
+        fetcher,
+        defaultConfig,
+    );
+}
+
 // --- Tenant Config Hooks ---
 
 export function useStatusConfig(entityType: string | null) {
@@ -225,6 +268,25 @@ export function useServiceOptions(enabled = true) {
 
 export function useJobOptions(enabled = true) {
     return useSWR(enabled ? "/api/jobs?limit=200" : null, fetcher, defaultConfig);
+}
+
+export type SetupChecklistResponse = {
+    items: Array<{
+        key: string;
+        label: string;
+        description: string;
+        href: string;
+        status: "complete" | "skipped" | "pending";
+    }>;
+    progress: { done: number; total: number; complete: number };
+};
+
+export function useSetupChecklist(enabled = true) {
+    return useSWR<SetupChecklistResponse>(
+        enabled ? "/api/tenant/setup-checklist" : null,
+        fetcher,
+        defaultConfig
+    );
 }
 
 export { fetcher };

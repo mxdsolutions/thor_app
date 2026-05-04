@@ -14,7 +14,7 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
 
     useEffect(() => {
         if (template?.name) {
-            document.title = `${template.name} | MXD Admin`;
+            document.title = `${template.name} | THOR: Tradie OS`;
         }
     }, [template?.name]);
 

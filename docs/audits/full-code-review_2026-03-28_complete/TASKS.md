@@ -1,4 +1,4 @@
-# MXD Admin — Audit Task List
+# THOR: Tradie OS — Audit Task List
 
 **Source:** [AUDIT.md](./AUDIT.md)
 **Date:** 2026-03-28

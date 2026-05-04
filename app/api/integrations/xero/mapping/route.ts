@@ -7,10 +7,10 @@ const ALLOWED_TYPES = ["company", "contact", "invoice", "quote"] as const;
 export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const { searchParams } = new URL(request.url);
     const entityType = searchParams.get("entity_type");
-    const mxdId = searchParams.get("mxd_id");
+    const thorId = searchParams.get("mxd_id");
 
     if (!entityType) return missingParamError("entity_type");
-    if (!mxdId) return missingParamError("mxd_id");
+    if (!thorId) return missingParamError("mxd_id");
     if (!ALLOWED_TYPES.includes(entityType as typeof ALLOWED_TYPES[number])) {
         return NextResponse.json({ mapping: null });
     }
@@ -20,7 +20,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .select("xero_id, last_synced_at, sync_direction")
         .eq("tenant_id", tenantId)
         .eq("entity_type", entityType)
-        .eq("mxd_id", mxdId)
+        .eq("mxd_id", thorId)
         .maybeSingle();
 
     if (error) return serverError();

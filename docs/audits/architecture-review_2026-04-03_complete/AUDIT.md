@@ -163,7 +163,7 @@ Tenant resolution, auth routing, platform admin gating, and header injection are
 
 Doesn't describe the project, links to Vercel docs, references Geist font (not used).
 
-**Fix:** Replace with a 3-paragraph summary: what MXD is, tech stack, link to CLAUDE.md.
+**Fix:** Replace with a 3-paragraph summary: what THOR is, tech stack, link to CLAUDE.md.
 
 ### L2. Missing DATABASE.md
 

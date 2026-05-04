@@ -4,13 +4,18 @@ import { headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
+import { getSeatUsage } from "@/lib/stripe-seats";
+
+export type InviteUserResult =
+    | { success: true; error: null; data: unknown }
+    | { success: false; error: string; code?: "no_seats_available" | "no_subscription" };
 
 export async function inviteUser(
     email: string,
     firstName: string,
     lastName: string,
     role: string
-) {
+): Promise<InviteUserResult> {
     const validated = forgotPasswordSchema.safeParse({ email });
     if (!validated.success) {
         return { success: false, error: validated.error.issues[0].message };
@@ -24,6 +29,21 @@ export async function inviteUser(
         }
 
         const tenantId = await getTenantId();
+
+        const usage = await getSeatUsage(supabase, tenantId);
+        // Pre-subscription invites are allowed — the seat count is computed
+        // when the owner kicks off Stripe Checkout (members + pending invites),
+        // so they're billed correctly from day 0.
+        if (!usage.billing_exempt && usage.has_subscription) {
+            if (usage.available <= 0) {
+                return {
+                    success: false,
+                    code: "no_seats_available",
+                    error: `You're using all ${usage.quantity} seats. Add more from Settings → Subscription before inviting.`,
+                };
+            }
+        }
+
         const admin = await createAdminClient();
 
         // Derive the base URL from the incoming request

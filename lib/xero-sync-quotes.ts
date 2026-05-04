@@ -31,9 +31,9 @@ export type XeroQuote = {
     UpdatedDateUTC?: string;
 };
 
-// --- MXD Quote -> Xero Quote ---
+// --- THOR Quote -> Xero Quote ---
 
-const MXD_QUOTE_STATUS_MAP: Record<string, string> = {
+const THOR_QUOTE_STATUS_MAP: Record<string, string> = {
     draft: "DRAFT",
     sent: "SENT",
     accepted: "ACCEPTED",
@@ -41,14 +41,14 @@ const MXD_QUOTE_STATUS_MAP: Record<string, string> = {
     expired: "DECLINED",
 };
 
-export type MXDQuoteLineItemForXero = {
+export type ThorQuoteLineItemForXero = {
     description?: string | null;
     quantity: number;
     material_cost: number;
     labour_cost: number;
 };
 
-export function mapMXDQuoteToXero(
+export function mapThorQuoteToXero(
     quote: {
         status?: string | null;
         title?: string | null;
@@ -60,14 +60,14 @@ export function mapMXDQuoteToXero(
         labour_margin: number;
     },
     xeroContactId: string,
-    lineItems: MXDQuoteLineItemForXero[]
+    lineItems: ThorQuoteLineItemForXero[]
 ) {
     const matMultiplier = 1 + (quote.material_margin || 0) / 100;
     const labMultiplier = 1 + (quote.labour_margin || 0) / 100;
 
     return {
         Contact: { ContactID: xeroContactId },
-        Status: MXD_QUOTE_STATUS_MAP[quote.status || "draft"] || "DRAFT",
+        Status: THOR_QUOTE_STATUS_MAP[quote.status || "draft"] || "DRAFT",
         Date: new Date().toISOString().slice(0, 10),
         ExpiryDate: quote.valid_until || undefined,
         Title: quote.title || undefined,
@@ -95,9 +95,9 @@ export async function pushQuoteToXero(
     supabase: SupabaseClient,
     tenantId: string,
     quoteId: string,
-    quote: Parameters<typeof mapMXDQuoteToXero>[0],
+    quote: Parameters<typeof mapThorQuoteToXero>[0],
     companyId: string,
-    lineItems: MXDQuoteLineItemForXero[],
+    lineItems: ThorQuoteLineItemForXero[],
     contactId?: string | null
 ) {
     const connection = await getXeroConnection(supabase, tenantId);
@@ -154,7 +154,7 @@ export async function pushQuoteToXero(
         .eq("mxd_id", quoteId)
         .single();
 
-    const xeroPayload = mapMXDQuoteToXero(quote, xeroContactId, lineItems);
+    const xeroPayload = mapThorQuoteToXero(quote, xeroContactId, lineItems);
     let res: Response;
 
     if (quoteMapping?.xero_id) {
