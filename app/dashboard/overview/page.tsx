@@ -455,9 +455,7 @@ export default function OverviewPage() {
 
             {/* Stat Cards */}
             {metricsLoading ? (
-                <div className="px-4 md:px-6 lg:px-10">
-                    <MetricsSkeleton count={3} />
-                </div>
+                <MetricsSkeleton count={3} />
             ) : (
                 <motion.div variants={fadeInUp}>
                     {/* Mobile: horizontal scroll, all 3 cards */}

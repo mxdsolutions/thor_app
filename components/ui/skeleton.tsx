@@ -61,21 +61,40 @@ function KanbanSkeleton({ columns = 4, cardsPerColumn = 3 }: { columns?: number;
 }
 
 function MetricsSkeleton({ count = 3 }: { count?: number }) {
-    return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-4 md:px-6 lg:px-10">
-            {Array.from({ length: count }).map((_, i) => (
-                <div key={i} className="rounded-2xl border border-border p-4 md:p-6 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Skeleton className="h-3.5 w-24" />
-                        <Skeleton className="h-9 w-9 rounded-xl" />
-                    </div>
-                    <div className="space-y-2">
-                        <Skeleton className="h-7 w-28" />
-                        <Skeleton className="h-3 w-20" />
-                    </div>
-                </div>
-            ))}
+    const desktopGrid = count > 3
+        ? "md:grid-cols-2 lg:grid-cols-5"
+        : "md:grid-cols-3";
+
+    const card = (
+        <div className="rounded-2xl border border-border p-4 md:p-6 space-y-4">
+            <div className="flex items-center justify-between">
+                <Skeleton className="h-3.5 w-24" />
+                <Skeleton className="h-9 w-9 rounded-xl" />
+            </div>
+            <div className="space-y-2">
+                <Skeleton className="h-7 w-28" />
+                <Skeleton className="h-3 w-20" />
+            </div>
         </div>
+    );
+
+    return (
+        <>
+            {/* Mobile: horizontal scroll matching live StatCards */}
+            <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
+                {Array.from({ length: count }).map((_, i) => (
+                    <div key={i} className="shrink-0 w-[75%] sm:w-[280px]">
+                        {card}
+                    </div>
+                ))}
+            </div>
+            {/* md+: grid */}
+            <div className={cn("hidden md:grid gap-3 px-4 md:px-6 lg:px-10", desktopGrid)}>
+                {Array.from({ length: count }).map((_, i) => (
+                    <div key={i}>{card}</div>
+                ))}
+            </div>
+        </>
     );
 }
 
