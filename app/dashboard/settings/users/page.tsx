@@ -18,6 +18,7 @@ import { IconSearch as MagnifyingGlassIcon, IconUserPlus as UserPlusIcon } from 
 import { toast } from "sonner";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 
 type UserTab = "all" | "owner" | "admin" | "manager" | "member" | "viewer";
 
@@ -68,8 +69,8 @@ export default function UsersPage() {
             />
 
             <div className="flex items-center justify-between gap-3 mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="relative flex-1 min-w-[320px] max-w-xl">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="relative flex-1 min-w-0 sm:min-w-[320px] max-w-xl">
                         <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             placeholder="Search by name or email..."
@@ -78,23 +79,26 @@ export default function UsersPage() {
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <Select value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Roles</SelectItem>
-                            <SelectItem value="owner">Owners</SelectItem>
-                            <SelectItem value="admin">Admins</SelectItem>
-                            <SelectItem value="manager">Managers</SelectItem>
-                            <SelectItem value="member">Members</SelectItem>
-                            <SelectItem value="viewer">Viewers</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <MobileFilters>
+                        <Select value={activeTab} onValueChange={(v) => setActiveTab(v as UserTab)}>
+                            <SelectTrigger className="w-[140px]">
+                                <SelectValue placeholder="Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Roles</SelectItem>
+                                <SelectItem value="owner">Owners</SelectItem>
+                                <SelectItem value="admin">Admins</SelectItem>
+                                <SelectItem value="manager">Managers</SelectItem>
+                                <SelectItem value="member">Members</SelectItem>
+                                <SelectItem value="viewer">Viewers</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </MobileFilters>
                 </div>
                 <Button className="px-6 shrink-0" onClick={() => setInviteOpen(true)}>
                     <UserPlusIcon className="w-4 h-4 mr-2" />
-                    Invite User
+                    <span className="hidden sm:inline">Invite User</span>
+                    <span className="sm:hidden">Invite</span>
                 </Button>
             </div>
 

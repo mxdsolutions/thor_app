@@ -13,7 +13,7 @@ import {
     type SubscriptionPlan,
     type TenantSubscription,
 } from "@/lib/swr";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { sectionHeadingClass } from "@/lib/design-system";
 import { AddSeatsModal } from "@/components/modals/AddSeatsModal";
 
@@ -57,7 +57,7 @@ function SubscriptionContent() {
 
     if (isLoading || !data) {
         return (
-            <div className="px-4 md:px-6 lg:px-10 space-y-4">
+            <div className="space-y-4">
                 <Card className="border-border shadow-none rounded-2xl">
                     <CardContent className="p-6">
                         <div className="h-5 w-40 bg-muted/50 animate-pulse rounded" />
@@ -72,7 +72,7 @@ function SubscriptionContent() {
     const showActive = subscription && subscription.status !== "canceled" && subscription.status !== "incomplete_expired";
 
     return (
-        <div className="px-4 md:px-6 lg:px-10 space-y-4">
+        <div className="space-y-4">
             {showActive ? (
                 <ActiveState
                     subscription={subscription}
@@ -146,7 +146,7 @@ function ActiveState({
 
             <Card className="border-border shadow-none rounded-2xl">
                 <CardContent className="p-6">
-                    <div className="flex items-start justify-between gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-6">
                         <div>
                             <div className="flex items-center gap-2.5 mb-1">
                                 <h3 className={sectionHeadingClass}>{planName}</h3>
@@ -166,15 +166,20 @@ function ActiveState({
                             </p>
                         </div>
                         {canWrite && !billingExempt && (
-                            <div className="flex items-center gap-2 shrink-0">
-                                <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setShowAddSeats(true)}
-                                >
-                                    Add seats
-                                </Button>
-                                <ManageBillingButton onChange={onChange} />
+                            <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                                <div className="flex-1 sm:flex-none">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="w-full sm:w-auto"
+                                        onClick={() => setShowAddSeats(true)}
+                                    >
+                                        Add seats
+                                    </Button>
+                                </div>
+                                <div className="flex-1 sm:flex-none">
+                                    <ManageBillingButton onChange={onChange} className="w-full sm:w-auto" />
+                                </div>
                             </div>
                         )}
                     </div>
@@ -338,7 +343,7 @@ function SummaryStat({ label, value }: { label: string; value: string }) {
     );
 }
 
-function ManageBillingButton({ onChange, variant = "outline" }: { onChange: () => void; variant?: "outline" | "default" }) {
+function ManageBillingButton({ onChange, variant = "outline", className }: { onChange: () => void; variant?: "outline" | "default"; className?: string }) {
     const [loading, setLoading] = useState(false);
 
     const handleClick = async () => {
@@ -365,7 +370,7 @@ function ManageBillingButton({ onChange, variant = "outline" }: { onChange: () =
             variant={variant === "default" ? "default" : "outline"}
             onClick={handleClick}
             disabled={loading}
-            className="shrink-0"
+            className={cn("shrink-0", className)}
         >
             {loading ? "Opening..." : "Manage Billing"}
         </Button>

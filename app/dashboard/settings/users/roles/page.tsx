@@ -6,6 +6,7 @@ import { useTenant } from "@/lib/tenant-context";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { RESOURCES, RESOURCE_GROUPS, type PermissionAction } from "@/lib/permissions";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type Role = {
     id: string;
@@ -107,9 +108,32 @@ export default function RolesPage() {
                 </p>
             </div>
 
-            <div className="flex gap-6">
-                {/* Role list */}
-                <div className="w-48 space-y-1 shrink-0">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+                {/* Mobile: role dropdown */}
+                <div className="md:hidden">
+                    <Select
+                        value={selectedRole?.id ?? ""}
+                        onValueChange={(id) => {
+                            const next = roles.find((r) => r.id === id);
+                            if (next) setSelectedRole(next);
+                        }}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roles.map((role) => (
+                                <SelectItem key={role.id} value={role.id}>
+                                    {role.name}
+                                    {role.is_system ? " (System)" : ""}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Desktop: role list */}
+                <div className="hidden md:block w-48 space-y-1 shrink-0">
                     {roles.map((role) => (
                         <button
                             key={role.id}
@@ -155,8 +179,8 @@ export default function RolesPage() {
                                                 const perms = selectedRole.permissions[resource.key] || {};
                                                 return (
                                                     <div key={resource.key} className="flex items-center px-4 py-3 border-t border-border/40">
-                                                        <span className="text-sm font-medium w-56 shrink-0">{resource.label}</span>
-                                                        <div className="flex gap-6">
+                                                        <span className="text-sm font-medium w-40 sm:w-56 shrink-0">{resource.label}</span>
+                                                        <div className="flex gap-4 sm:gap-6">
                                                             {ACTIONS.map((action) => {
                                                                 const supported = resource.actions.includes(action);
                                                                 const cascadeBlocked =

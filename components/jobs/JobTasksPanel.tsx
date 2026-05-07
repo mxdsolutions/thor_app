@@ -108,7 +108,7 @@ export function JobTasksPanel({ jobId, variant = "rail" }: JobTasksPanelProps) {
             variant === "rail" && "border-l border-border bg-background"
         )}>
             <div className="px-5 pt-5 pb-3 flex items-center justify-between shrink-0">
-                <h3 className="text-xl font-bold uppercase tracking-wide">Tasks</h3>
+                <h3 className="text-xl font-bold tracking-wide">Tasks</h3>
                 <Button
                     type="button"
                     size="sm"

@@ -19,7 +19,7 @@ const columns: DataTableColumn<JobRow>[] = [
         render: (r) => (
             <div className="flex items-center gap-3">
                 <span className={cn("w-2 h-2 rounded-full", getJobStatusDot(r.status))} />
-                <span className="font-semibold">{r.jobTitle}</span>
+                <span className="font-semibold whitespace-nowrap">{r.jobTitle}</span>
             </div>
         ),
     },
@@ -33,7 +33,7 @@ const columns: DataTableColumn<JobRow>[] = [
     {
         key: "quoted",
         label: "Quoted",
-        className: "text-right tabular-nums hidden md:table-cell",
+        className: "text-right tabular-nums",
         render: (r) => formatCurrency(r.quoted),
     },
     {
@@ -61,15 +61,14 @@ const columns: DataTableColumn<JobRow>[] = [
     {
         key: "marginPct",
         label: "Margin %",
-        className: "text-right tabular-nums hidden lg:table-cell",
+        className: "text-right tabular-nums",
         render: (r) => (r.revenue > 0 ? `${r.marginPct.toFixed(1)}%` : "—"),
     },
     {
         key: "paidStatus",
         label: "Paid",
-        className: "hidden lg:table-cell",
         render: (r) => (
-            <span className={cn("text-xs font-semibold capitalize", paidStatusTextClass[r.paidStatus] ?? "text-muted-foreground")}>
+            <span className={cn("text-xs font-semibold capitalize whitespace-nowrap", paidStatusTextClass[r.paidStatus] ?? "text-muted-foreground")}>
                 {r.paidStatus.replace(/_/g, " ")}
             </span>
         ),
@@ -80,17 +79,19 @@ export function JobProfitabilityTable({ rows }: JobProfitabilityTableProps) {
     const router = useRouter();
 
     return (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="flex items-center justify-between p-4 md:p-5 border-b border-border/40">
+        <div className="rounded-2xl border border-border bg-card">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-3 p-4 md:p-5 border-b border-border/40">
                 <h2 className="text-sm font-bold tracking-tight">Job Profitability — Top 10</h2>
                 <span className="text-xs text-muted-foreground">All-time totals, active jobs only</span>
             </div>
-            <DataTable<JobRow>
-                items={rows}
-                columns={columns}
-                emptyMessage="No active jobs to compare yet."
-                onRowClick={(row) => router.push(`/dashboard/jobs/${row.id}`)}
-            />
+            <div className="overflow-x-auto">
+                <DataTable<JobRow>
+                    items={rows}
+                    columns={columns}
+                    emptyMessage="No active jobs to compare yet."
+                    onRowClick={(row) => router.push(`/dashboard/jobs/${row.id}`)}
+                />
+            </div>
         </div>
     );
 }

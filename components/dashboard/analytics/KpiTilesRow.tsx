@@ -48,32 +48,49 @@ export function KpiTilesRow({ data }: KpiTilesRowProps) {
     const { kpis, requestedPeriod } = data;
     const includeDeltas = showDeltas(requestedPeriod);
 
+    const tiles: { label: string; value: string; sublabel?: ReactNode }[] = [
+        {
+            label: "Total Revenue",
+            value: formatCurrency(kpis.totalRevenue.current),
+            sublabel: includeDeltas ? deltaSublabel(kpis.totalRevenue.current, kpis.totalRevenue.previous) : undefined,
+        },
+        {
+            label: "Cash Collected",
+            value: formatCurrency(kpis.cashCollected.current),
+            sublabel: includeDeltas ? deltaSublabel(kpis.cashCollected.current, kpis.cashCollected.previous) : undefined,
+        },
+        {
+            label: "Outstanding AR",
+            value: formatCurrency(kpis.outstandingAR.current),
+            sublabel: <span className="text-muted-foreground">current snapshot</span>,
+        },
+        {
+            label: "Total Expenses",
+            value: formatCurrency(kpis.totalExpenses.current),
+            sublabel: includeDeltas ? deltaSublabel(kpis.totalExpenses.current, kpis.totalExpenses.previous, true) : undefined,
+        },
+        {
+            label: "Active Jobs",
+            value: String(kpis.activeJobs.current),
+        },
+    ];
+
     return (
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 ${cardGap} px-4 md:px-6 lg:px-10`}>
-            <StatCard
-                label="Total Revenue"
-                value={formatCurrency(kpis.totalRevenue.current)}
-                sublabel={includeDeltas ? deltaSublabel(kpis.totalRevenue.current, kpis.totalRevenue.previous) : undefined}
-            />
-            <StatCard
-                label="Cash Collected"
-                value={formatCurrency(kpis.cashCollected.current)}
-                sublabel={includeDeltas ? deltaSublabel(kpis.cashCollected.current, kpis.cashCollected.previous) : undefined}
-            />
-            <StatCard
-                label="Outstanding AR"
-                value={formatCurrency(kpis.outstandingAR.current)}
-                sublabel={<span className="text-muted-foreground">current snapshot</span>}
-            />
-            <StatCard
-                label="Total Expenses"
-                value={formatCurrency(kpis.totalExpenses.current)}
-                sublabel={includeDeltas ? deltaSublabel(kpis.totalExpenses.current, kpis.totalExpenses.previous, true) : undefined}
-            />
-            <StatCard
-                label="Active Jobs"
-                value={String(kpis.activeJobs.current)}
-            />
-        </div>
+        <>
+            {/* Mobile: horizontal scroll */}
+            <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
+                {tiles.map((tile, i) => (
+                    <div key={i} className="shrink-0 w-[75%] sm:w-[280px]">
+                        <StatCard label={tile.label} value={tile.value} sublabel={tile.sublabel} />
+                    </div>
+                ))}
+            </div>
+            {/* md+: grid */}
+            <div className={`hidden md:grid md:grid-cols-2 lg:grid-cols-5 ${cardGap} px-4 md:px-6 lg:px-10`}>
+                {tiles.map((tile, i) => (
+                    <StatCard key={i} label={tile.label} value={tile.value} sublabel={tile.sublabel} />
+                ))}
+            </div>
+        </>
     );
 }

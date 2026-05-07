@@ -263,7 +263,7 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
-                                "pb-3 text-[17px] font-medium transition-colors relative focus:outline-none whitespace-nowrap",
+                                "pb-3 text-[15px] font-medium transition-colors relative focus:outline-none whitespace-nowrap",
                                 activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                             )}
                         >

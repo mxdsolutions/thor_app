@@ -108,7 +108,7 @@ export function SideSheetLayout({
                                     key={tab.id}
                                     onClick={() => onTabChange(tab.id)}
                                     className={cn(
-                                        "pb-3 text-[17px] font-medium transition-colors relative focus:outline-none",
+                                        "pb-3 text-[15px] font-medium transition-colors relative focus:outline-none",
                                         activeTab === tab.id
                                             ? "text-foreground"
                                             : "text-muted-foreground hover:text-foreground"
