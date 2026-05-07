@@ -58,6 +58,7 @@ export function mapThorQuoteToXero(
         gst_inclusive?: boolean | null;
         material_margin: number;
         labour_margin: number;
+        currency?: string | null;
     },
     xeroContactId: string,
     lineItems: ThorQuoteLineItemForXero[]
@@ -73,7 +74,7 @@ export function mapThorQuoteToXero(
         Title: quote.title || undefined,
         Summary: quote.description || undefined,
         Terms: quote.scope_description || undefined,
-        CurrencyCode: "AUD",
+        CurrencyCode: quote.currency || "AUD",
         LineAmountTypes: quote.gst_inclusive ? "Inclusive" : "Exclusive",
         LineItems: lineItems.map((li) => ({
             Description: li.description || "",

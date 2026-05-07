@@ -1,0 +1,145 @@
+import { NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { withAuth } from "@/app/api/_lib/handler";
+import { tenantListQuery } from "@/app/api/_lib/list-query";
+import { serverError, validationError, notFoundError, forbiddenError } from "@/app/api/_lib/errors";
+import { timesheetSchema, timesheetUpdateSchema } from "@/lib/validation";
+
+const TIMESHEET_SELECT =
+    "*, job:jobs (id, job_title, reference_id), user:profiles!timesheets_user_id_fkey (id, full_name, email, avatar_url)";
+
+/** Roles that may log time on behalf of another user. Members and viewers
+ *  can only log their own hours. */
+const PRIVILEGED_ROLES = new Set(["owner", "admin", "manager"]);
+
+/**
+ * Authorise a write that targets `targetUserId`:
+ *   - the target must be a member of the caller's tenant (closes the
+ *     cross-tenant hole — RLS only checks the row's tenant_id, not the FK)
+ *   - if writing for someone else, the caller's role must be privileged
+ *
+ * Returns null on success, or a 403/404 response the handler should return.
+ */
+async function authoriseTargetUser(
+    supabase: SupabaseClient,
+    callerId: string,
+    tenantId: string,
+    targetUserId: string,
+) {
+    const { data: target } = await supabase
+        .from("tenant_memberships")
+        .select("user_id")
+        .eq("tenant_id", tenantId)
+        .eq("user_id", targetUserId)
+        .maybeSingle();
+    if (!target) return notFoundError("Employee");
+
+    if (callerId === targetUserId) return null;
+
+    const { data: caller } = await supabase
+        .from("tenant_memberships")
+        .select("role")
+        .eq("tenant_id", tenantId)
+        .eq("user_id", callerId)
+        .maybeSingle();
+    if (!caller || !PRIVILEGED_ROLES.has(caller.role)) {
+        return forbiddenError("You can only log time for yourself");
+    }
+    return null;
+}
+
+export const GET = withAuth(async (request, { supabase, tenantId, user }) => {
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get("job_id");
+    const userParam = searchParams.get("user_id");
+
+    const { query } = tenantListQuery(supabase, "timesheets", {
+        select: TIMESHEET_SELECT,
+        tenantId,
+        request,
+        searchColumns: ["notes"],
+        orderBy: { column: "start_at", ascending: false },
+        archivable: true,
+    });
+
+    let q = query;
+    if (jobId) q = q.eq("job_id", jobId);
+    if (userParam === "me") {
+        q = q.eq("user_id", user.id);
+    } else if (userParam) {
+        q = q.eq("user_id", userParam);
+    }
+
+    const { data, error, count } = await q;
+    if (error) return serverError(error);
+    return NextResponse.json({ items: data, total: count || 0 });
+});
+
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const body = await request.json();
+    const validation = timesheetSchema.safeParse(body);
+    if (!validation.success) return validationError(validation.error);
+
+    const denied = await authoriseTargetUser(supabase, user.id, tenantId, validation.data.user_id);
+    if (denied) return denied;
+
+    // Confirm the referenced job (if any) belongs to the caller's tenant.
+    if (validation.data.job_id) {
+        const { data: jobRow, error: jobErr } = await supabase
+            .from("jobs")
+            .select("id")
+            .eq("id", validation.data.job_id)
+            .eq("tenant_id", tenantId)
+            .maybeSingle();
+        if (jobErr || !jobRow) return notFoundError("Job");
+    }
+
+    const { data, error } = await supabase
+        .from("timesheets")
+        .insert({
+            ...validation.data,
+            source: validation.data.source ?? "manual",
+            tenant_id: tenantId,
+            created_by: user.id,
+        })
+        .select(TIMESHEET_SELECT)
+        .single();
+
+    if (error) return serverError(error);
+    return NextResponse.json({ item: data }, { status: 201 });
+});
+
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const body = await request.json();
+    const validation = timesheetUpdateSchema.safeParse(body);
+    if (!validation.success) return validationError(validation.error);
+
+    const { id, ...updates } = validation.data;
+
+    if (updates.user_id) {
+        const denied = await authoriseTargetUser(supabase, user.id, tenantId, updates.user_id);
+        if (denied) return denied;
+    }
+
+    if (updates.job_id) {
+        const { data: jobRow } = await supabase
+            .from("jobs")
+            .select("id")
+            .eq("id", updates.job_id)
+            .eq("tenant_id", tenantId)
+            .maybeSingle();
+        if (!jobRow) return notFoundError("Job");
+    }
+
+    const { data, error } = await supabase
+        .from("timesheets")
+        .update(updates)
+        .eq("id", id)
+        .eq("tenant_id", tenantId)
+        .select(TIMESHEET_SELECT)
+        .single();
+
+    if (error) return serverError(error);
+    return NextResponse.json({ item: data });
+});
+

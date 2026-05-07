@@ -28,7 +28,7 @@ export const POST = withPlatformAuth(async (request, { adminClient, user }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     if (!data) return notFoundError("Tenant");
 
     console.log(`[platform-admin] Tenant ${id} ${action}ed by ${user.id}`);

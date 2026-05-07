@@ -1,45 +1,49 @@
 @import "tailwindcss/index.css";
+@import "tw-animate-css";
 
 @theme {
-  --font-sans: var(--font-plex-sans);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
   --font-display: var(--font-antonio);
+  --font-statement: var(--font-bricolage);
   --font-paladins: var(--font-paladins-cond);
 
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(0 0% 0%);
+  /* Warm, paper-leaning neutrals — moves away from clinical pure white/black */
+  --color-background: hsl(30 8% 98%);
+  --color-foreground: hsl(220 14% 14%);
 
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(0 0% 0%);
+  --color-card-foreground: hsl(220 14% 14%);
 
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(0 0% 0%);
+  --color-popover-foreground: hsl(220 14% 14%);
 
   --color-primary: hsl(16 87% 55%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(0 0% 96.1%);
-  --color-secondary-foreground: hsl(0 0% 9%);
+  --color-secondary: hsl(30 6% 95%);
+  --color-secondary-foreground: hsl(220 14% 14%);
 
-  --color-muted: hsl(0 0% 96.1%);
-  --color-muted-foreground: hsl(0 0% 45.1%);
+  --color-muted: hsl(30 6% 95%);
+  --color-muted-foreground: hsl(220 8% 42%);
 
-  --color-accent: hsl(0 0% 96.1%);
-  --color-accent-foreground: hsl(0 0% 9%);
+  --color-accent: hsl(30 6% 95%);
+  --color-accent-foreground: hsl(220 14% 14%);
 
-  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive: hsl(0 84% 60%);
   --color-destructive-foreground: hsl(0 0% 98%);
 
-  --color-border: hsl(0 0% 89.8%);
-  --color-input: hsl(0 0% 89.8%);
+  --color-border: hsl(220 10% 88%);
+  --color-input: hsl(220 10% 88%);
   --color-ring: hsl(16 87% 55%);
 
-  /* Industrial radius scale: small elements 2px, surfaces 4px, buttons/interactive 6px. */
-  --radius-sm: 2px;
-  --radius-md: 2px;
-  --radius-lg: 6px;
-  --radius-xl: 4px;
-  --radius-2xl: 4px;
-  --radius-3xl: 4px;
+  /* Unified radius scale — calm, consistent, no jumps. 4/8/8. */
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
+  --radius-2xl: 8px;
+  --radius-3xl: 8px;
 }
 
 @layer base {
@@ -49,14 +53,23 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: var(--font-plex-sans);
+    font-family: var(--font-inter);
   }
 
+  /* Inter handles all hierarchy via weight + size.
+     Opt into Bebas (display) explicitly with the `font-display` utility. */
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-antonio);
-    font-weight: 500;
-    letter-spacing: 0.01em;
+    font-weight: 600;
+    letter-spacing: -0.011em;
   }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .sheet-overlay[data-state="open"] {

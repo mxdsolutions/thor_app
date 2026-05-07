@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useTenant } from "@/lib/tenant-context";
 import { ReportWizardShell } from "@/components/reports/wizard/ReportWizardShell";
+import { makeInternalUploader } from "@/components/reports/UploadContext";
 import { ROUTES } from "@/lib/routes";
 import { IconArrowLeft as ArrowLeftIcon } from "@tabler/icons-react";
 import type { TemplateSchema, ReportTemplate } from "@/lib/report-templates/types";
@@ -129,6 +130,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
             schema={schema}
             initialData={initialData}
             tenantId={tenant.id}
+            uploader={makeInternalUploader(tenant.id, report.id)}
             onSave={handleSave}
             onSubmit={handleSubmit}
         />

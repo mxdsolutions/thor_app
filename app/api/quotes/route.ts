@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
+import { applyArchiveFilter, parseArchiveScope } from "@/app/api/_lib/archive";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { quoteSchema, quoteUpdateSchema, createQuoteWithItemsSchema } from "@/lib/validation";
 import { pushQuoteToXero } from "@/lib/xero-sync";
+import { recalcQuoteTotal } from "@/app/api/_lib/line-items";
 
 export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const { limit, offset, search } = parsePagination(request);
@@ -15,6 +17,8 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
+    query = applyArchiveFilter(query, parseArchiveScope(request));
+
     if (search) {
         query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
@@ -24,7 +28,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     if (jobId) query = query.eq("job_id", jobId);
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data, total: count || 0 });
 });
@@ -37,22 +41,11 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     if (compositeValidation.success) {
         const { line_items, sections, ...quoteFields } = compositeValidation.data;
 
-        // Gather all items for total calculation
+        // Gather all items (used by Xero sync below)
         const allItems = [
             ...(line_items || []),
             ...(sections || []).flatMap(s => s.items),
         ];
-
-        // Calculate total from line items + margins
-        let materialSum = 0;
-        let labourSum = 0;
-        for (const li of allItems) {
-            materialSum += li.quantity * li.material_cost;
-            labourSum += li.quantity * li.labour_cost;
-        }
-        const totalAmount =
-            materialSum * (1 + quoteFields.material_margin / 100) +
-            labourSum * (1 + quoteFields.labour_margin / 100);
 
         // Auto-generate title if not provided
         let title = quoteFields.title;
@@ -64,12 +57,14 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             title = `Quote #${(count || 0) + 1}`;
         }
 
+        // Insert with total_amount = 0; recalc_quote_total will set it
+        // atomically once line items land.
         const { data: quote, error: quoteError } = await supabase
             .from("quotes")
             .insert({
                 ...quoteFields,
                 title,
-                total_amount: totalAmount,
+                total_amount: 0,
                 status: "draft",
                 created_by: user.id,
                 tenant_id: tenantId,
@@ -77,7 +72,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name, email, phone, job_title), job:jobs(id, job_title, status)")
             .single();
 
-        if (quoteError) return serverError();
+        if (quoteError) return serverError(quoteError);
 
         const lineItemRows: Record<string, unknown>[] = [];
 
@@ -95,7 +90,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
                 .insert(sectionRows)
                 .select();
 
-            if (secError) return serverError();
+            if (secError) return serverError(secError);
 
             // Map items to their section IDs (sections inserted in order)
             for (let si = 0; si < sections.length; si++) {
@@ -146,8 +141,13 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             const { error: liError } = await supabase
                 .from("quote_line_items")
                 .insert(lineItemRows);
-            if (liError) return serverError();
+            if (liError) return serverError(liError);
         }
+
+        // Atomically compute the total in Postgres so concurrent line-item
+        // writes can't clobber each other.
+        const newTotal = await recalcQuoteTotal(supabase, quote.id);
+        quote.total_amount = newTotal;
 
         // Push to Xero if connected
         let xeroWarning: string | undefined;
@@ -195,7 +195,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data }, { status: 201 });
 });
@@ -215,7 +215,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data });
 });

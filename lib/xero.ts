@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { createHash, randomBytes } from "crypto";
 
 const XERO_AUTH_URL = "https://login.xero.com/identity/connect/authorize";
 const XERO_TOKEN_URL = "https://identity.xero.com/connect/token";
@@ -8,7 +9,17 @@ const XERO_CONNECTIONS_URL = "https://api.xero.com/connections";
 const SCOPES =
     "openid profile email offline_access accounting.contacts accounting.invoices";
 
-export function buildXeroAuthUrl(state: string): string {
+/** Generate a PKCE code verifier (43-128 chars, URL-safe). */
+export function generatePkceVerifier(): string {
+    return randomBytes(32).toString("base64url");
+}
+
+/** Derive the S256 code_challenge from a verifier. */
+export function pkceChallengeFromVerifier(verifier: string): string {
+    return createHash("sha256").update(verifier).digest("base64url");
+}
+
+export function buildXeroAuthUrl(state: string, codeChallenge?: string): string {
     const params = new URLSearchParams({
         response_type: "code",
         client_id: process.env.XERO_CLIENT_ID!,
@@ -16,11 +27,22 @@ export function buildXeroAuthUrl(state: string): string {
         scope: SCOPES,
         state,
     });
+    if (codeChallenge) {
+        params.set("code_challenge", codeChallenge);
+        params.set("code_challenge_method", "S256");
+    }
 
     return `${XERO_AUTH_URL}?${params.toString()}`;
 }
 
-export async function exchangeXeroCodeForTokens(code: string) {
+export async function exchangeXeroCodeForTokens(code: string, codeVerifier?: string) {
+    const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: process.env.XERO_REDIRECT_URI!,
+    });
+    if (codeVerifier) body.set("code_verifier", codeVerifier);
+
     const res = await fetch(XERO_TOKEN_URL, {
         method: "POST",
         headers: {
@@ -29,11 +51,7 @@ export async function exchangeXeroCodeForTokens(code: string) {
                 `${process.env.XERO_CLIENT_ID}:${process.env.XERO_CLIENT_SECRET}`
             ).toString("base64")}`,
         },
-        body: new URLSearchParams({
-            grant_type: "authorization_code",
-            code,
-            redirect_uri: process.env.XERO_REDIRECT_URI!,
-        }),
+        body,
     });
 
     if (!res.ok) {
@@ -83,6 +101,10 @@ async function refreshXeroToken(refreshToken: string) {
 /**
  * Get a valid Xero access token for a tenant, refreshing if needed.
  * Returns { accessToken, xeroTenantId } or throws.
+ *
+ * Concurrent-safe: uses optimistic locking on the refresh_token column so
+ * two simultaneous callers don't both consume the refresh token at Xero
+ * (which would burn it and leave the loser with `invalid_grant`).
  */
 export async function getValidXeroToken(
     supabase: SupabaseClient,
@@ -103,7 +125,7 @@ export async function getValidXeroToken(
     const now = new Date();
     const fiveMinutes = 5 * 60 * 1000;
 
-    // Token is still valid
+    // Token is still valid — return immediately
     if (expiresAt.getTime() - now.getTime() > fiveMinutes) {
         return {
             accessToken: connection.access_token,
@@ -111,13 +133,38 @@ export async function getValidXeroToken(
         };
     }
 
-    // Refresh the token
-    const tokens = await refreshXeroToken(connection.refresh_token);
-    const newExpiresAt = new Date(
-        Date.now() + tokens.expires_in * 1000
-    ).toISOString();
+    const oldRefreshToken = connection.refresh_token;
 
-    await supabase
+    let tokens;
+    try {
+        tokens = await refreshXeroToken(oldRefreshToken);
+    } catch {
+        // Refresh failed — could be revoked, expired, or a race loser.
+        // Re-read to check if another request already refreshed successfully.
+        const { data: updated } = await supabase
+            .from("xero_connections")
+            .select("access_token, refresh_token, token_expires_at, xero_tenant_id")
+            .eq("id", connection.id)
+            .single();
+
+        if (updated && updated.refresh_token !== oldRefreshToken) {
+            return {
+                accessToken: updated.access_token,
+                xeroTenantId: updated.xero_tenant_id,
+            };
+        }
+
+        // Genuinely revoked/expired — surface the error to the caller.
+        throw new Error("Xero connection has expired or been revoked. Please reconnect.");
+    }
+
+    const newExpiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+
+    // Optimistic lock: only update if refresh_token still matches what we used.
+    // If another request already refreshed, this update affects 0 rows — fine,
+    // their tokens are already persisted and our access token is still valid
+    // for this request (Xero issued it).
+    const { error: updateError } = await supabase
         .from("xero_connections")
         .update({
             access_token: tokens.access_token,
@@ -125,7 +172,16 @@ export async function getValidXeroToken(
             token_expires_at: newExpiresAt,
             updated_at: new Date().toISOString(),
         })
-        .eq("id", connection.id);
+        .eq("id", connection.id)
+        .eq("refresh_token", oldRefreshToken);
+
+    if (updateError) {
+        console.error(
+            "[xero] CRITICAL: Failed to persist refreshed tokens for tenant",
+            tenantId,
+            updateError.message
+        );
+    }
 
     return {
         accessToken: tokens.access_token,
@@ -208,4 +264,26 @@ export async function getXeroConnection(
         .single();
 
     return data;
+}
+
+/**
+ * Revoke the refresh token at Xero's identity service. Best-effort —
+ * a network error here shouldn't block the local disconnect.
+ * https://developer.xero.com/documentation/guides/oauth2/auth-flow#revoking-tokens
+ */
+export async function revokeXeroToken(refreshToken: string): Promise<void> {
+    try {
+        await fetch("https://identity.xero.com/connect/revocation", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                Authorization: `Basic ${Buffer.from(
+                    `${process.env.XERO_CLIENT_ID}:${process.env.XERO_CLIENT_SECRET}`
+                ).toString("base64")}`,
+            },
+            body: new URLSearchParams({ token: refreshToken }),
+        });
+    } catch (err) {
+        console.error("[xero] revokeXeroToken failed (non-fatal):", err);
+    }
 }

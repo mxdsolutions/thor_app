@@ -79,16 +79,20 @@ function MetricsSkeleton({ count = 3 }: { count?: number }) {
     );
 }
 
+// Deterministic bar pattern — must be stable across server/client to avoid
+// hydration mismatch. Visual variety only, no real meaning.
+const BAR_HEIGHTS = [62, 38, 78, 54, 86, 44, 72, 58, 90, 48, 66, 80];
+
 function ChartSkeleton({ className }: { className?: string }) {
     return (
         <div className={cn("rounded-2xl border border-border p-6 space-y-4", className)}>
             <Skeleton className="h-5 w-40" />
             <div className="flex items-end gap-2 h-48">
-                {Array.from({ length: 12 }).map((_, i) => (
+                {BAR_HEIGHTS.map((h, i) => (
                     <Skeleton
                         key={i}
                         className="flex-1 rounded-t"
-                        style={{ height: `${30 + Math.random() * 60}%` }}
+                        style={{ height: `${h}%` }}
                     />
                 ))}
             </div>

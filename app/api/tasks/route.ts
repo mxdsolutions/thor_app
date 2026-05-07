@@ -35,7 +35,7 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
     if (jobId) query = query.eq("job_id", jobId);
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ items: data, total: count || 0 });
 });
 
@@ -54,7 +54,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         .select("*, assigned_user:profiles!tasks_assigned_to_fkey(id, full_name)")
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ item: data }, { status: 201 });
 });
 
@@ -74,6 +74,6 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select("*, assigned_user:profiles!tasks_assigned_to_fkey(id, full_name)")
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ item: data });
 });

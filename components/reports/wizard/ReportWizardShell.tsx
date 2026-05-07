@@ -10,6 +10,7 @@ import { computeAllSectionValidations } from "@/lib/reports/validation";
 import { ROUTES } from "@/lib/routes";
 import { WizardTopBar } from "./WizardTopBar";
 import { WizardStepContent } from "./WizardStepContent";
+import { UploadProvider, type ReportPhotoUploader } from "@/components/reports/UploadContext";
 
 interface ReportWizardShellProps {
     reportId: string;
@@ -18,6 +19,22 @@ interface ReportWizardShellProps {
     schema: TemplateSchema;
     initialData: Record<string, unknown>;
     tenantId?: string;
+    /** Photo uploader for `photo_upload` fields. Internal pages pass a session
+     *  uploader; the public completion page passes a token-based uploader. */
+    uploader?: ReportPhotoUploader;
+    /** External (no-auth) flow uses a custom top bar / submit experience. */
+    mode?: "internal" | "external";
+    /** External flow renders this header above the wizard instead of the
+     *  internal `WizardTopBar` (which links back to the dashboard). */
+    headerSlot?: React.ReactNode;
+    /** Hide the navigation back-to-dashboard chrome (used on the external page). */
+    hideTopBar?: boolean;
+    /** Skip the post-submit redirect — the external page renders its own
+     *  thank-you state instead of bouncing to the dashboard. */
+    skipRedirectOnSubmit?: boolean;
+    /** Optional callback fired after a successful submit. Useful for the
+     *  external page to flip to its thank-you panel. */
+    onSubmitted?: () => void;
     onSave: (data: Record<string, unknown>) => Promise<void>;
     onSubmit: (data: Record<string, unknown>) => Promise<void>;
 }
@@ -29,6 +46,12 @@ export function ReportWizardShell({
     schema,
     initialData,
     tenantId,
+    uploader,
+    mode = "internal",
+    headerSlot,
+    hideTopBar,
+    skipRedirectOnSubmit,
+    onSubmitted,
     onSave,
     onSubmit,
 }: ReportWizardShellProps) {
@@ -125,13 +148,16 @@ export function ReportWizardShell({
             hasUnsavedRef.current = false;
             setStatus("submitted");
             toast.success("Report submitted");
-            router.push(`${ROUTES.OPS_REPORTS}?report=${reportId}`);
+            onSubmitted?.();
+            if (!skipRedirectOnSubmit) {
+                router.push(`${ROUTES.OPS_REPORTS}?report=${reportId}`);
+            }
         } catch {
             toast.error("Failed to submit report");
         } finally {
             setSubmitting(false);
         }
-    }, [onSubmit, router, reportId]);
+    }, [onSubmit, router, reportId, onSubmitted, skipRedirectOnSubmit]);
 
     // --- Validation ---
     const validations = useMemo(
@@ -141,18 +167,21 @@ export function ReportWizardShell({
 
     if (!schema.sections[currentStep]) return null;
 
-    return (
+    const inner = (
         <div className="h-screen flex flex-col bg-background">
-            <WizardTopBar
-                reportTitle={reportTitle}
-                currentStep={currentStep}
-                totalSteps={schema.sections.length}
-                saveStatus={saveStatus}
-                reportStatus={status}
-                sections={schema.sections}
-                validations={validations}
-                onStepClick={goToStep}
-            />
+            {headerSlot}
+            {!hideTopBar && (
+                <WizardTopBar
+                    reportTitle={reportTitle}
+                    currentStep={currentStep}
+                    totalSteps={schema.sections.length}
+                    saveStatus={saveStatus}
+                    reportStatus={status}
+                    sections={schema.sections}
+                    validations={validations}
+                    onStepClick={goToStep}
+                />
+            )}
 
             <WizardStepContent
                 schema={schema}
@@ -188,7 +217,9 @@ export function ReportWizardShell({
                         >
                             <LoaderIcon className="w-6 h-6 text-primary animate-spin" />
                             <div className="text-center">
-                                <p className="text-sm font-semibold">Submitting report…</p>
+                                <p className="text-sm font-semibold">
+                                    {mode === "external" ? "Submitting…" : "Submitting report…"}
+                                </p>
                                 <p className="text-xs text-muted-foreground mt-0.5">
                                     Finalising your report. This may take a moment.
                                 </p>
@@ -199,4 +230,6 @@ export function ReportWizardShell({
             </AnimatePresence>
         </div>
     );
+
+    return uploader ? <UploadProvider uploader={uploader}>{inner}</UploadProvider> : inner;
 }

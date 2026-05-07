@@ -1,4 +1,13 @@
-import useSWR, { type SWRConfiguration } from "swr";
+import useSWR, { mutate as globalMutate, type SWRConfiguration } from "swr";
+
+/** Archive scope for any archivable list endpoint. Default is `active`. */
+export type ArchiveScope = "active" | "archived" | "all";
+
+/** Append the archive param when it differs from the default so cache keys
+ *  for callers that don't pass a scope stay identical to pre-archive behaviour. */
+function appendArchive(params: URLSearchParams, scope?: ArchiveScope) {
+    if (scope && scope !== "active") params.set("archive", scope);
+}
 
 // --- Shared API response shapes ---
 
@@ -12,6 +21,7 @@ export type PricingItem = {
     Material_Cost: string | null;
     Labour_Cost: string | null;
     Pricing_Status: string | null;
+    archived_at?: string | null;
 };
 
 const fetcher = async (url: string) => {
@@ -28,26 +38,29 @@ const defaultConfig: SWRConfiguration = {
     dedupingInterval: 10000,
 };
 
-export function useCompanies(search?: string, offset = 0, limit = 50) {
+export function useCompanies(search?: string, offset = 0, limit = 50, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/companies?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useContacts(search?: string, offset = 0, limit = 50) {
+export function useContacts(search?: string, offset = 0, limit = 50, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/contacts?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useJobs(offset = 0, limit = 50) {
+export function useJobs(offset = 0, limit = 50, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/jobs?${params.toString()}`, fetcher, defaultConfig);
 }
 
@@ -62,6 +75,55 @@ export function useStats() {
     });
 }
 
+export type AnalyticsPeriod = "30d" | "90d" | "qtd" | "ytd" | "all";
+
+export type AnalyticsResponse = {
+    period: { start: string; end: string; granularity: "week" | "month" };
+    kpis: {
+        totalRevenue:  { current: number; previous: number };
+        cashCollected: { current: number; previous: number };
+        outstandingAR: { current: number };
+        totalExpenses: { current: number; previous: number };
+        activeJobs:    { current: number };
+    };
+    revenueChart: { start: string; revenue: number; jobs: number }[];
+    jobProfitability: {
+        id: string;
+        jobTitle: string;
+        status: string;
+        quoted: number;
+        revenue: number;
+        expenses: number;
+        marginAmount: number;
+        marginPct: number;
+        paidStatus: string;
+    }[];
+    arAging: { current: number; d1_30: number; d31_60: number; d61_90: number; d90_plus: number };
+    requestedPeriod: AnalyticsPeriod;
+};
+
+export function useAnalytics(period: AnalyticsPeriod) {
+    return useSWR<AnalyticsResponse>(`/api/analytics?period=${period}`, fetcher, {
+        ...defaultConfig,
+        dedupingInterval: 30000,
+        keepPreviousData: true,
+    });
+}
+
+export type OverviewMetricBucket = { count: number; totalAmount: number };
+export type OverviewMetrics = {
+    pendingQuotes: OverviewMetricBucket;
+    pendingInvoices: OverviewMetricBucket;
+    activeJobs: OverviewMetricBucket;
+};
+
+export function useOverviewMetrics() {
+    return useSWR<OverviewMetrics>("/api/overview/metrics", fetcher, {
+        ...defaultConfig,
+        dedupingInterval: 30000,
+    });
+}
+
 export function useProfiles() {
     return useSWR("/api/users", fetcher, {
         ...defaultConfig,
@@ -69,43 +131,42 @@ export function useProfiles() {
     });
 }
 
-export function usePricing(search?: string, trade?: string, offset = 0, limit = 100) {
+export function usePricing(search?: string, trade?: string, offset = 0, limit = 100, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     if (trade) params.set("trade", trade);
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/pricing?${params.toString()}`, fetcher, defaultConfig);
 }
 
-export function useQuotes(search?: string, offset = 0, limit = 50) {
+export function useQuotes(search?: string, offset = 0, limit = 50, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/quotes?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
-export function useReports() {
-    return useSWR("/api/reports", fetcher, defaultConfig);
+export function useReports(archive?: ArchiveScope) {
+    const params = new URLSearchParams();
+    appendArchive(params, archive);
+    const qs = params.toString();
+    return useSWR(`/api/reports${qs ? `?${qs}` : ""}`, fetcher, defaultConfig);
 }
 
 export function useLicenses() {
     return useSWR("/api/licenses", fetcher, defaultConfig);
 }
 
-export function useInvoices(offset = 0, limit = 50) {
+export function useInvoices(offset = 0, limit = 50, archive?: ArchiveScope) {
     const params = new URLSearchParams();
     params.set("offset", String(offset));
     params.set("limit", String(limit));
+    appendArchive(params, archive);
     return useSWR(`/api/invoices?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
-}
-
-export function useServices(offset = 0, limit = 50) {
-    const params = new URLSearchParams();
-    params.set("offset", String(offset));
-    params.set("limit", String(limit));
-    return useSWR(`/api/services?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
 export function useMyTasks() {
@@ -137,6 +198,33 @@ export function useMyTenants() {
 export function useScheduleEntries(start: string, end: string) {
     return useSWR(
         `/api/schedule?start=${start}&end=${end}`,
+        fetcher,
+        defaultConfig,
+    );
+}
+
+// --- Report Share-Token Hooks ---
+
+export type ReportShareToken = {
+    id: string;
+    token: string;
+    recipient_email: string | null;
+    recipient_name: string | null;
+    message: string | null;
+    expires_at: string;
+    first_opened_at: string | null;
+    submitted_at: string | null;
+    submitted_by_email: string | null;
+    submitted_by_name: string | null;
+    revoked_at: string | null;
+    email_sent_at: string | null;
+    created_at: string;
+    created_by: string;
+};
+
+export function useReportShareTokens(reportId: string | null) {
+    return useSWR<{ items: ReportShareToken[] }>(
+        reportId ? `/api/reports/${reportId}/share-tokens` : null,
         fetcher,
         defaultConfig,
     );
@@ -253,6 +341,120 @@ export function useJobReports(jobId: string | null) {
     return useSWR(jobId ? `/api/reports?job_id=${jobId}` : null, fetcher, defaultConfig);
 }
 
+export function useJobScheduleEntries(jobId: string | null) {
+    return useSWR(jobId ? `/api/schedule?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+export function useJobCounts(jobId: string | null) {
+    return useSWR(jobId ? `/api/jobs/${jobId}/counts` : null, fetcher, defaultConfig);
+}
+
+// --- File Hooks ---
+
+/** List files at the tenant level (no job filter) or scoped to a single job
+ *  when `jobId` is provided. Pass `jobId = null` to list tenant-only files
+ *  (where `job_id is null`); omit it to list everything in the tenant. */
+export function useFiles(opts: {
+    jobId?: string | null;
+    /** When `null`, scope to tenant-level files only (`job_id is null`). When
+     *  a string, scope to that job's files. When `undefined`, list all. */
+    scope?: "tenant" | "job" | "all";
+    search?: string;
+    archive?: ArchiveScope;
+    offset?: number;
+    limit?: number;
+} = {}) {
+    const { jobId, scope = "all", search, archive, offset = 0, limit = 50 } = opts;
+    const params = new URLSearchParams();
+    if (scope === "job" && jobId) params.set("job_id", jobId);
+    if (scope === "tenant") params.set("scope", "tenant");
+    if (search) params.set("search", search);
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    appendArchive(params, archive);
+    // Don't fetch when caller asked for job scope but didn't supply a jobId.
+    const key = scope === "job" && !jobId ? null : `/api/files?${params.toString()}`;
+    return useSWR(key, fetcher, { ...defaultConfig, keepPreviousData: true });
+}
+
+export function useJobFiles(jobId: string | null) {
+    return useSWR(jobId ? `/api/files?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+// --- Receipt Hooks ---
+
+export function useJobReceipts(jobId: string | null) {
+    return useSWR(jobId ? `/api/receipts?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+// --- Timesheet Hooks ---
+
+export function useTimesheets(opts: {
+    jobId?: string | null;
+    userId?: string | "me" | null;
+    search?: string;
+    archive?: ArchiveScope;
+    offset?: number;
+    limit?: number;
+} = {}) {
+    const { jobId, userId, search, archive, offset = 0, limit = 50 } = opts;
+    const params = new URLSearchParams();
+    if (jobId) params.set("job_id", jobId);
+    if (userId) params.set("user_id", userId);
+    if (search) params.set("search", search);
+    params.set("offset", String(offset));
+    params.set("limit", String(limit));
+    appendArchive(params, archive);
+    return useSWR(`/api/timesheets?${params.toString()}`, fetcher, {
+        ...defaultConfig,
+        keepPreviousData: true,
+    });
+}
+
+export function useJobTimesheets(jobId: string | null) {
+    return useSWR(
+        jobId ? `/api/timesheets?job_id=${jobId}` : null,
+        fetcher,
+        defaultConfig,
+    );
+}
+
+/** The currently signed-in user's open clock-in timer, or null. Polls every
+ *  30s so the elapsed display in the dashboard stays roughly fresh even when
+ *  the user has multiple tabs open. */
+export function useActiveTimesheet() {
+    return useSWR("/api/timesheets/active", fetcher, {
+        ...defaultConfig,
+        refreshInterval: 30000,
+    });
+}
+
+/** Revalidate every cached `/api/timesheets*` key — list, job-scoped, and the
+ *  active-timer endpoint. Call after any mutation so stale lists don't linger. */
+export function refreshTimesheetCache() {
+    void globalMutate(
+        (key) => typeof key === "string" && key.startsWith("/api/timesheets"),
+        undefined,
+        { revalidate: true },
+    );
+}
+
+// --- Purchase Order Hooks ---
+
+export function useJobPurchaseOrders(jobId: string | null) {
+    return useSWR(jobId ? `/api/purchase-orders?job_id=${jobId}` : null, fetcher, defaultConfig);
+}
+
+/** Returns POs that were generated from a specific quote — used to compute
+ *  the "X of Y line items have POs" progress on the quote sheet. */
+export function useQuotePurchaseOrders(quoteId: string | null) {
+    return useSWR(
+        quoteId ? `/api/purchase-orders?source_quote_id=${quoteId}` : null,
+        fetcher,
+        defaultConfig
+    );
+}
+
 // Selection hooks for modals (return only when key is truthy)
 export function useCompanyOptions(enabled = true) {
     return useSWR(enabled ? "/api/companies" : null, fetcher, defaultConfig);
@@ -260,10 +462,6 @@ export function useCompanyOptions(enabled = true) {
 
 export function useContactOptions(enabled = true) {
     return useSWR(enabled ? "/api/contacts" : null, fetcher, defaultConfig);
-}
-
-export function useServiceOptions(enabled = true) {
-    return useSWR(enabled ? "/api/services?limit=200" : null, fetcher, defaultConfig);
 }
 
 export function useJobOptions(enabled = true) {

@@ -4,11 +4,20 @@ import { headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
-import { getSeatUsage } from "@/lib/stripe-seats";
 
 export type InviteUserResult =
     | { success: true; error: null; data: unknown }
     | { success: false; error: string; code?: "no_seats_available" | "no_subscription" };
+
+type ClaimSeatResult = {
+    claimed: boolean;
+    reason?: string;
+    used?: number;
+    quantity?: number;
+    available?: number;
+    billing_exempt?: boolean;
+    has_subscription?: boolean;
+};
 
 export async function inviteUser(
     email: string,
@@ -30,18 +39,23 @@ export async function inviteUser(
 
         const tenantId = await getTenantId();
 
-        const usage = await getSeatUsage(supabase, tenantId);
-        // Pre-subscription invites are allowed — the seat count is computed
-        // when the owner kicks off Stripe Checkout (members + pending invites),
-        // so they're billed correctly from day 0.
-        if (!usage.billing_exempt && usage.has_subscription) {
-            if (usage.available <= 0) {
-                return {
-                    success: false,
-                    code: "no_seats_available",
-                    error: `You're using all ${usage.quantity} seats. Add more from Settings → Subscription before inviting.`,
-                };
-            }
+        // Atomic seat claim — wraps the count-and-decide in a transaction
+        // advisory lock keyed on tenant_id so concurrent invites can't both
+        // pass at quota - 1.
+        const { data: claim, error: claimError } = await supabase
+            .rpc("claim_seat", { p_tenant_id: tenantId })
+            .single<ClaimSeatResult>();
+
+        if (claimError) {
+            return { success: false, error: claimError.message };
+        }
+
+        if (claim && !claim.claimed) {
+            return {
+                success: false,
+                code: "no_seats_available",
+                error: `You're using all ${claim.quantity} seats. Add more from Settings → Subscription before inviting.`,
+            };
         }
 
         const admin = await createAdminClient();

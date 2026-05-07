@@ -29,8 +29,13 @@ export function usePageTitle(title: string) {
 
     useEffect(() => {
         setTitle(title);
-        document.title = companyName ? `${title} | ${companyName}` : title;
-        return () => { setTitle(""); document.title = companyName || "Dashboard"; };
+        document.title = companyName
+            ? `${title} | ${companyName} · THOR`
+            : `${title} · THOR`;
+        return () => {
+            setTitle("");
+            document.title = companyName ? `${companyName} · THOR` : "THOR";
+        };
     }, [title, setTitle, companyName]);
 }
 

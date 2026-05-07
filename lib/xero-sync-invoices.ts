@@ -332,7 +332,8 @@ async function upsertXeroInvoiceToThor(
                 company_id: companyId,
                 updated_at: new Date().toISOString(),
             })
-            .eq("id", existing.mxd_id);
+            .eq("id", existing.mxd_id)
+            .eq("tenant_id", tenantId);
 
         // Update line items
         await syncInvoiceLineItems(supabase, tenantId, existing.mxd_id, xi);
@@ -386,7 +387,8 @@ async function syncInvoiceLineItems(
     await supabase
         .from("invoice_line_items")
         .delete()
-        .eq("invoice_id", invoiceId);
+        .eq("invoice_id", invoiceId)
+        .eq("tenant_id", tenantId);
 
     await supabase.from("invoice_line_items").insert(
         items.map((li) => ({

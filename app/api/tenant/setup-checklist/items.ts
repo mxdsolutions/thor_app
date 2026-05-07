@@ -7,8 +7,7 @@ export type SetupItemKey =
     | "report_cover"
     | "invite_members"
     | "first_job"
-    | "xero_sync"
-    | "services";
+    | "xero_sync";
 
 export type SetupItemStatus = "complete" | "skipped" | "pending";
 
@@ -39,12 +38,6 @@ export const SETUP_ITEMS: readonly SetupItem[] = [
         label: "Set your invoice prefix",
         description: "Used as the prefix on every quote and invoice number.",
         href: `${ROUTES.SETTINGS_COMPANY}/details`,
-    },
-    {
-        key: "services",
-        label: "Set up your services",
-        description: "Define the services you offer so they're available on quotes.",
-        href: ROUTES.OPS_SERVICES,
     },
     {
         key: "first_job",

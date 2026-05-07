@@ -90,7 +90,7 @@ export function ReportTemplateSideSheet({ templateId, open, onOpenChange, onUpda
                             </div>
                             <div className="flex-1 min-w-0 pt-0.5">
                                 <div className="flex items-center gap-2.5">
-                                    <SheetTitle className="text-lg font-bold truncate">{data.name}</SheetTitle>
+                                    <SheetTitle className="font-statement text-lg font-extrabold tracking-tight truncate">{data.name}</SheetTitle>
                                     <Badge variant="outline" className="shrink-0 text-[10px] font-bold uppercase tracking-wider">
                                         <span className={cn(
                                             "w-1.5 h-1.5 rounded-full mr-1.5",

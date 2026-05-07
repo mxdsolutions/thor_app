@@ -4,7 +4,7 @@ import { validationError } from "@/app/api/_lib/errors";
 import { graphFetch, OutlookReauthRequired } from "@/lib/microsoft-graph";
 import { sendEmailSchema } from "@/lib/validation";
 
-export const POST = withAuth(async (request, { supabase, user }) => {
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     const body = await request.json();
     const validation = sendEmailSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -38,6 +38,7 @@ export const POST = withAuth(async (request, { supabase, user }) => {
         const res = await graphFetch(supabase, user.id, "/me/sendMail", {
             method: "POST",
             body: JSON.stringify({ message }),
+            tenantId,
         });
 
         if (!res.ok) {

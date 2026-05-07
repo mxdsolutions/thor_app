@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLicenses } from "@/lib/swr";
-import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
+import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconArchive as ArchiveIcon } from "@tabler/icons-react";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell, sectionHeadingClass } from "@/lib/design-system";
 
 type License = {
@@ -31,7 +31,7 @@ export default function LicensesPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [archivingId, setArchivingId] = useState<string | null>(null);
 
     const resetForm = () => {
         setForm(EMPTY_FORM);
@@ -85,17 +85,21 @@ export default function LicensesPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        setDeletingId(id);
+    const handleArchive = async (id: string) => {
+        setArchivingId(id);
         try {
-            const res = await fetch(`/api/licenses?id=${id}`, { method: "DELETE" });
+            const res = await fetch(`/api/licenses/${id}/archive`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ archived: true }),
+            });
             if (!res.ok) throw new Error();
-            toast.success("License removed");
+            toast.success("License archived");
             mutate();
         } catch {
-            toast.error("Failed to delete license");
+            toast.error("Failed to archive license");
         } finally {
-            setDeletingId(null);
+            setArchivingId(null);
         }
     };
 
@@ -232,12 +236,13 @@ export default function LicensesPage() {
                                                 <PencilSquareIcon className="w-4 h-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(license.id)}
-                                                disabled={deletingId === license.id}
-                                                className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-muted-foreground hover:text-red-600"
-                                                title="Delete"
+                                                onClick={() => handleArchive(license.id)}
+                                                disabled={archivingId === license.id}
+                                                className="p-2 rounded-lg hover:bg-muted/50 transition-colors text-muted-foreground hover:text-foreground"
+                                                title="Archive"
+                                                aria-label="Archive license"
                                             >
-                                                <TrashIcon className="w-4 h-4" />
+                                                <ArchiveIcon className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>

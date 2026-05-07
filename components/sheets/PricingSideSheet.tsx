@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { DetailFields } from "./DetailFields";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
+import { useArchiveAction } from "./use-archive-action";
 import { IconCurrencyDollar as CurrencyDollarIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { PricingItem } from "@/lib/swr";
@@ -36,6 +37,16 @@ export function PricingSideSheet({ item, open, onOpenChange, onUpdate }: Pricing
         }
     }, [data, onUpdate]);
 
+    const archive = useArchiveAction({
+        entityName: "pricing item",
+        endpoint: data?.Matrix_ID ? `/api/pricing/${encodeURIComponent(data.Matrix_ID)}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
+
     if (!data) return null;
 
     const isVerified = data.Pricing_Status === "Verified";
@@ -57,6 +68,8 @@ export function PricingSideSheet({ item, open, onOpenChange, onUpdate }: Pricing
                 label: data.Pricing_Status || "Unknown",
                 dotColor: isVerified ? "bg-emerald-500" : "bg-amber-500",
             }}
+            actions={archive.menu}
+            banner={archive.banner}
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}

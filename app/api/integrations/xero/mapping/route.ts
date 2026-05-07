@@ -23,7 +23,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .eq("mxd_id", thorId)
         .maybeSingle();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ mapping: data || null });
 });

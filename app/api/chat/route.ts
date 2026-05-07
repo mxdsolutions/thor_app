@@ -66,24 +66,35 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 
     const client = getAnthropicClient();
 
+    // Forward client disconnects to the upstream Anthropic call so we don't
+    // burn tokens on a request the user no longer cares about.
+    const abortSignal = request.signal;
+
     try {
         let turns = 0;
         while (turns < MAX_TOOL_TURNS) {
             turns++;
 
-            const response = await client.messages.create({
-                model: AI_MODEL,
-                max_tokens: MAX_OUTPUT_TOKENS,
-                system: [
-                    {
-                        type: "text",
-                        text: systemText,
-                        cache_control: { type: "ephemeral" },
-                    },
-                ],
-                tools: toolsForApi,
-                messages,
-            });
+            if (abortSignal.aborted) {
+                return new NextResponse(null, { status: 499 });
+            }
+
+            const response = await client.messages.create(
+                {
+                    model: AI_MODEL,
+                    max_tokens: MAX_OUTPUT_TOKENS,
+                    system: [
+                        {
+                            type: "text",
+                            text: systemText,
+                            cache_control: { type: "ephemeral" },
+                        },
+                    ],
+                    tools: toolsForApi,
+                    messages,
+                },
+                { signal: abortSignal }
+            );
 
             messages.push({ role: "assistant", content: response.content });
 

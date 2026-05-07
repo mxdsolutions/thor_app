@@ -13,8 +13,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
             project:projects!jobs_project_id_fkey (id, title),
             assignees:job_assignees (user:profiles (id, full_name, email)),
             company:companies (id, name),
-            contact:contacts (id, first_name, last_name),
-            service:products!jobs_service_id_fkey (id, name)
+            contact:contacts (id, first_name, last_name)
         `)
         .eq("id", id)
         .eq("tenant_id", tenantId)

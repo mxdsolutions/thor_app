@@ -79,13 +79,18 @@ export class OutlookReauthRequired extends Error {
     }
 }
 
-export async function getValidToken(supabase: SupabaseClient, userId: string): Promise<string> {
-    const { data: connection, error } = await supabase
+export async function getValidToken(
+    supabase: SupabaseClient,
+    userId: string,
+    tenantId?: string,
+): Promise<string> {
+    let query = supabase
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
-        .eq("provider", "outlook")
-        .single();
+        .eq("provider", "outlook");
+    if (tenantId) query = query.eq("tenant_id", tenantId);
+    const { data: connection, error } = await query.single();
 
     if (error || !connection) {
         throw new OutlookReauthRequired("No Outlook connection found. Please reconnect your account.");
@@ -164,18 +169,32 @@ export async function graphFetch(
     supabase: SupabaseClient,
     userId: string,
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit & { retries?: number; tenantId?: string }
 ): Promise<Response> {
-    const token = await getValidToken(supabase, userId);
+    const token = await getValidToken(supabase, userId, options?.tenantId);
+    const maxRetries = options?.retries ?? 3;
 
-    return fetch(`${GRAPH_BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            ...options?.headers,
-        },
-    });
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const res = await fetch(`${GRAPH_BASE_URL}${endpoint}`, {
+            ...options,
+            headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+                ...options?.headers,
+            },
+        });
+
+        // Microsoft Graph throttles per-app/per-tenant. Honour Retry-After.
+        if (res.status === 429 && attempt < maxRetries) {
+            const retryAfter = parseInt(res.headers.get("Retry-After") || "5", 10);
+            await new Promise((r) => setTimeout(r, retryAfter * 1000));
+            continue;
+        }
+
+        return res;
+    }
+
+    throw new Error("Microsoft Graph: max retries exceeded");
 }
 
 export function parseIdTokenEmail(idToken: string): string | null {

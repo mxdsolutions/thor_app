@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
+import { applyArchiveFilter, parseArchiveScope } from "@/app/api/_lib/archive";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { contactSchema, contactUpdateSchema } from "@/lib/validation";
 import { pushCompanyToXero } from "@/lib/xero-sync";
@@ -21,6 +22,8 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
+    query = applyArchiveFilter(query, parseArchiveScope(request));
+
     if (search) {
         query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%`);
     }
@@ -30,7 +33,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     if (companyId) query = query.eq("company_id", companyId);
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data, total: count || 0 });
 });
@@ -46,7 +49,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     // If contact has a company, push the company to Xero (which includes ContactPersons)
     if (data.company_id) {
@@ -80,7 +83,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     // Re-sync parent company so Xero's ContactPersons list stays current
     if (data.company_id) {

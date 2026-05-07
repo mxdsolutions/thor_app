@@ -30,7 +30,7 @@ export const PATCH = withPlatformAuth(async (request: NextRequest, { adminClient
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     if (!data) return notFoundError("Report template");
 
     return NextResponse.json({ item: data });
@@ -44,7 +44,7 @@ export const DELETE = withPlatformAuth(async (request: NextRequest, { adminClien
         .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq("id", id);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ success: true });
 });

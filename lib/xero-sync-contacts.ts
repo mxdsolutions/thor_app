@@ -329,7 +329,8 @@ async function upsertXeroContactToThor(
         await supabase
             .from("companies")
             .update({ ...companyData, updated_at: new Date().toISOString() })
-            .eq("id", existing.mxd_id);
+            .eq("id", existing.mxd_id)
+            .eq("tenant_id", tenantId);
 
         await supabase
             .from("xero_sync_mappings")
@@ -373,7 +374,8 @@ async function upsertXeroContactToThor(
         await supabase
             .from("companies")
             .update({ ...companyData, updated_at: new Date().toISOString() })
-            .eq("id", match.id);
+            .eq("id", match.id)
+            .eq("tenant_id", tenantId);
 
         await syncContactPersons(supabase, tenantId, userId, xc, match.id);
         return "updated";
@@ -435,7 +437,8 @@ async function syncContactPersons(
                     email: cp.EmailAddress || undefined,
                     updated_at: new Date().toISOString(),
                 })
-                .eq("id", existingContacts[0].id);
+                .eq("id", existingContacts[0].id)
+                .eq("tenant_id", tenantId);
         } else {
             await supabase.from("contacts").insert({
                 first_name: cp.FirstName || "Unknown",

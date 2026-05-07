@@ -10,7 +10,7 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
         .order("created_at", { ascending: false })
         .limit(50);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const { count } = await supabase
         .from("notifications")

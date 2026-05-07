@@ -10,14 +10,16 @@ import { createClient } from "@/lib/supabase/client";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon } from "@tabler/icons-react";
+import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon, IconSend as SendIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "@/lib/status-config";
 import type { ReportTemplate, TemplateSchema } from "@/lib/report-templates/types";
+import { useArchiveAction } from "./use-archive-action";
+import { SendReportFormModal } from "@/components/modals/SendReportFormModal";
 
 const noop = () => {};
 
-type Report = {
+export type Report = {
     id: string;
     title: string;
     type: string;
@@ -30,6 +32,7 @@ type Report = {
     project?: { id: string; title: string } | null;
     company?: { id: string; name: string } | null;
     creator?: { id: string; full_name: string } | null;
+    archived_at?: string | null;
 };
 
 interface ReportSideSheetProps {
@@ -45,6 +48,7 @@ const TYPE_LABELS = REPORT_TYPE_LABELS;
 export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: ReportSideSheetProps) {
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<Report | null>(report);
+    const [sendModalOpen, setSendModalOpen] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [template, setTemplate] = useState<ReportTemplate | null>(null);
     const [freshData, setFreshData] = useState<Record<string, unknown> | null>(null);
@@ -218,16 +222,26 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
 
     const handleSave = useCallback(async (column: string, value: string | number | null) => {
         if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("reports")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
+        const res = await fetch("/api/reports", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.id, [column]: value }),
+        });
+        if (res.ok) {
             setData(prev => prev ? { ...prev, [column]: value } : prev);
             onUpdate?.();
         }
     }, [data, onUpdate]);
+
+    const archive = useArchiveAction({
+        entityName: "report",
+        endpoint: data ? `/api/reports/${data.id}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
 
     if (!data) return null;
 
@@ -249,6 +263,15 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                     Open Report Form
                 </a>
             </Button>
+            <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => setSendModalOpen(true)}
+            >
+                <SendIcon className="w-4 h-4 mr-2" />
+                Send Report Form
+            </Button>
             {data.status === "submitted" && (
                 <Button
                     size="sm"
@@ -264,6 +287,12 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
     ) : null;
 
     return (
+        <>
+        <SendReportFormModal
+            open={sendModalOpen}
+            onOpenChange={setSendModalOpen}
+            reportId={data.id}
+        />
         <SideSheetLayout
             open={open}
             onOpenChange={onOpenChange}
@@ -279,10 +308,14 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            banner={archive.banner}
             actions={
-                actionButtons ? (
-                    <div className="hidden md:flex items-center gap-2">{actionButtons}</div>
-                ) : undefined
+                <div className="flex items-center gap-2">
+                    {actionButtons && (
+                        <div className="hidden md:flex items-center gap-2">{actionButtons}</div>
+                    )}
+                    {archive.menu}
+                </div>
             }
             footer={
                 actionButtons ? (
@@ -450,5 +483,6 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                 <ActivityTimeline entityType="report" entityId={data.id} />
             )}
         </SideSheetLayout>
+        </>
     );
 }

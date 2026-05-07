@@ -10,7 +10,7 @@ export const GET = withAuth(async (_request, { supabase, user }) => {
         .eq("id", user.id)
         .single();
 
-    if (profileError) return serverError();
+    if (profileError) return serverError(profileError);
 
     return NextResponse.json({
         user: {
@@ -42,7 +42,7 @@ export const PATCH = withAuth(async (request, { supabase, user }) => {
         })
         .eq("id", user.id);
 
-    if (updateError) return serverError();
+    if (updateError) return serverError(updateError);
 
     return NextResponse.json({ success: true });
 });

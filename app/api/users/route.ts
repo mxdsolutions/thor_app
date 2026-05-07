@@ -11,14 +11,14 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
         .select("user_id, role, joined_at")
         .eq("tenant_id", tenantId);
 
-    if (memberError) return serverError();
+    if (memberError) return serverError(memberError);
 
     const userIds = (memberships || []).map(m => m.user_id);
 
     const { data: profiles } = userIds.length > 0
         ? await supabase
             .from("profiles")
-            .select("id, full_name, email, avatar_url, created_at, position")
+            .select("id, full_name, email, avatar_url, created_at, position, hourly_rate")
             .in("id", userIds)
         : { data: [] };
 
@@ -36,6 +36,7 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
                 avatar_url: profile?.avatar_url,
                 user_type: m.role,
                 position: profile?.position,
+                hourly_rate: profile?.hourly_rate,
             },
             tenant_role: m.role,
             joined_at: m.joined_at,
@@ -86,7 +87,7 @@ export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
         .eq("user_id", user_id)
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ success: true });
 });

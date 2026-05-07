@@ -15,8 +15,8 @@ export const DEFAULT_MODULES: TenantModule[] = [
     { module_id: "operations.jobs", enabled: true },
     { module_id: "operations.schedule", enabled: true },
     { module_id: "operations.projects", enabled: true },
-    { module_id: "operations.services", enabled: true },
     { module_id: "operations.reports", enabled: true },
+    { module_id: "operations.timesheets", enabled: true },
     // Finance sub-modules
     { module_id: "finance.quotes", enabled: true },
     { module_id: "finance.invoices", enabled: true },

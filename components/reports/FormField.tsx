@@ -194,10 +194,8 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         photos={(value as PhotoItem[]) || []}
                         onChange={onChange}
                         readOnly={readOnly}
-                        reportId={reportId}
                         sectionId={sectionId}
                         fieldId={field.id}
-                        tenantId={tenantId}
                     />
                     {helpText}
                 </div>

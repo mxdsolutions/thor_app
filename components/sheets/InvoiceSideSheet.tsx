@@ -6,13 +6,13 @@ import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { IconSend as PaperAirplaneIcon, IconCash as BanknotesIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { INVOICE_STATUS_CONFIG } from "@/lib/status-config";
+import { useArchiveAction } from "./use-archive-action";
 
-type Invoice = {
+export type Invoice = {
     id: string;
     invoice_number: string | null;
     reference: string | null;
@@ -31,6 +31,7 @@ type Invoice = {
     created_at: string;
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
+    archived_at?: string | null;
 };
 
 interface InvoiceSideSheetProps {
@@ -53,12 +54,12 @@ export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: Invo
 
     const handleSave = useCallback(async (column: string, value: string | number | null) => {
         if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("invoices")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
+        const res = await fetch("/api/invoices", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.id, [column]: value }),
+        });
+        if (res.ok) {
             setData(prev => prev ? { ...prev, [column]: value } : prev);
             onUpdate?.();
         }
@@ -79,6 +80,16 @@ export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: Invo
         }
     }, [data]);
 
+    const archive = useArchiveAction({
+        entityName: "invoice",
+        endpoint: data ? `/api/invoices/${data.id}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
+
     if (!data) return null;
 
     const status = statusConfig[data.status] || statusConfig.draft;
@@ -97,6 +108,8 @@ export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: Invo
             title={data.invoice_number || data.reference || "Draft Invoice"}
             subtitle={data.company?.name || "No company"}
             badge={{ label: status.label, dotColor: status.color }}
+            actions={archive.menu}
+            banner={archive.banner}
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}

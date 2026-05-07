@@ -27,6 +27,9 @@ interface SideSheetLayoutProps {
         dotColor: string;
     };
     actions?: ReactNode;
+    /** Optional banner rendered between the header and the tab strip — used for
+     *  archived / read-only / status notices. */
+    banner?: ReactNode;
     footer?: ReactNode;
     /** Extra classes for the footer wrapper — handy for `md:hidden` etc. */
     footerClassName?: string;
@@ -47,6 +50,7 @@ export function SideSheetLayout({
     subtitle,
     badge,
     actions,
+    banner,
     footer,
     footerClassName,
     contentClassName,
@@ -65,7 +69,7 @@ export function SideSheetLayout({
                             {icon}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <SheetTitle className="text-[22px] font-bold truncate leading-tight">{title}</SheetTitle>
+                            <SheetTitle className="font-statement text-[22px] font-extrabold tracking-tight truncate leading-tight">{title}</SheetTitle>
                             <SheetDescription className="sr-only">{subtitle || title}</SheetDescription>
                             {(badge || actions) && (
                                 <div className="flex items-center justify-between gap-3 mt-[2px]">
@@ -92,6 +96,8 @@ export function SideSheetLayout({
                         </div>
                     </SheetHeader>
                 </div>
+
+                {banner}
 
                 {/* Tabs + Content */}
                 <div className="flex flex-col flex-1 min-h-0 bg-secondary/20">

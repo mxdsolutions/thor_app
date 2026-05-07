@@ -3,12 +3,27 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { TenantSwitcher } from "@/components/TenantSwitcher";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
 import { useTenantOptional, usePermissionOptional } from "@/lib/tenant-context";
 import { AnimatePresence, motion } from "framer-motion";
-import { IconLogout as ArrowRightStartOnRectangleIcon, IconMenu2 as Bars2Icon, IconX as XMarkIcon, IconMail as EnvelopeIcon, IconBell as BellIcon, IconSettings as CogIcon } from "@tabler/icons-react";
+import {
+    LogOut as ArrowRightStartOnRectangleIcon,
+    Menu as Bars2Icon,
+    X as XMarkIcon,
+    Mail as EnvelopeIcon,
+    Bell as BellIcon,
+    Settings as CogIcon,
+    Plus as PlusIcon,
+    Briefcase,
+    Calculator,
+    Banknote,
+    User,
+    FileText,
+    CalendarDays,
+} from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
 import {
     OVERVIEW_ITEM,
@@ -30,18 +45,30 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteGuard } from "@/app/dashboard/RouteGuard";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
 import { MobileHeaderActionProvider, useMobileHeaderActionValue } from "@/lib/mobile-header-action-context";
-import { pageHeadingClass } from "@/lib/design-system";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
 
-function PageTitle({ companyName }: { companyName?: string | null }) {
+function NavTooltip({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <TooltipPrimitive.Root>
+            <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
+            <TooltipPrimitive.Portal>
+                <TooltipPrimitive.Content
+                    side="right"
+                    sideOffset={10}
+                    className="z-50 bg-foreground text-white text-[15px] font-medium px-3 py-1.5 rounded-md border border-white/10 shadow-lg data-[state=delayed-open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=delayed-open]:fade-in-0 data-[state=closed]:slide-out-to-left-1 data-[state=delayed-open]:slide-in-from-left-1"
+                >
+                    {label}
+                </TooltipPrimitive.Content>
+            </TooltipPrimitive.Portal>
+        </TooltipPrimitive.Root>
+    );
+}
+
+function PageTitle({ className }: { className?: string }) {
     const title = useCurrentPageTitle();
     if (!title) return null;
     return (
-        <h1 className={cn(pageHeadingClass, "leading-none")}>
+        <h1 className={cn("font-semibold tracking-tight leading-none truncate", className)}>
             {title}
-            {companyName && (
-                <span className="text-muted-foreground font-bold"> | {companyName}</span>
-            )}
         </h1>
     );
 }
@@ -62,38 +89,92 @@ function MobileHeaderActionButton() {
     );
 }
 
-function SidebarNav({ items, pathname, onNavigate }: { items: NavItem[]; pathname: string; onNavigate?: () => void }) {
+function SidebarNav({ items, pathname, onNavigate, compact = false }: { items: NavItem[]; pathname: string; onNavigate?: () => void; compact?: boolean }) {
     const linkClass = (isActive: boolean) => cn(
-        "group flex items-center gap-3 xl:gap-4 px-3 py-2 xl:py-3 rounded-lg font-display text-2xl md:text-base xl:text-xl font-bold uppercase transition-all duration-200",
-        isActive ? "bg-white/10 text-white" : "text-white/50 hover:text-white hover:bg-white/[0.07]"
+        "group flex items-center rounded-lg transition-colors duration-150",
+        compact
+            ? "justify-center w-10 h-10 mx-auto"
+            : "gap-3 px-3 py-2.5 text-[15px] font-medium",
+        isActive ? "bg-white/10 text-white" : "text-zinc-300 hover:text-white hover:bg-white/[0.06]"
     );
 
+    const allItems = [OVERVIEW_ITEM, ...items];
+
     return (
-        <div className="space-y-0.5 xl:space-y-1">
-            <Link
-                href={OVERVIEW_ITEM.href}
-                onClick={onNavigate}
-                className={linkClass(pathname === OVERVIEW_ITEM.href || pathname.startsWith(OVERVIEW_ITEM.href + "/"))}
-            >
-                <OVERVIEW_ITEM.icon className={cn("w-5 h-5 xl:w-6 xl:h-6 shrink-0 transition-transform duration-200", !(pathname === OVERVIEW_ITEM.href) && "group-hover:scale-110")} />
-                {OVERVIEW_ITEM.label}
-            </Link>
-            {items.map((item) => {
+        <div className={compact ? "space-y-1" : "space-y-0.5"}>
+            {allItems.map((item) => {
                 const matchTarget = item.matchPrefix ?? item.href;
                 const isActive = pathname === matchTarget || pathname.startsWith(matchTarget + "/") || pathname === item.href;
-                return (
+                const link = (
                     <Link
                         key={item.href}
                         href={item.href}
                         onClick={onNavigate}
                         className={linkClass(isActive)}
                     >
-                        <item.icon className={cn("w-5 h-5 xl:w-6 xl:h-6 shrink-0 transition-transform duration-200", !isActive && "group-hover:scale-110")} />
-                        {item.label}
+                        <item.icon className="w-[20px] h-[20px] shrink-0" strokeWidth={2} />
+                        {!compact && item.label}
                     </Link>
                 );
+                return compact ? (
+                    <NavTooltip key={item.href} label={item.label}>{link}</NavTooltip>
+                ) : link;
             })}
         </div>
+    );
+}
+
+const CREATE_ITEMS: Array<{ label: string; href: string; icon: typeof Briefcase }> = [
+    { label: "Job", href: "/dashboard/jobs?create=1", icon: Briefcase },
+    { label: "Quote", href: "/dashboard/quotes?create=1", icon: Calculator },
+    { label: "Invoice", href: "/dashboard/invoices?create=1", icon: Banknote },
+    { label: "Contact", href: "/dashboard/clients?create=1", icon: User },
+    { label: "Report", href: "/dashboard/reports?create=1", icon: FileText },
+    { label: "Appointment", href: "/dashboard/schedule?create=1", icon: CalendarDays },
+];
+
+function CreateMenu({ onNavigate, compact = false }: { onNavigate?: () => void; compact?: boolean }) {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <button
+                    type="button"
+                    title={compact ? "Create" : undefined}
+                    className={cn(
+                        "flex items-center justify-center bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm",
+                        compact
+                            ? "w-10 h-10 mx-auto rounded-full"
+                            : "w-full gap-2 px-3 py-2.5 text-[14px] font-semibold rounded-lg"
+                    )}
+                >
+                    <PlusIcon className="w-[16px] h-[16px]" strokeWidth={2.5} />
+                    {!compact && "Create"}
+                </button>
+            </PopoverTrigger>
+            <PopoverContent
+                align={compact ? "start" : "start"}
+                side={compact ? "right" : "bottom"}
+                sideOffset={compact ? 8 : 6}
+                className={cn("p-1.5", compact && "w-44")}
+            >
+                {CREATE_ITEMS.map((item) => (
+                    <Link
+                        key={item.label}
+                        href={item.href}
+                        onClick={() => {
+                            setOpen(false);
+                            onNavigate?.();
+                        }}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[14px] font-medium text-foreground hover:bg-secondary transition-colors"
+                    >
+                        <item.icon className="w-[16px] h-[16px] text-muted-foreground" strokeWidth={2} />
+                        {item.label}
+                    </Link>
+                ))}
+            </PopoverContent>
+        </Popover>
     );
 }
 
@@ -111,30 +192,22 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
     const [notifOpen, setNotifOpen] = useState(false);
     const [signOutOpen, setSignOutOpen] = useState(false);
 
-    // Tenant context (optional — null when no TenantProvider wraps this component)
     const tenant = useTenantOptional();
-
-    // Permission check — defaults to true when no tenant provider is available
-    // (e.g., during auth flows) so the settings link isn't hidden prematurely.
     const hasSettingsAccess = usePermissionOptional("settings", "read", true);
 
     const { initials, displayName, email: userEmail } = useUserProfile();
     const { notifications, unreadCount, markAllRead, markOneRead, refresh: refreshNotifs } = useNotifications();
 
-    // Module access
     const { data: modulesData } = useTenantModules();
     const enabledModules = buildEnabledSet(modulesData?.modules ?? []);
     const modulesLoaded = !!modulesData;
 
-    const baseNavItems = buildNavItems({
-        enabledModules,
-        modulesLoaded,
-    });
+    const baseNavItems = buildNavItems({ enabledModules, modulesLoaded });
     const permissions = tenant?.permissions;
     const role = tenant?.role;
     const visibleNavItems = baseNavItems.filter((item) => {
         if (!item.permissionKey) return true;
-        if (!tenant) return true; // fail-open while tenant context loads
+        if (!tenant) return true;
         if (role === "owner") return true;
         return permissions?.[item.permissionKey]?.read === true;
     });
@@ -142,114 +215,132 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
         ? [...visibleNavItems, { href: ROUTES.SETTINGS_USERS, label: "Settings", icon: CogIcon, matchPrefix: "/dashboard/settings" }]
         : visibleNavItems;
 
+    const tenantLabel = tenant?.company_name || tenant?.name;
+
     return (
-        <div className="h-dvh overflow-hidden bg-black flex">
-            {/* Desktop Sidebar */}
-            <aside className="w-[280px] bg-black hidden md:flex flex-col fixed inset-y-0 left-0 z-30">
-                <div className="px-5 pt-5 pb-4 flex flex-col min-w-0">
-                    <Link href="/dashboard/overview" className="flex flex-col min-w-0 leading-tight">
-                        <span className="font-paladins text-[34px] xl:text-[40px] tracking-[0.08em] text-white leading-none">THOR<span className="font-sans text-[0.55em] font-semibold ml-[0.2em] align-super text-white/70">™</span></span>
-                        <span className="text-[12px] xl:text-[13px] font-semibold uppercase tracking-[0.18em] text-white/50 mt-1 leading-none">Construction. Amplified.</span>
+        <PageTitleProvider>
+        <MobileHeaderActionProvider>
+        <TooltipPrimitive.Provider delayDuration={0} skipDelayDuration={300}>
+            <div className="h-dvh overflow-hidden flex bg-foreground">
+
+                {/* Desktop Sidebar — icon rail */}
+                <aside className="w-[64px] bg-foreground hidden md:flex flex-col shrink-0 border-r border-white/10">
+                    <Link
+                        href="/dashboard/overview"
+                        className="flex items-center justify-center h-14 shrink-0"
+                    >
+                        <span className="font-paladins text-[14px] tracking-[0.08em] text-white leading-none">THOR</span>
                     </Link>
-                    {tenant && (
-                        <div className="mt-4 w-full min-w-0">
-                            <TenantSwitcher active={{ id: tenant.id, name: tenant.name, company_name: tenant.company_name, logo_url: tenant.logo_url }} />
-                        </div>
+                    <div className="px-3 pb-3">
+                        <CreateMenu compact />
+                    </div>
+                    <nav className="flex-1 px-3 overflow-y-auto pt-1 pb-3">
+                        <SidebarNav items={navItems} pathname={pathname} compact />
+                    </nav>
+                    <div className="p-3 pb-4 border-t border-white/10 space-y-1">
+                        <NavTooltip label={displayName}>
+                            <Link
+                                href="/dashboard/settings/settings"
+                                className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg bg-white/10 hover:bg-white/15 transition-colors"
+                            >
+                                <span className="text-xs font-semibold text-white tracking-wide">{initials}</span>
+                            </Link>
+                        </NavTooltip>
+                        <NavTooltip label="Sign out">
+                            <button
+                                onClick={() => setSignOutOpen(true)}
+                                className="flex items-center justify-center w-10 h-10 mx-auto rounded-lg text-zinc-300 hover:text-white hover:bg-white/[0.06] transition-colors"
+                            >
+                                <ArrowRightStartOnRectangleIcon className="w-[20px] h-[20px] shrink-0" strokeWidth={2} />
+                            </button>
+                        </NavTooltip>
+                    </div>
+                </aside>
+
+                {/* Mobile Sidebar Overlay */}
+                <AnimatePresence>
+                    {mobileMenuOpen && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40 md:hidden"
+                                onClick={() => setMobileMenuOpen(false)}
+                            />
+                            <motion.aside
+                                initial={{ x: "-100%" }}
+                                animate={{ x: 0 }}
+                                exit={{ x: "-100%" }}
+                                transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                                style={{ width: "80%" }}
+                                className="fixed inset-y-0 left-0 bg-foreground z-50 md:hidden flex flex-col shadow-2xl"
+                            >
+                                <div className="flex flex-col px-5 pt-5 pb-4 gap-0">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex flex-col min-w-0 leading-tight flex-1">
+                                            <span style={{ fontSize: 40, lineHeight: 1 }} className="font-paladins tracking-[0.08em] text-white">
+                                                THOR<span className="font-sans text-[0.55em] font-semibold ml-[0.2em] align-super text-white/70">™</span>
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60"
+                                        >
+                                            <XMarkIcon className="w-5 h-5" strokeWidth={2} />
+                                        </button>
+                                    </div>
+                                    <div className="mt-4 w-full">
+                                        <CreateMenu onNavigate={() => setMobileMenuOpen(false)} />
+                                    </div>
+                                </div>
+
+                                <nav className="flex-1 px-3 overflow-y-auto pt-0 pb-4">
+                                    <SidebarNav items={navItems} pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
+                                    <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
+                                        <Link
+                                            href="/dashboard/settings/settings"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                                                <span className="text-xs font-semibold text-white tracking-wide">{initials}</span>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-[13px] font-medium text-white truncate">{displayName}</p>
+                                                <p className="text-[11px] text-white/40 truncate">{userEmail}</p>
+                                            </div>
+                                        </Link>
+                                        <button
+                                            onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors w-full"
+                                        >
+                                            <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+                                            Sign out
+                                        </button>
+                                    </div>
+                                </nav>
+                            </motion.aside>
+                        </>
                     )}
-                </div>
-                <nav className="flex-1 px-3 overflow-y-auto pt-0 pb-3 xl:pb-4">
-                    <SidebarNav items={navItems} pathname={pathname} />
-                </nav>
-                <div className="p-3 pb-4 xl:pb-5 border-t border-white/10 space-y-0.5">
-                    <Link href="/dashboard/settings/settings" className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer">
-                        <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-lg bg-secondary flex items-center justify-center">
-                            <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs xl:text-base font-medium text-white truncate">{displayName}</p>
-                            <p className="text-[11px] xl:text-[15px] text-white/40 truncate">{userEmail}</p>
-                        </div>
-                    </Link>
-                    <button onClick={() => setSignOutOpen(true)} className="flex items-center gap-3 xl:gap-4 px-3 py-2 xl:py-3 rounded-lg font-display text-base xl:text-xl font-bold uppercase text-white/50 hover:text-white hover:bg-white/[0.07] transition-colors w-full">
-                        <ArrowRightStartOnRectangleIcon className="w-5 h-5 xl:w-6 xl:h-6 shrink-0" />
-                        Sign out
-                    </button>
-                </div>
-            </aside>
+                </AnimatePresence>
 
-            {/* Mobile Sidebar Overlay */}
-            <AnimatePresence>
-                {mobileMenuOpen && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
-                            onClick={() => setMobileMenuOpen(false)}
-                        />
-                        <motion.aside
-                            initial={{ x: "-100%" }}
-                            animate={{ x: 0 }}
-                            exit={{ x: "-100%" }}
-                            transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                            style={{ width: "90%" }}
-                            className="fixed inset-y-0 left-0 bg-black z-50 md:hidden flex flex-col shadow-2xl"
-                        >
-                            <div className="flex flex-col px-5 pt-5 pb-4 gap-0">
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex flex-col min-w-0 leading-tight flex-1">
-                                        <span style={{ fontSize: 40, lineHeight: 1 }} className="font-paladins tracking-[0.08em] text-white">THOR<span className="font-sans text-[0.55em] font-semibold ml-[0.2em] align-super text-white/70">™</span></span>
-                                        <span className="text-[13px] font-semibold uppercase tracking-[0.18em] text-white/50 mt-1 leading-none">Construction. Amplified.</span>
-                                    </div>
-                                    <button onClick={() => setMobileMenuOpen(false)} className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60">
-                                        <XMarkIcon className="w-5 h-5" />
-                                    </button>
-                                </div>
-                                {tenant && (
-                                    <div className="mt-4 w-full min-w-0">
-                                        <TenantSwitcher active={{ id: tenant.id, name: tenant.name, company_name: tenant.company_name, logo_url: tenant.logo_url }} />
-                                    </div>
-                                )}
-                            </div>
+                {/* Right column — header + (main + AI panel) */}
+                <div className="flex-1 min-w-0 flex flex-col bg-background">
 
-                            <nav className="flex-1 px-3 overflow-y-auto pt-0 pb-4">
-                                <SidebarNav items={navItems} pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-                                <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
-                                    <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.07] transition-colors cursor-pointer">
-                                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                                            <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-base font-medium text-white truncate">{displayName}</p>
-                                            <p className="text-[15px] text-white/40 truncate">{userEmail}</p>
-                                        </div>
-                                    </Link>
-                                    <button onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }} className="flex items-center gap-4 px-3 py-3 rounded-lg font-display text-lg font-bold text-white/50 hover:text-white hover:bg-white/[0.07] transition-colors w-full">
-                                        <ArrowRightStartOnRectangleIcon className="w-6 h-6 shrink-0" />
-                                        Sign out
-                                    </button>
-                                </div>
-                            </nav>
-                        </motion.aside>
-                    </>
-                )}
-            </AnimatePresence>
-
-            {/* Main content */}
-            <main className="flex-1 min-w-0 overflow-hidden md:ml-[280px]">
-              <PageTitleProvider>
-              <MobileHeaderActionProvider>
-                <div className="bg-background h-dvh overflow-hidden flex flex-col">
-                    {/* Desktop header — inside the container */}
-                    <header className="hidden md:flex h-20 border-b border-border items-center px-6 lg:px-10 gap-4 shrink-0">
-                        <PageTitle companyName={tenant?.company_name || tenant?.name} />
-                        <div className="flex items-center gap-2 ml-auto">
+                    {/* Top header — desktop only, off-white, sits over main + AI */}
+                    <header className="hidden md:flex h-14 items-center px-6 lg:px-8 gap-4 shrink-0 bg-background">
+                        {tenantLabel && (
+                            <span className="text-[16px] text-foreground/80 font-medium truncate">
+                                {tenantLabel}
+                            </span>
+                        )}
+                        <div className="flex items-center gap-1 ml-auto">
                             {showPlatformAdminLink && (
                                 <Link
                                     href="/platform-admin"
-                                    className="px-3 py-1.5 text-base font-medium bg-secondary text-foreground hover:bg-secondary/80 rounded-lg transition-colors"
+                                    className="px-3 py-1.5 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                                 >
                                     Go to Admin
                                 </Link>
@@ -257,56 +348,74 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
                             {tenant?.role === "owner" && <SetupChecklist />}
                             <button
                                 title="Notifications"
+                                aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
                                 onClick={() => { setNotifOpen(true); refreshNotifs(); }}
                                 className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors relative"
                             >
-                                <BellIcon className="w-[26px] h-[26px]" />
+                                <BellIcon className="w-[20px] h-[20px]" strokeWidth={2} />
                                 {unreadCount > 0 && (
-                                    <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full ring-2 ring-background" />
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
                                 )}
                             </button>
-                            <Link href={ROUTES.CRM_EMAILS} title="Emails" className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                                <EnvelopeIcon className="w-[26px] h-[26px]" />
+                            <Link
+                                href={ROUTES.CRM_EMAILS}
+                                title="Emails"
+                                aria-label="Emails"
+                                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                            >
+                                <EnvelopeIcon className="w-[20px] h-[20px]" strokeWidth={2} />
                             </Link>
                             <AssistantTrigger />
                         </div>
                     </header>
 
-                    {/* Mobile header — hidden on job detail pages so the detail view spans full height */}
-                    {!pathname.startsWith("/dashboard/jobs/") && (
-                        <header className="md:hidden h-20 border-b border-border flex items-center px-4 sticky top-0 z-20 bg-background shrink-0">
-                            <div className="w-10">
-                                <button onClick={() => setMobileMenuOpen(true)} className="p-2 rounded-lg hover:bg-secondary transition-colors" aria-label="Open menu">
-                                    <Bars2Icon className="w-5 h-5" />
-                                </button>
-                            </div>
-                            <div className="flex-1 text-center">
-                                <PageTitle />
-                            </div>
-                            <MobileHeaderActionButton />
-                        </header>
-                    )}
+                    {/* Body row — main + AI panel, both below the header */}
+                    <div className="flex-1 min-h-0 flex">
+                        <main className="flex-1 min-w-0 overflow-hidden bg-background">
+                            <div className="h-full overflow-hidden flex flex-col">
+                                {/* Mobile header */}
+                                {!pathname.startsWith("/dashboard/jobs/") && (
+                                    <header className="md:hidden h-16 border-b border-border flex items-center px-4 sticky top-0 z-20 bg-background shrink-0">
+                                        <div className="w-10">
+                                            <button
+                                                onClick={() => setMobileMenuOpen(true)}
+                                                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                                                aria-label="Open menu"
+                                            >
+                                                <Bars2Icon className="w-5 h-5" strokeWidth={2} />
+                                            </button>
+                                        </div>
+                                        <div className="flex-1 text-center">
+                                            <PageTitle className="font-statement font-extrabold tracking-tight text-lg text-foreground" />
+                                        </div>
+                                        <MobileHeaderActionButton />
+                                    </header>
+                                )}
 
-                    <div className="relative w-full pt-4 lg:pt-6 min-w-0 flex-1 min-h-0 overflow-y-auto">
-                        <ErrorBoundary><RouteGuard>{children}</RouteGuard></ErrorBoundary>
+                                <div className="relative w-full pt-4 lg:pt-6 min-w-0 flex-1 min-h-0 overflow-y-auto">
+                                    <ErrorBoundary><RouteGuard>{children}</RouteGuard></ErrorBoundary>
+                                </div>
+                            </div>
+                        </main>
+
+                        <AssistantPanel />
                     </div>
                 </div>
-              </MobileHeaderActionProvider>
-              </PageTitleProvider>
-            </main>
 
-            <AssistantPanel />
-            <AssistantFab />
+                <AssistantFab />
 
-            <NotificationSheet
-                open={notifOpen}
-                onOpenChange={setNotifOpen}
-                notifications={notifications}
-                unreadCount={unreadCount}
-                onMarkAllRead={markAllRead}
-                onMarkOneRead={markOneRead}
-            />
-            <SignOutDialog open={signOutOpen} onOpenChange={setSignOutOpen} />
-        </div>
+                <NotificationSheet
+                    open={notifOpen}
+                    onOpenChange={setNotifOpen}
+                    notifications={notifications}
+                    unreadCount={unreadCount}
+                    onMarkAllRead={markAllRead}
+                    onMarkOneRead={markOneRead}
+                />
+                <SignOutDialog open={signOutOpen} onOpenChange={setSignOutOpen} />
+            </div>
+        </TooltipPrimitive.Provider>
+        </MobileHeaderActionProvider>
+        </PageTitleProvider>
     );
 }

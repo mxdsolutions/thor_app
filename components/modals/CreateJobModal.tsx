@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { IconX as XMarkIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
-import { useContacts, useProfiles, useStatusConfig, useServices } from "@/lib/swr";
+import { useContacts, useProfiles, useStatusConfig } from "@/lib/swr";
 import { DEFAULT_JOB_STATUSES, getDefaultStatusId } from "@/lib/status-config";
 import { useTenant } from "@/lib/tenant-context";
 import { mutate } from "swr";
@@ -24,21 +24,14 @@ interface CreateJobModalProps {
 
 type Contact = { id: string; first_name: string; last_name: string; email: string | null; company_id: string | null };
 type User = { id: string; full_name: string | null; email: string | null };
-type Service = { id: string; name: string };
 
-/** Modal for creating a new service job with type, contact, auto job-id, and assignees. */
+/** Modal for creating a new job with contact, auto job-id, and assignees. */
 export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }: CreateJobModalProps) {
     const [saving, setSaving] = useState(false);
     const [referenceId, setReferenceId] = useState("");
     const [jobTitle, setJobTitle] = useState("");
     const [description, setDescription] = useState("");
     const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
-
-    // Type (service) search
-    const [serviceId, setServiceId] = useState("");
-    const [serviceSearch, setServiceSearch] = useState("");
-    const [showServiceDropdown, setShowServiceDropdown] = useState(false);
-    const [creatingService, setCreatingService] = useState(false);
 
     // Contact search
     const [contactId, setContactId] = useState("");
@@ -56,9 +49,6 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
     const { data: userData } = useProfiles();
     const users: User[] = userData?.users || [];
 
-    const { data: serviceData, mutate: refreshServices } = useServices();
-    const services: Service[] = serviceData?.items || [];
-
     const selectedContact = contacts.find(c => c.id === contactId);
     const filteredContacts = contacts.filter(c => {
         const fullName = `${c.first_name} ${c.last_name}`.toLowerCase();
@@ -66,19 +56,12 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
             (c.email && c.email.toLowerCase().includes(contactSearch.toLowerCase()));
     });
 
-    const selectedService = services.find(s => s.id === serviceId);
-    const filteredServices = services.filter(s =>
-        s.name.toLowerCase().includes(serviceSearch.toLowerCase())
-    );
-
     const reset = () => {
         setReferenceId("");
         setJobTitle("");
         setDescription("");
         setContactId("");
         setContactSearch("");
-        setServiceId("");
-        setServiceSearch("");
         setAssigneeIds([]);
     };
 
@@ -94,37 +77,6 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
         // every parent render.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
-
-    const handleSelectService = (service: Service) => {
-        setServiceId(service.id);
-        setServiceSearch("");
-        setShowServiceDropdown(false);
-        if (!jobTitle.trim()) {
-            setJobTitle(service.name);
-        }
-    };
-
-    const handleCreateService = async () => {
-        const name = serviceSearch.trim();
-        if (!name || creatingService) return;
-        setCreatingService(true);
-        try {
-            const res = await fetch("/api/services", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name }),
-            });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            await refreshServices();
-            handleSelectService(data.item as Service);
-            toast.success("Service created");
-        } catch {
-            toast.error("Failed to create service");
-        } finally {
-            setCreatingService(false);
-        }
-    };
 
     const handleSelectContact = (contact: Contact) => {
         setContactId(contact.id);
@@ -151,7 +103,6 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                     reference_id: fullRef,
                     job_title: jobTitle.trim(),
                     description: description.trim() || null,
-                    service_id: serviceId || null,
                     contact_id: contactId || null,
                     company_id: selectedContact?.company_id || null,
                     assignee_ids: assigneeIds,
@@ -177,7 +128,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
                         <DialogTitle>New Job</DialogTitle>
-                        <DialogDescription>Create a new service job.</DialogDescription>
+                        <DialogDescription>Create a new job.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
                         <DialogBody className="space-y-4 pb-6">
@@ -208,62 +159,6 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                             <p className="text-xs text-muted-foreground">
                                 This will be auto-populated if left empty.
                             </p>
-                        </div>
-
-                        {/* Type (service) selector with search + create */}
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-muted-foreground">Type</label>
-                            <div className="relative">
-                                <Input
-                                    placeholder="Search or create service type..."
-                                    value={selectedService ? selectedService.name : serviceSearch}
-                                    onChange={(e) => {
-                                        setServiceSearch(e.target.value);
-                                        setServiceId("");
-                                        setShowServiceDropdown(true);
-                                    }}
-                                    onFocus={() => setShowServiceDropdown(true)}
-                                    onBlur={() => setTimeout(() => setShowServiceDropdown(false), 200)}
-                                    className="rounded-xl"
-                                />
-                                {showServiceDropdown && !selectedService && (
-                                    <div className="absolute z-50 top-full mt-1 w-full bg-background border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                                        {filteredServices.length === 0 && !serviceSearch && (
-                                            <div className="px-3 py-2 text-sm text-muted-foreground">Type to search services</div>
-                                        )}
-                                        {filteredServices.map(s => (
-                                            <button
-                                                key={s.id}
-                                                type="button"
-                                                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl"
-                                                onClick={() => handleSelectService(s)}
-                                            >
-                                                <span className="font-medium">{s.name}</span>
-                                            </button>
-                                        ))}
-                                        {serviceSearch.trim() && (
-                                            <button
-                                                type="button"
-                                                className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5 border-t border-border rounded-b-xl disabled:opacity-50"
-                                                disabled={creatingService}
-                                                onClick={handleCreateService}
-                                            >
-                                                <PlusIcon className="w-3.5 h-3.5" />
-                                                {creatingService ? "Creating..." : `Create new service: "${serviceSearch}"`}
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                                {selectedService && (
-                                    <button
-                                        type="button"
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-                                        onClick={() => { setServiceId(""); setServiceSearch(""); }}
-                                    >
-                                        Clear
-                                    </button>
-                                )}
-                            </div>
                         </div>
 
                         {/* Contact selector with search + create */}
@@ -330,7 +225,7 @@ export function CreateJobModal({ open, onOpenChange, onCreated, defaultValues }:
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-muted-foreground">Job Name *</label>
                             <Input
-                                placeholder="Auto-filled from type"
+                                placeholder="What's this job about?"
                                 value={jobTitle}
                                 onChange={(e) => setJobTitle(e.target.value)}
                                 className="rounded-xl"

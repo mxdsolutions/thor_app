@@ -12,7 +12,7 @@ type ChecklistResponseItem = {
 };
 
 export const GET = withAuth(async (_request, { supabase, tenantId }) => {
-    const [tenantRes, membershipsRes, jobsRes, productsRes, xeroRes, skipsRes] =
+    const [tenantRes, membershipsRes, jobsRes, xeroRes, skipsRes] =
         await Promise.all([
             supabase
                 .from("tenants")
@@ -28,10 +28,6 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
                 .select("id", { count: "exact", head: true })
                 .eq("tenant_id", tenantId),
             supabase
-                .from("products")
-                .select("id", { count: "exact", head: true })
-                .eq("tenant_id", tenantId),
-            supabase
                 .from("xero_connections")
                 .select("status")
                 .eq("tenant_id", tenantId)
@@ -42,12 +38,11 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
                 .eq("tenant_id", tenantId),
         ]);
 
-    if (tenantRes.error) return serverError();
+    if (tenantRes.error) return serverError(tenantRes.error);
 
     const tenant = tenantRes.data;
     const memberCount = membershipsRes.count ?? 0;
     const jobCount = jobsRes.count ?? 0;
-    const productCount = productsRes.count ?? 0;
     const xeroConnected =
         !!xeroRes.data && xeroRes.data.status !== "pending_org_selection";
     const skipped = new Set<string>(
@@ -62,7 +57,6 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
         invite_members: memberCount > 1,
         first_job: jobCount > 0,
         xero_sync: xeroConnected,
-        services: productCount > 0,
     };
 
     const items: ChecklistResponseItem[] = SETUP_ITEMS.map((item) => {

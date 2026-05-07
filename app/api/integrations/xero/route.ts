@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
+import { revokeXeroToken } from "@/lib/xero";
 
 export const GET = withAuth(async (_request, { supabase, tenantId }) => {
     const { data: connection } = await supabase
@@ -27,6 +28,18 @@ export const DELETE = withAuth(async (_request, { supabase, user, tenantId }) =>
         "write"
     );
     if (denied) return denied;
+
+    // Best-effort revoke at Xero before nuking the local row, so a leaked
+    // DB snapshot can't be replayed. Failure is non-fatal — the local
+    // delete below still runs.
+    const { data: connection } = await supabase
+        .from("xero_connections")
+        .select("refresh_token")
+        .eq("tenant_id", tenantId)
+        .maybeSingle();
+    if (connection?.refresh_token) {
+        await revokeXeroToken(connection.refresh_token);
+    }
 
     // Delete sync mappings first
     await supabase

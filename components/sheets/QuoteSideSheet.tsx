@@ -1,19 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
-import { formatCurrency, timeAgo } from "@/lib/utils";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
-import { DetailFields } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { Button } from "@/components/ui/button";
-import { IconDownload as ArrowDownTrayIcon, IconPencil as PencilIcon, IconSend as SendIcon } from "@tabler/icons-react";
+import {
+    IconDownload as ArrowDownTrayIcon,
+    IconPencil as PencilIcon,
+    IconSend as SendIcon,
+    IconBuildingWarehouse as SupplierIcon,
+} from "@tabler/icons-react";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { toast } from "sonner";
 import { QUOTE_STATUS_CONFIG } from "@/lib/status-config";
-import { useContactOptions, useCompanyOptions, useJobOptions } from "@/lib/swr";
-import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
+import { useQuotePurchaseOrders, fetcher } from "@/lib/swr";
+import { useArchiveAction } from "./use-archive-action";
 import useSWR from "swr";
+
+import { QuoteDetailsTab } from "./quote-tabs/QuoteDetailsTab";
+import { QuoteRelatedTab } from "./quote-tabs/QuoteRelatedTab";
 
 const EditQuoteModal = lazy(() =>
     import("@/components/modals/EditQuoteModal").then(mod => ({ default: mod.EditQuoteModal }))
@@ -21,8 +27,15 @@ const EditQuoteModal = lazy(() =>
 const ComposeEmailModal = lazy(() =>
     import("@/components/modals/ComposeEmailModal").then(mod => ({ default: mod.ComposeEmailModal }))
 );
+const CreatePurchaseOrderModal = lazy(() =>
+    import("@/components/modals/CreatePurchaseOrderModal").then(mod => ({ default: mod.CreatePurchaseOrderModal }))
+);
+const PurchaseOrderSideSheet = lazy(() =>
+    import("@/components/sheets/PurchaseOrderSideSheet").then(mod => ({ default: mod.PurchaseOrderSideSheet }))
+);
+import type { PurchaseOrderItem } from "@/components/sheets/PurchaseOrderSideSheet";
 
-type Quote = {
+export type Quote = {
     id: string;
     title: string;
     description: string | null;
@@ -40,6 +53,7 @@ type Quote = {
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string; email?: string | null; company_id?: string | null } | null;
     job?: { id: string; title: string; status?: string } | null;
+    archived_at?: string | null;
 };
 
 interface QuoteSideSheetProps {
@@ -51,6 +65,8 @@ interface QuoteSideSheetProps {
 
 const statusConfig = QUOTE_STATUS_CONFIG;
 
+type SelectedPo = PurchaseOrderItem;
+
 /** Side sheet for viewing/editing quote details, line items, and margin calculations. */
 export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSideSheetProps) {
     const [activeTab, setActiveTab] = useState("details");
@@ -59,6 +75,8 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
     const [editOpen, setEditOpen] = useState(false);
     const [sending, setSending] = useState(false);
     const [composeOpen, setComposeOpen] = useState(false);
+    const [poModalOpen, setPoModalOpen] = useState(false);
+    const [selectedPo, setSelectedPo] = useState<SelectedPo | null>(null);
     const [emailDefaults, setEmailDefaults] = useState<{
         to: string;
         subject: string;
@@ -68,11 +86,6 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
     const tenant = useTenantOptional();
     const { data: outlookStatus } = useSWR(open ? "/api/integrations/outlook" : null, (url: string) => fetch(url).then(r => r.json()));
     const hasEmailIntegration = outlookStatus?.connected === true;
-    const { data: xeroMappingData } = useSWR<{ mapping: { xero_id: string; last_synced_at: string | null; sync_direction: string | null } | null }>(
-        open && data?.id ? `/api/integrations/xero/mapping?entity_type=quote&mxd_id=${data.id}` : null,
-        (url: string) => fetch(url).then(r => r.json())
-    );
-    const xeroMapping = xeroMappingData?.mapping || null;
 
     useEffect(() => { setData(quote); }, [quote]);
     useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);
@@ -132,7 +145,6 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
         if (!data) return;
         setSending(true);
         try {
-            // Generate PDF and convert to base64
             const blob = await generatePDFBlob();
             const arrayBuffer = await blob.arrayBuffer();
             const base64 = btoa(
@@ -164,6 +176,38 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
         }
     }, [data, generatePDFBlob]);
 
+    const archive = useArchiveAction({
+        entityName: "quote",
+        endpoint: data ? `/api/quotes/${data.id}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
+
+    // Quote → PO progress: show "X of Y line items have POs" so the user can
+    // see at a glance whether more POs need to be generated for this quote.
+    const { data: posData, mutate: mutatePos } = useQuotePurchaseOrders(open && data?.id ? data.id : null);
+    const { data: lineItemsData } = useSWR<{ items?: { id: string }[]; lineItems?: { id: string }[] }>(
+        open && data?.id ? `/api/quote-line-items?quote_id=${data.id}` : null,
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+    const totalLineItems = (lineItemsData?.items ?? lineItemsData?.lineItems ?? []).length;
+    const allocatedLineItemIds = useMemo(() => {
+        const ids = new Set<string>();
+        type POSummary = { line_items?: { source_quote_line_item_id: string | null }[] };
+        for (const po of (posData?.items as POSummary[] | undefined) ?? []) {
+            for (const li of po.line_items ?? []) {
+                if (li.source_quote_line_item_id) ids.add(li.source_quote_line_item_id);
+            }
+        }
+        return ids;
+    }, [posData]);
+    const allocatedCount = allocatedLineItemIds.size;
+    const canGeneratePo = !!data?.job_id && !data?.archived_at;
+
     if (!data) return null;
 
     const status = statusConfig[data.status] || statusConfig.draft;
@@ -193,6 +237,7 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            banner={archive.banner}
             actions={
                 <>
                     {isDraft && (
@@ -206,6 +251,17 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
                             Edit Quote
                         </Button>
                     )}
+                    {canGeneratePo && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="hidden sm:inline-flex rounded-lg h-8 text-sm gap-1.5"
+                            onClick={() => setPoModalOpen(true)}
+                        >
+                            <SupplierIcon className="w-3.5 h-3.5" />
+                            Generate PO
+                        </Button>
+                    )}
                     <Button
                         variant="outline"
                         size="sm"
@@ -216,6 +272,7 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
                         <ArrowDownTrayIcon className="w-3.5 h-3.5" />
                         {downloading ? "Generating..." : "View PDF"}
                     </Button>
+                    {archive.menu}
                 </>
             }
             footer={
@@ -260,113 +317,51 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
             }
         >
             {activeTab === "details" && (
-                <div className="space-y-4">
-                    <div className="rounded-xl border border-border bg-card p-5">
-                        <DetailFields
-                            onSave={handleSave}
-                            fields={[
-                                {
-                                    label: "Title",
-                                    value: data.title,
-                                    dbColumn: "title",
-                                    type: "text",
-                                    rawValue: data.title,
-                                },
-                                {
-                                    label: "Status",
-                                    value: status.label,
-                                    dbColumn: "status",
-                                    type: "select",
-                                    rawValue: data.status,
-                                    options: Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label })),
-                                },
-                                {
-                                    label: "Amount",
-                                    value: formatCurrency(data.total_amount),
-                                    dbColumn: "total_amount",
-                                    type: "text",
-                                    rawValue: String(data.total_amount),
-                                },
-                                {
-                                    label: "Valid Until",
-                                    value: data.valid_until || null,
-                                    dbColumn: "valid_until",
-                                    type: "text",
-                                    rawValue: data.valid_until,
-                                },
-                                {
-                                    label: "Created",
-                                    value: new Date(data.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card p-5 space-y-1">
-                        <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60">Scope</p>
-                        <DetailFields
-                            onSave={handleSave}
-                            fields={[
-                                {
-                                    label: "",
-                                    value: data.scope_description || null,
-                                    dbColumn: "scope_description",
-                                    type: "textarea",
-                                    rawValue: data.scope_description,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card p-5 space-y-1">
-                        <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60">Description</p>
-                        <DetailFields
-                            onSave={handleSave}
-                            fields={[
-                                {
-                                    label: "",
-                                    value: data.description || null,
-                                    dbColumn: "description",
-                                    type: "textarea",
-                                    rawValue: data.description,
-                                },
-                            ]}
-                        />
-                    </div>
-
-                    {xeroMapping && (
-                        <div className="rounded-xl border border-border bg-card p-5">
-                            <div className="flex items-center justify-between mb-3">
-                                <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60">Xero</p>
-                                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-500">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    Connected to Xero
-                                </span>
-                            </div>
-                            <DetailFields
-                                fields={[
-                                    {
-                                        label: "Xero Quote ID",
-                                        value: (
-                                            <span className="font-mono text-xs break-all">
-                                                {xeroMapping.xero_id}
-                                            </span>
-                                        ),
-                                    },
-                                    ...(xeroMapping.last_synced_at ? [{
-                                        label: "Last synced",
-                                        value: timeAgo(xeroMapping.last_synced_at),
-                                    }] : []),
-                                ]}
-                            />
-                        </div>
-                    )}
-
-                </div>
+                <QuoteDetailsTab data={data} open={open} onSave={handleSave} />
             )}
 
             {activeTab === "related" && (
-                <RelatedTab data={data} setData={setData} onUpdate={onUpdate} open={open} />
+                <>
+                    <QuoteRelatedTab data={data} setData={setData} onUpdate={onUpdate} open={open} />
+                    {canGeneratePo && (
+                        <div className="mt-4 rounded-xl border border-border bg-card p-5 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold">Purchase orders</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {totalLineItems > 0
+                                            ? `${allocatedCount} of ${totalLineItems} line items have POs`
+                                            : "No quote line items yet"}
+                                    </p>
+                                </div>
+                                <Button size="sm" onClick={() => setPoModalOpen(true)}>
+                                    <SupplierIcon className="w-3.5 h-3.5 mr-1.5" />
+                                    Generate PO
+                                </Button>
+                            </div>
+                            {(posData?.items?.length ?? 0) > 0 && (
+                                <div className="space-y-1.5">
+                                    {((posData?.items ?? []) as SelectedPo[]).map((po) => (
+                                        <button
+                                            key={po.id}
+                                            type="button"
+                                            onClick={() => setSelectedPo(po)}
+                                            className="w-full flex items-center justify-between p-3 rounded-lg border bg-background text-sm hover:bg-secondary/40 transition-colors text-left"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-medium truncate">
+                                                    {po.company?.name || po.title || po.reference_id || "Untitled PO"}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground capitalize">{po.status}</p>
+                                            </div>
+                                            <span className="font-semibold">${Number(po.total_amount || 0).toFixed(2)}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </>
             )}
 
             {activeTab === "notes" && (
@@ -414,175 +409,30 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
                 />
             </Suspense>
         )}
+
+        {poModalOpen && data.job_id && (
+            <Suspense fallback={null}>
+                <CreatePurchaseOrderModal
+                    open={poModalOpen}
+                    onOpenChange={setPoModalOpen}
+                    jobId={data.job_id}
+                    sourceQuoteId={data.id}
+                    onCreated={() => {
+                        mutatePos();
+                        onUpdate?.();
+                    }}
+                />
+            </Suspense>
+        )}
+
+        <Suspense fallback={null}>
+            <PurchaseOrderSideSheet
+                purchaseOrder={selectedPo}
+                open={!!selectedPo}
+                onOpenChange={(o) => { if (!o) setSelectedPo(null); }}
+                onUpdate={() => mutatePos()}
+            />
+        </Suspense>
         </>
-    );
-}
-
-type ContactOption = { id: string; first_name: string; last_name: string; email?: string | null; company_id?: string | null };
-type CompanyOption = { id: string; name: string };
-type JobOption = { id: string; title: string; reference_id?: string | null; contact?: { first_name: string; last_name: string } | null; service?: { name: string } | null };
-
-function RelatedTab({
-    data,
-    setData,
-    onUpdate,
-    open,
-}: {
-    data: Quote;
-    setData: React.Dispatch<React.SetStateAction<Quote | null>>;
-    onUpdate?: () => void;
-    open: boolean;
-}) {
-    const { data: contactsData, isLoading: contactsLoading, mutate: mutateContacts } = useContactOptions(open);
-    const { data: companiesData, isLoading: companiesLoading, mutate: mutateCompanies } = useCompanyOptions(open);
-    const { data: jobsData, isLoading: jobsLoading, mutate: mutateJobs } = useJobOptions(open);
-
-    const contactOptions: EntityOption[] = useMemo(
-        () => (contactsData?.items ?? []).map((c: ContactOption) => ({
-            id: c.id,
-            label: `${c.first_name} ${c.last_name}`,
-            subtitle: c.email,
-            company_id: c.company_id,
-        })),
-        [contactsData]
-    );
-
-    const companyOptions: EntityOption[] = useMemo(
-        () => (companiesData?.items ?? []).map((c: CompanyOption) => ({
-            id: c.id,
-            label: c.name,
-        })),
-        [companiesData]
-    );
-
-    const jobOptions: EntityOption[] = useMemo(
-        () => (jobsData?.items ?? []).map((j: JobOption) => {
-            const contactName = j.contact ? `${j.contact.first_name} ${j.contact.last_name}` : j.title;
-            const parts = [j.reference_id, j.service?.name].filter(Boolean);
-            return {
-                id: j.id,
-                label: contactName,
-                subtitle: parts.join(" \u00B7 ") || null,
-            };
-        }),
-        [jobsData]
-    );
-
-    const saveRelation = useCallback(async (column: string, value: string | null) => {
-        const res = await fetch("/api/quotes", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: data.id, [column]: value }),
-        });
-        if (!res.ok) {
-            toast.error("Failed to update");
-            return false;
-        }
-        onUpdate?.();
-        return true;
-    }, [data.id, onUpdate]);
-
-    const handleContactChange = useCallback(async (id: string, option?: EntityOption) => {
-        const ok = await saveRelation("contact_id", id || null);
-        if (!ok) return;
-
-        if (id && option) {
-            const contact = (contactsData?.items ?? []).find((c: ContactOption) => c.id === id);
-            setData(prev => prev ? {
-                ...prev,
-                contact_id: id,
-                contact: contact ? { id: contact.id, first_name: contact.first_name, last_name: contact.last_name, email: contact.email, company_id: contact.company_id } : prev.contact,
-            } : prev);
-
-            // Auto-set company from contact
-            if (option.company_id && option.company_id !== data.company_id) {
-                const companyOk = await saveRelation("company_id", option.company_id);
-                if (companyOk) {
-                    const company = (companiesData?.items ?? []).find((c: CompanyOption) => c.id === option.company_id);
-                    setData(prev => prev ? {
-                        ...prev,
-                        company_id: option.company_id!,
-                        company: company ? { id: company.id, name: company.name } : prev.company,
-                    } : prev);
-                }
-            }
-        } else {
-            setData(prev => prev ? { ...prev, contact_id: null, contact: null } : prev);
-        }
-    }, [saveRelation, contactsData, companiesData, data.company_id, setData]);
-
-    const handleCompanyChange = useCallback(async (id: string) => {
-        const ok = await saveRelation("company_id", id || null);
-        if (!ok) return;
-
-        if (id) {
-            const company = (companiesData?.items ?? []).find((c: CompanyOption) => c.id === id);
-            setData(prev => prev ? {
-                ...prev,
-                company_id: id,
-                company: company ? { id: company.id, name: company.name } : prev.company,
-            } : prev);
-        } else {
-            setData(prev => prev ? { ...prev, company_id: null, company: null } : prev);
-        }
-    }, [saveRelation, companiesData, setData]);
-
-    const handleJobChange = useCallback(async (id: string) => {
-        const ok = await saveRelation("job_id", id || null);
-        if (!ok) return;
-
-        if (id) {
-            const job = (jobsData?.items ?? []).find((j: JobOption) => j.id === id);
-            setData(prev => prev ? {
-                ...prev,
-                job_id: id,
-                job: job ? { id: job.id, title: job.title } : prev.job,
-            } : prev);
-        } else {
-            setData(prev => prev ? { ...prev, job_id: null, job: null } : prev);
-        }
-    }, [saveRelation, jobsData, setData]);
-
-    return (
-        <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-3">
-                <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60 mb-2">Job</p>
-                <EntitySearchDropdown
-                    value={data.job_id || data.job?.id || ""}
-                    onChange={handleJobChange}
-                    options={jobOptions}
-                    placeholder="Search or create job..."
-                    entityType="job"
-                    onCreated={() => mutateJobs()}
-                    loading={jobsLoading}
-                />
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-3">
-                <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60 mb-2">Contact</p>
-                <EntitySearchDropdown
-                    value={data.contact_id || data.contact?.id || ""}
-                    onChange={handleContactChange}
-                    options={contactOptions}
-                    placeholder="Search or create contact..."
-                    entityType="contact"
-                    onCreated={() => mutateContacts()}
-                    loading={contactsLoading}
-                />
-            </div>
-
-            <div className="rounded-xl border border-border bg-card p-3">
-                <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60 mb-2">Company</p>
-                <EntitySearchDropdown
-                    value={data.company_id || data.company?.id || ""}
-                    onChange={handleCompanyChange}
-                    options={companyOptions}
-                    placeholder="Search or create company..."
-                    entityType="company"
-                    onCreated={() => mutateCompanies()}
-                    loading={companiesLoading}
-                />
-            </div>
-        </div>
     );
 }

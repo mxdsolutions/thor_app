@@ -13,7 +13,7 @@ export const PATCH = withAuth(async (request, { supabase, user }) => {
             .eq("user_id", user.id)
             .eq("read", false);
 
-        if (error) return serverError();
+        if (error) return serverError(error);
     } else if (notification_ids && notification_ids.length > 0) {
         const { error } = await supabase
             .from("notifications")
@@ -21,7 +21,7 @@ export const PATCH = withAuth(async (request, { supabase, user }) => {
             .eq("user_id", user.id)
             .in("id", notification_ids);
 
-        if (error) return serverError();
+        if (error) return serverError(error);
     } else {
         return NextResponse.json({ error: "Provide notification_ids or mark_all" }, { status: 400 });
     }

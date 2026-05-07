@@ -31,6 +31,7 @@ export type AppUser = {
     full_name?: string;
     user_type?: string;
     position?: string;
+    hourly_rate?: number;
   };
 };
 
@@ -79,4 +80,37 @@ export function timeAgo(dateStr: string): string {
 export function formatCurrency(value: number | null): string {
   if (value == null) return "—";
   return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(value);
+}
+
+/** Format a duration in milliseconds as `Hh Mm` (e.g. "2h 15m"). */
+export function formatDuration(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "0m";
+  const totalMinutes = Math.floor(ms / 60000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
+const pad2 = (n: number) => n.toString().padStart(2, "0");
+
+/** Today as a `YYYY-MM-DD` string in the user's local timezone. */
+export function todayISODate(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Current time as a `HH:MM` string in the user's local timezone. */
+export function nowHHMM(): string {
+  const d = new Date();
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
+/** Combine a `YYYY-MM-DD` date and `HH:MM` time into a Date, or null if either
+ *  is missing/invalid. Interprets the inputs as local time. */
+export function combineDateTime(date: string, time: string): Date | null {
+  if (!date || !time) return null;
+  const dt = new Date(`${date}T${time}`);
+  return Number.isNaN(dt.getTime()) ? null : dt;
 }

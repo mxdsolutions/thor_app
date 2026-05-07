@@ -244,7 +244,10 @@ export function CreateContactModal({ open, onOpenChange, onCreated, defaultCompa
                                     className="rounded-xl"
                                 />
                                 {showCompanyDropdown && !selectedCompany && (
-                                    <div className="absolute z-50 top-full mt-1 w-full bg-background border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                                    // Open upward — Company is the last field in the modal body, and the
+                                    // surrounding DialogBody has `overflow-y-auto` which would clip a downward
+                                    // dropdown at the footer boundary regardless of z-index.
+                                    <div className="absolute z-50 bottom-full mb-1 w-full bg-background border border-border rounded-xl shadow-lg max-h-48 overflow-y-auto">
                                         {filteredCompanies.map(c => (
                                             <button
                                                 key={c.id}

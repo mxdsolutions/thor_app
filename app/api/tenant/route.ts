@@ -50,7 +50,7 @@ export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ tenant: data });
 });

@@ -135,4 +135,62 @@ describe("POST /api/webhooks/stripe", () => {
         expect(state.updateCalls[0]?.table).toBe("stripe_webhook_events");
         expect(state.updateCalls[0]?.patch).toHaveProperty("processed_at");
     });
+
+    it("customer.subscription.deleted flips tenant_subscriptions to canceled", async () => {
+        constructEventMock.mockReturnValue({
+            id: "evt_sub_deleted",
+            type: "customer.subscription.deleted",
+            data: { object: { id: "sub_123" } },
+        });
+
+        const res = await POST(request("{}", { "stripe-signature": "sig_ok" }));
+        expect(res.status).toBe(200);
+
+        const subUpdate = state.updateCalls.find((c) => c.table === "tenant_subscriptions");
+        expect(subUpdate, "expected an UPDATE on tenant_subscriptions").toBeTruthy();
+        expect(subUpdate?.patch).toMatchObject({ status: "canceled", cancel_at_period_end: false });
+    });
+
+    it("invoice.payment_failed flips tenant_subscriptions to past_due", async () => {
+        constructEventMock.mockReturnValue({
+            id: "evt_invoice_failed",
+            type: "invoice.payment_failed",
+            data: { object: { customer: "cus_123" } },
+        });
+
+        const res = await POST(request("{}", { "stripe-signature": "sig_ok" }));
+        expect(res.status).toBe(200);
+
+        const subUpdate = state.updateCalls.find((c) => c.table === "tenant_subscriptions");
+        expect(subUpdate, "expected an UPDATE on tenant_subscriptions").toBeTruthy();
+        expect(subUpdate?.patch).toMatchObject({ status: "past_due" });
+    });
+
+    it("trial_will_end is acknowledged but does not write tenant_subscriptions", async () => {
+        constructEventMock.mockReturnValue({
+            id: "evt_trial_warning",
+            type: "customer.subscription.trial_will_end",
+            data: { object: { id: "sub_999" } },
+        });
+
+        const res = await POST(request("{}", { "stripe-signature": "sig_ok" }));
+        expect(res.status).toBe(200);
+        const subUpdate = state.updateCalls.find((c) => c.table === "tenant_subscriptions");
+        expect(subUpdate).toBeFalsy();
+    });
+
+    it("returns 500 (Stripe will retry) when the event-log INSERT fails for a non-23505 reason", async () => {
+        constructEventMock.mockReturnValue({
+            id: "evt_db_broken",
+            type: "invoice.payment_succeeded",
+            data: { object: {} },
+        });
+
+        state.insertResult = { error: { code: "08006", message: "connection closed" } };
+
+        const res = await POST(request("{}", { "stripe-signature": "sig_ok" }));
+        expect(res.status).toBe(500);
+        // No dispatch should have run, so no other tables touched.
+        expect(state.updateCalls).toHaveLength(0);
+    });
 });

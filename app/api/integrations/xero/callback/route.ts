@@ -27,10 +27,12 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    // Validate CSRF state
+    // Validate CSRF state and pull the PKCE verifier
     const cookieStore = await cookies();
     const savedState = cookieStore.get("xero_oauth_state")?.value;
+    const codeVerifier = cookieStore.get("xero_pkce_verifier")?.value;
     cookieStore.delete("xero_oauth_state");
+    cookieStore.delete("xero_pkce_verifier");
 
     if (state !== savedState) {
         return NextResponse.redirect(
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const tokens = await exchangeXeroCodeForTokens(code);
+        const tokens = await exchangeXeroCodeForTokens(code, codeVerifier);
         const expiresAt = new Date(
             Date.now() + tokens.expires_in * 1000
         ).toISOString();

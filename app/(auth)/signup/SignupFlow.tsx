@@ -1,25 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-    IconArrowRight as ArrowRightIcon,
-    IconArrowLeft as ArrowLeftIcon,
-    IconPlus as PlusIcon,
-    IconTrash as TrashIcon,
-    IconUpload as UploadIcon,
-    IconBuilding as BuildingIcon,
-} from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { AnimatePresence } from "framer-motion";
 import { Logo } from "@/components/Logo";
-import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { tenantSignup } from "@/app/actions/tenantSignup";
 import { inviteUser } from "@/app/actions/inviteUser";
 import { createClient as createBrowserClient } from "@/lib/supabase/client";
+
+import { WelcomeStep } from "./steps/WelcomeStep";
+import { AccountStep } from "./steps/AccountStep";
+import { CompanyStep } from "./steps/CompanyStep";
+import { InvitesStep } from "./steps/InvitesStep";
+import { PlanStep } from "./steps/PlanStep";
 
 export type ClientPlan = {
     id: string;
@@ -29,13 +23,6 @@ export type ClientPlan = {
 };
 
 type InviteRow = { email: string };
-
-const inputClass =
-    "h-12 text-base bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-white/40 focus:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-white/40 transition-all rounded-lg";
-const primaryBtnClass = "bg-white text-black hover:bg-white/90";
-const ghostBtnClass = "text-white/50 hover:text-white hover:bg-white/5";
-const labelClass = "text-[10px] font-bold text-white/40 uppercase tracking-[0.15em]";
-const stepEyebrowClass = "text-[11px] font-bold text-white/40 uppercase tracking-[0.2em]";
 
 export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
     const router = useRouter();
@@ -53,15 +40,14 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
     const [companyName, setCompanyName] = useState("");
     const [logoFile, setLogoFile] = useState<File | null>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
-    const logoInputRef = useRef<HTMLInputElement>(null);
 
     // Set once tenantSignup runs (or rehydrated from Stripe-return state).
     const [tenantId, setTenantId] = useState<string | null>(null);
 
-    // Step 3 — Plan
+    // Step 4 — Plan
     const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
 
-    // Step 4 — Invites
+    // Step 3 — Invites
     const [invites, setInvites] = useState<InviteRow[]>([{ email: "" }]);
 
     // Resume after a cancelled Stripe Checkout: ?step=plan&checkout=cancelled
@@ -239,7 +225,6 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
         setStep((s) => Math.max(0, s - 1));
     };
 
-    // ---- Render ----
     return (
         <div className="min-h-screen bg-black flex flex-col relative overflow-hidden text-white">
             <header className="relative z-10 shrink-0 pt-10 pb-8 flex justify-center">
@@ -249,431 +234,59 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
             <main className="relative z-10 flex-1 flex items-center justify-center px-6 pb-32">
                 <div className="w-full flex justify-center">
                     <AnimatePresence mode="wait">
-                        {step === 0 && (
-                            <motion.div
-                                key="welcome"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="w-full max-w-lg text-center space-y-10"
-                            >
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-center gap-3">
-                                        <span className="h-px w-8 bg-white/15" />
-                                        <p className={stepEyebrowClass}>Welcome to THOR</p>
-                                        <span className="h-px w-8 bg-white/15" />
-                                    </div>
-                                    <h1 className="font-display text-5xl md:text-7xl font-semibold text-white leading-[0.95] tracking-tight">
-                                        Built for teams<br />
-                                        <span className="text-white/50">that build things.</span>
-                                    </h1>
-                                    <p className="text-base md:text-lg text-white/50 max-w-md mx-auto leading-relaxed">
-                                        Quote, schedule, invoice, manage and grow without juggling six different tools.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <Button
-                                        size="lg"
-                                        className={cn("h-12 px-8 text-base", primaryBtnClass)}
-                                        onClick={() => setStep(1)}
-                                    >
-                                        Set up your workspace
-                                        <ArrowRightIcon className="ml-2 w-4 h-4" />
-                                    </Button>
-                                    <p className="text-xs text-white/30">
-                                        30-day free trial · Card not charged until day 30
-                                    </p>
-                                </div>
-
-                                <p className="text-sm text-white/40">
-                                    Already have an account?{" "}
-                                    <Link href="/" className="text-white font-semibold hover:underline">
-                                        Log in
-                                    </Link>
-                                </p>
-                            </motion.div>
-                        )}
+                        {step === 0 && <WelcomeStep onStart={() => setStep(1)} />}
 
                         {step === 1 && (
-                            <motion.div
-                                key="account"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="w-full max-w-md space-y-8"
-                            >
-                                <div className="text-center space-y-3">
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Create your account
-                                    </h2>
-                                    <p className="text-white/50 text-base">
-                                        You&apos;ll be the workspace owner.
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="space-y-2">
-                                            <label className={labelClass}>First Name</label>
-                                            <Input
-                                                value={firstName}
-                                                onChange={(e) => setFirstName(e.target.value)}
-                                                placeholder="Jane"
-                                                className={inputClass}
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className={labelClass}>Last Name</label>
-                                            <Input
-                                                value={lastName}
-                                                onChange={(e) => setLastName(e.target.value)}
-                                                placeholder="Doe"
-                                                className={inputClass}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className={labelClass}>Email</label>
-                                        <Input
-                                            type="email"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            placeholder="you@company.com"
-                                            className={inputClass}
-                                            autoComplete="email"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className={labelClass}>Password</label>
-                                        <Input
-                                            type="password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            placeholder="At least 8 characters"
-                                            className={inputClass}
-                                            autoComplete="new-password"
-                                            onKeyDown={(e) => e.key === "Enter" && accountValid && handleNext()}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <Button variant="ghost" onClick={goBack} className={ghostBtnClass}>
-                                        <ArrowLeftIcon className="mr-2 w-4 h-4" /> Back
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={!accountValid}
-                                        className={primaryBtnClass}
-                                    >
-                                        Continue <ArrowRightIcon className="ml-2 w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </motion.div>
+                            <AccountStep
+                                firstName={firstName}
+                                setFirstName={setFirstName}
+                                lastName={lastName}
+                                setLastName={setLastName}
+                                email={email}
+                                setEmail={setEmail}
+                                password={password}
+                                setPassword={setPassword}
+                                accountValid={accountValid}
+                                onNext={handleNext}
+                                onBack={goBack}
+                            />
                         )}
 
                         {step === 2 && (
-                            <motion.div
-                                key="company"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="w-full max-w-md space-y-8"
-                            >
-                                <div className="text-center space-y-3">
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Set up your company
-                                    </h2>
-                                    <p className="text-white/50 text-base">
-                                        These appear across your workspace. You can change them any time.
-                                    </p>
-                                </div>
-
-                                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 space-y-7">
-                                    <div className="flex flex-col items-center text-center space-y-4">
-                                        <button
-                                            type="button"
-                                            onClick={() => logoInputRef.current?.click()}
-                                            className={cn(
-                                                "relative group w-28 h-28 rounded-2xl overflow-hidden transition-all cursor-pointer flex items-center justify-center",
-                                                logoPreview
-                                                    ? "border border-white/15 bg-white"
-                                                    : "border-2 border-dashed border-white/15 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.05]",
-                                            )}
-                                        >
-                                            {logoPreview ? (
-                                                <>
-                                                    {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded preview */}
-                                                    <img
-                                                        src={logoPreview}
-                                                        alt="Logo preview"
-                                                        className="max-w-full max-h-full object-contain p-3"
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <UploadIcon className="w-6 h-6 text-white" />
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-1.5 text-white/40 group-hover:text-white/70 transition-colors">
-                                                    <BuildingIcon className="w-7 h-7" />
-                                                    <span className="text-[10px] font-bold uppercase tracking-widest">Add logo</span>
-                                                </div>
-                                            )}
-                                        </button>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-white/40">PNG, JPG, SVG · max 5MB · optional</p>
-                                            {logoPreview && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setLogoFile(null);
-                                                        setLogoPreview(null);
-                                                        if (logoInputRef.current) logoInputRef.current.value = "";
-                                                    }}
-                                                    className="text-xs text-white/40 hover:text-white/70 transition-colors"
-                                                >
-                                                    Remove logo
-                                                </button>
-                                            )}
-                                        </div>
-                                        <input
-                                            ref={logoInputRef}
-                                            type="file"
-                                            accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                                            onChange={handleLogoSelect}
-                                            className="hidden"
-                                        />
-                                    </div>
-
-                                    <div className="h-px bg-white/5" />
-
-                                    <div className="space-y-2">
-                                        <label className={labelClass}>Company Name</label>
-                                        <Input
-                                            value={companyName}
-                                            onChange={(e) => setCompanyName(e.target.value)}
-                                            placeholder="Acme Engineering"
-                                            className={inputClass}
-                                            onKeyDown={(e) => e.key === "Enter" && companyValid && handleNext()}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={goBack}
-                                        disabled={isSubmitting}
-                                        className={ghostBtnClass}
-                                    >
-                                        <ArrowLeftIcon className="mr-2 w-4 h-4" /> Back
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={!companyValid || isSubmitting}
-                                        className={primaryBtnClass}
-                                    >
-                                        {isSubmitting ? "Creating workspace..." : "Continue"}
-                                        {!isSubmitting && <ArrowRightIcon className="ml-2 w-4 h-4" />}
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {step === 4 && (
-                            <motion.div
-                                key="plan"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="w-full max-w-4xl space-y-8"
-                            >
-                                <div className="text-center space-y-3">
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Choose your plan
-                                    </h2>
-                                    <p className="text-white/50 text-base">
-                                        Start with a 30-day free trial. No card charged until day 30.
-                                    </p>
-                                </div>
-
-                                <div className="flex justify-center">
-                                    <div className="inline-flex items-center rounded-lg border border-white/10 bg-white/5 p-1">
-                                        {(["monthly", "annual"] as const).map((opt) => (
-                                            <button
-                                                key={opt}
-                                                onClick={() => setBillingCycle(opt)}
-                                                className={cn(
-                                                    "px-4 h-8 text-[11px] font-bold uppercase tracking-wider rounded-md transition-colors",
-                                                    billingCycle === opt
-                                                        ? "bg-white text-black"
-                                                        : "text-white/50 hover:text-white",
-                                                )}
-                                            >
-                                                {opt === "monthly" ? "Monthly" : "Annual · Save 17%"}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {plans.map((plan) => {
-                                        const cycleData =
-                                            billingCycle === "annual" ? plan.annual : plan.monthly;
-                                        const monthlyEq =
-                                            billingCycle === "annual"
-                                                ? Math.round(plan.annual.amount_cents / 12)
-                                                : null;
-                                        const highlight = plan.id === "iron_oak";
-                                        return (
-                                            <div
-                                                key={plan.id}
-                                                className={cn(
-                                                    "relative rounded-2xl border p-7 flex flex-col transition-colors",
-                                                    highlight
-                                                        ? "border-white bg-white/[0.06]"
-                                                        : "border-white/10 bg-white/[0.02] hover:border-white/20",
-                                                )}
-                                            >
-                                                {highlight && (
-                                                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                                                        <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest bg-white text-black rounded-md">
-                                                            Most popular
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                <h3 className="font-display text-2xl text-white">{plan.name}</h3>
-
-                                                <div className="mt-6">
-                                                    <div className="flex items-baseline gap-1.5">
-                                                        <span className="text-4xl font-display font-semibold text-white">
-                                                            {formatCurrency(cycleData.amount_cents / 100).replace(/\.00$/, "")}
-                                                        </span>
-                                                        <span className="text-sm text-white/40">
-                                                            / seat / {billingCycle === "annual" ? "yr" : "mo"}
-                                                        </span>
-                                                    </div>
-                                                    {monthlyEq != null && (
-                                                        <p className="text-xs text-white/30 mt-1">
-                                                            ≈ {formatCurrency(monthlyEq / 100).replace(/\.00$/, "")} / seat / mo
-                                                        </p>
-                                                    )}
-                                                </div>
-
-                                                <div className="mt-7 pt-6 border-t border-white/10">
-                                                    <Button
-                                                        size="lg"
-                                                        className={cn(
-                                                            "w-full",
-                                                            highlight
-                                                                ? "bg-white text-black hover:bg-white/90"
-                                                                : "bg-white/10 text-white border border-white/15 hover:bg-white/20",
-                                                        )}
-                                                        disabled={isSubmitting || !tenantId}
-                                                        onClick={() => startCheckout(cycleData.price_id)}
-                                                    >
-                                                        {isSubmitting ? "Starting..." : "Start 30-day trial"}
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                <p className="text-center text-xs text-white/30">
-                                    You&apos;ll be redirected to Stripe to enter payment details.
-                                </p>
-                            </motion.div>
+                            <CompanyStep
+                                companyName={companyName}
+                                setCompanyName={setCompanyName}
+                                logoFile={logoFile}
+                                setLogoFile={setLogoFile}
+                                logoPreview={logoPreview}
+                                setLogoPreview={setLogoPreview}
+                                onLogoSelect={handleLogoSelect}
+                                companyValid={companyValid}
+                                isSubmitting={isSubmitting}
+                                onNext={handleNext}
+                                onBack={goBack}
+                            />
                         )}
 
                         {step === 3 && (
-                            <motion.div
-                                key="invite"
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="w-full max-w-md space-y-8"
-                            >
-                                <div className="text-center space-y-3">
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Invite your team
-                                    </h2>
-                                    <p className="text-white/50 text-base">
-                                        Add who you want to bring on board. We&apos;ll size your subscription to match in the next step.
-                                    </p>
-                                </div>
+                            <InvitesStep
+                                invites={invites}
+                                setInvites={setInvites}
+                                isSubmitting={isSubmitting}
+                                onSubmit={handleNext}
+                                onSkip={() => setStep(4)}
+                            />
+                        )}
 
-                                <div className="space-y-3">
-                                    {invites.map((row, idx) => (
-                                        <div key={idx} className="flex items-center gap-2">
-                                            <Input
-                                                type="email"
-                                                value={row.email}
-                                                onChange={(e) => {
-                                                    const next = [...invites];
-                                                    next[idx] = { email: e.target.value };
-                                                    setInvites(next);
-                                                }}
-                                                placeholder="teammate@company.com"
-                                                className={inputClass}
-                                                autoFocus={idx === 0}
-                                            />
-                                            {invites.length > 1 && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setInvites(invites.filter((_, i) => i !== idx))
-                                                    }
-                                                    className="text-white/30 hover:text-white/70 transition-colors p-2"
-                                                    aria-label="Remove invite"
-                                                >
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    ))}
-                                    <button
-                                        type="button"
-                                        onClick={() => setInvites([...invites, { email: "" }])}
-                                        className="inline-flex items-center gap-1.5 text-sm font-medium text-white/60 hover:text-white transition-colors"
-                                    >
-                                        <PlusIcon className="w-4 h-4" /> Add another
-                                    </button>
-                                </div>
-
-                                <p className="text-xs text-white/30 text-center">
-                                    Everyone joins as <span className="text-white/60">Member</span>. You can change roles later in Settings → Users.
-                                </p>
-
-                                <div className="flex items-center justify-between">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setStep(4)}
-                                        disabled={isSubmitting}
-                                        className={ghostBtnClass}
-                                    >
-                                        Skip for now
-                                    </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={isSubmitting}
-                                        className={primaryBtnClass}
-                                    >
-                                        {isSubmitting ? "Sending..." : "Send invites"}
-                                        {!isSubmitting && <ArrowRightIcon className="ml-2 w-4 h-4" />}
-                                    </Button>
-                                </div>
-                            </motion.div>
+                        {step === 4 && (
+                            <PlanStep
+                                plans={plans}
+                                billingCycle={billingCycle}
+                                setBillingCycle={setBillingCycle}
+                                isSubmitting={isSubmitting}
+                                tenantId={tenantId}
+                                onCheckout={startCheckout}
+                            />
                         )}
                     </AnimatePresence>
                 </div>
@@ -681,5 +294,3 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
         </div>
     );
 }
-
-

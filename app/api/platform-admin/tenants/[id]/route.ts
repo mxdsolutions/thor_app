@@ -69,7 +69,7 @@ export const PATCH = withPlatformAuth(async (request, { adminClient, user }) => 
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     if (!data) return notFoundError("Tenant");
 
     console.log(`[platform-admin] Tenant ${id} updated by ${user.id}:`, Object.keys(validation.data));

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { IconX, IconSend, IconRefresh } from "@tabler/icons-react";
+import { Send, RefreshCw, X } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { useAssistant } from "./AssistantContext";
 
@@ -33,6 +35,16 @@ export function AssistantPanel() {
             requestAnimationFrame(() => inputRef.current?.focus());
         }
     }, [open]);
+
+    // Close on Escape
+    useEffect(() => {
+        if (!open) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setOpen(false);
+        };
+        window.addEventListener("keydown", handler);
+        return () => window.removeEventListener("keydown", handler);
+    }, [open, setOpen]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -92,39 +104,50 @@ export function AssistantPanel() {
     return (
         <AnimatePresence initial={false}>
             {open && (
-                <motion.aside
-                    key="assistant-panel"
-                    initial={{ width: 0 }}
-                    animate={{ width: "var(--assistant-w)" }}
-                    exit={{ width: 0 }}
-                    transition={{ type: "spring", damping: 30, stiffness: 280 }}
-                    style={{ ["--assistant-w" as string]: "min(100vw, 420px)" }}
-                    className="shrink-0 overflow-hidden border-l border-border bg-background"
-                >
-                    <div className="h-dvh flex flex-col" style={{ width: "min(100vw, 420px)" }}>
-                        <header className="h-20 px-5 flex items-center justify-between border-b border-border shrink-0">
-                            <div className="min-w-0 leading-tight">
-                                <p className="font-paladins text-[28px] tracking-[0.08em] text-foreground leading-none">
-                                    THOR<span className="font-sans text-[0.38em] font-semibold ml-[0.25em] align-super text-foreground/70">AI</span>
-                                </p>
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mt-1 leading-none">Ask about your workspace</p>
-                            </div>
-                            <div className="flex items-center gap-1">
+                <>
+                    {/* Backdrop — mobile only (taps dismiss) */}
+                    <motion.div
+                        key="assistant-backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        onClick={() => setOpen(false)}
+                        className="md:hidden fixed inset-0 z-30 bg-foreground/40 backdrop-blur-sm"
+                    />
+
+                    {/* Panel — fixed overlay below xl, inline flex item at xl+ */}
+                    <motion.aside
+                        key="assistant-panel"
+                        initial={{ width: 0 }}
+                        animate={{ width: "var(--assistant-w)" }}
+                        exit={{ width: 0 }}
+                        transition={{ type: "spring", damping: 30, stiffness: 280 }}
+                        style={{ ["--assistant-w" as string]: "min(100vw, 420px)" }}
+                        className="fixed inset-y-0 right-0 z-40 overflow-hidden bg-background border-l border-border shadow-2xl xl:static xl:inset-auto xl:z-auto xl:shadow-none xl:shrink-0 xl:bg-secondary xl:border-l-0 xl:rounded-[12px] xl:m-3"
+                    >
+                        <div className="h-full flex flex-col" style={{ width: "min(100vw, 420px)" }}>
+                        <header className="h-14 px-5 flex items-center justify-center shrink-0 relative">
+                            <p className="font-paladins text-[24px] tracking-[0.08em] text-foreground leading-none">
+                                THOR<span className="font-sans text-[0.4em] font-semibold ml-[0.25em] align-super text-foreground/70 mt-[-2px] inline-block">AI</span>
+                            </p>
+                            <div className="flex items-center gap-1 absolute right-3">
                                 {messages.length > 0 && (
                                     <button
                                         onClick={reset}
                                         title="New conversation"
                                         className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                                     >
-                                        <IconRefresh className="w-5 h-5" />
+                                        <RefreshCw className="w-4 h-4" strokeWidth={2} />
                                     </button>
                                 )}
                                 <button
                                     onClick={() => setOpen(false)}
                                     title="Close"
-                                    className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                                    className="xl:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                                    aria-label="Close assistant"
                                 >
-                                    <IconX className="w-5 h-5" />
+                                    <X className="w-5 h-5" strokeWidth={2} />
                                 </button>
                             </div>
                         </header>
@@ -133,7 +156,7 @@ export function AssistantPanel() {
                             {messages.length === 0 ? (
                                 <div className="h-full flex flex-col justify-center items-stretch text-center gap-6 py-12">
                                     <div>
-                                        <p className="font-display font-bold uppercase text-2xl tracking-wide">How can I help?</p>
+                                        <p className="text-2xl font-semibold tracking-tight">How can I help?</p>
                                         <p className="text-sm text-muted-foreground mt-2">
                                             I can answer questions about your jobs, contacts, companies, quotes and invoices.
                                         </p>
@@ -161,8 +184,8 @@ export function AssistantPanel() {
                             )}
                         </div>
 
-                        <form onSubmit={handleSubmit} className="border-t border-border p-3 shrink-0">
-                            <div className="flex items-end gap-2 rounded-xl border border-border bg-card px-3 py-2 focus-within:border-foreground/30 transition-colors">
+                        <form onSubmit={handleSubmit} className="p-3 shrink-0">
+                            <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-1.5 focus-within:border-foreground/30 transition-colors">
                                 <textarea
                                     ref={inputRef}
                                     value={input}
@@ -171,7 +194,7 @@ export function AssistantPanel() {
                                     placeholder="Ask anything…"
                                     rows={1}
                                     disabled={sending}
-                                    className="flex-1 resize-none bg-transparent outline-none text-sm placeholder:text-muted-foreground py-1 max-h-32"
+                                    className="flex-1 resize-none bg-transparent outline-none text-sm placeholder:text-muted-foreground py-1.5 leading-5 max-h-32"
                                 />
                                 <button
                                     type="submit"
@@ -184,16 +207,68 @@ export function AssistantPanel() {
                                     )}
                                     aria-label="Send"
                                 >
-                                    <IconSend className="w-4 h-4" />
+                                    <Send className="w-4 h-4" strokeWidth={2} />
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </motion.aside>
+                        </div>
+                    </motion.aside>
+                </>
             )}
         </AnimatePresence>
     );
 }
+
+const markdownComponents = {
+    p: ({ children }: { children?: React.ReactNode }) => (
+        <p className="mb-2 last:mb-0">{children}</p>
+    ),
+    ul: ({ children }: { children?: React.ReactNode }) => (
+        <ul className="list-disc pl-5 mb-2 last:mb-0 space-y-1">{children}</ul>
+    ),
+    ol: ({ children }: { children?: React.ReactNode }) => (
+        <ol className="list-decimal pl-5 mb-2 last:mb-0 space-y-1">{children}</ol>
+    ),
+    li: ({ children }: { children?: React.ReactNode }) => <li>{children}</li>,
+    h1: ({ children }: { children?: React.ReactNode }) => (
+        <h1 className="text-base font-semibold mt-2 mb-2 first:mt-0">{children}</h1>
+    ),
+    h2: ({ children }: { children?: React.ReactNode }) => (
+        <h2 className="text-sm font-semibold mt-2 mb-1.5 first:mt-0">{children}</h2>
+    ),
+    h3: ({ children }: { children?: React.ReactNode }) => (
+        <h3 className="text-sm font-semibold mt-2 mb-1 first:mt-0">{children}</h3>
+    ),
+    strong: ({ children }: { children?: React.ReactNode }) => (
+        <strong className="font-semibold">{children}</strong>
+    ),
+    em: ({ children }: { children?: React.ReactNode }) => <em className="italic">{children}</em>,
+    code: ({ children }: { children?: React.ReactNode }) => (
+        <code className="bg-secondary px-1 py-0.5 rounded text-[12px] font-mono">{children}</code>
+    ),
+    pre: ({ children }: { children?: React.ReactNode }) => (
+        <pre className="bg-secondary p-2 rounded text-[12px] font-mono overflow-x-auto mb-2 last:mb-0">{children}</pre>
+    ),
+    a: ({ children, href }: { children?: React.ReactNode; href?: string }) => (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:no-underline">
+            {children}
+        </a>
+    ),
+    blockquote: ({ children }: { children?: React.ReactNode }) => (
+        <blockquote className="border-l-2 border-border pl-3 my-2 text-muted-foreground">{children}</blockquote>
+    ),
+    table: ({ children }: { children?: React.ReactNode }) => (
+        <div className="overflow-x-auto my-2">
+            <table className="w-full text-[13px] border-collapse">{children}</table>
+        </div>
+    ),
+    th: ({ children }: { children?: React.ReactNode }) => (
+        <th className="border border-border px-2 py-1 text-left font-semibold bg-secondary/50">{children}</th>
+    ),
+    td: ({ children }: { children?: React.ReactNode }) => (
+        <td className="border border-border px-2 py-1 align-top">{children}</td>
+    ),
+};
 
 function Bubble({ message }: { message: ChatMessage }) {
     const isUser = message.role === "user";
@@ -201,13 +276,19 @@ function Bubble({ message }: { message: ChatMessage }) {
         <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
             <div
                 className={cn(
-                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed",
+                    "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
                     isUser
-                        ? "bg-foreground text-background"
+                        ? "bg-foreground text-background whitespace-pre-wrap"
                         : "bg-card border border-border text-foreground"
                 )}
             >
-                {message.content}
+                {isUser ? (
+                    message.content
+                ) : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                        {message.content}
+                    </ReactMarkdown>
+                )}
             </div>
         </div>
     );

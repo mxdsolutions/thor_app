@@ -10,6 +10,7 @@ import { usePermissionOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { JobSearchSelect } from "@/components/ui/job-search-select";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 import { REPORT_STATUS_CONFIG } from "@/lib/status-config";
 import {
     tableBase,
@@ -26,7 +27,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, timeAgo } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
-import { useReports } from "@/lib/swr";
+import { useReports, type ArchiveScope } from "@/lib/swr";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateReportModal } from "@/components/modals/CreateReportModal";
 import { ReportSideSheet } from "@/components/sheets/ReportSideSheet";
 
@@ -67,15 +69,17 @@ export default function ReportsPage() {
     const [search, setSearch] = useState("");
     const [typeFilter, setTypeFilter] = useState<string>("All");
     const [statusFilter, setStatusFilter] = useState<string>("All");
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [jobFilter, setJobFilter] = useState<string>("");
     const [createOpen, setCreateOpen] = useState(false);
+    useCreateDeepLink(() => setCreateOpen(true));
     const [selectedReport, setSelectedReport] = useState<Report | null>(null);
     const canWriteReports = usePermissionOptional("ops.reports", "write", true);
     useMobileHeaderAction(useCallback(() => {
         if (canWriteReports) setCreateOpen(true);
     }, [canWriteReports]));
 
-    const { data, isLoading, mutate } = useReports();
+    const { data, isLoading, mutate } = useReports(archiveScope);
     const allReports: Report[] = useMemo(() => data?.items || [], [data]);
 
     // Auto-open side sheet from ?report=<id> query param, then strip the param so
@@ -103,7 +107,11 @@ export default function ReportsPage() {
     <>
         <ScrollableTableLayout
             header={
-                <DashboardControls>
+                <div className="space-y-4">
+                    <div className="px-4 md:px-6 lg:px-10">
+                        <h1 className="font-statement text-2xl font-extrabold tracking-tight">Reports</h1>
+                    </div>
+                    <DashboardControls>
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                             <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -127,17 +135,13 @@ export default function ReportsPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[150px]">
-                                    <SelectValue placeholder="Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="All">All Statuses</SelectItem>
-                                    {Object.entries(REPORT_STATUS_CONFIG).map(([key, v]) => (
-                                        <SelectItem key={key} value={key}>{v.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <ArchiveScopedStatusSelect
+                                archive={archiveScope}
+                                onArchiveChange={setArchiveScope}
+                                status={statusFilter}
+                                onStatusChange={setStatusFilter}
+                                statuses={Object.entries(REPORT_STATUS_CONFIG).map(([key, v]) => ({ id: key, label: v.label }))}
+                            />
                             <JobSearchSelect
                                 value={jobFilter}
                                 onChange={setJobFilter}
@@ -153,6 +157,7 @@ export default function ReportsPage() {
                         </Button>
                     )}
                 </DashboardControls>
+                </div>
             }
         >
             {isLoading ? (

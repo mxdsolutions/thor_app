@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import { IconPhoto as PhotoIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon, IconRefresh as ArrowPathIcon, IconX as XMarkIcon, IconEdit as PencilSquareIcon } from "@tabler/icons-react";
-import { uploadReportPhoto, deleteReportPhoto } from "@/lib/report-photos";
+import { deleteReportPhoto } from "@/lib/report-photos";
+import { usePhotoUploader } from "./UploadContext";
 import { PhotoLightbox } from "./PhotoLightbox";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,10 +35,8 @@ interface PhotoUploadFieldProps {
     photos: PhotoItem[];
     onChange: (photos: unknown) => void;
     readOnly?: boolean;
-    reportId?: string;
     sectionId?: string;
     fieldId?: string;
-    tenantId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -48,11 +47,10 @@ export function PhotoUploadField({
     photos,
     onChange,
     readOnly,
-    reportId,
     sectionId,
     fieldId,
-    tenantId,
 }: PhotoUploadFieldProps) {
+    const uploader = usePhotoUploader();
     const [uploadQueue, setUploadQueue] = useState<UploadingFile[]>([]);
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const [dragOver, setDragOver] = useState(false);
@@ -94,7 +92,7 @@ export function PhotoUploadField({
     const processQueue = useCallback(() => {
         if (!mountedRef.current) return;
         if (activeUploadsRef.current >= MAX_CONCURRENT) return;
-        if (!reportId || !sectionId || !fieldId || !tenantId) return;
+        if (!sectionId || !fieldId || !uploader) return;
 
         setUploadQueue((prev) => {
             const nextPending = prev.find((f) => f.status === "pending");
@@ -108,7 +106,7 @@ export function PhotoUploadField({
             );
 
             // Fire the upload (async, outside the setState)
-            uploadReportPhoto(nextPending.file, tenantId!, reportId!, sectionId!, fieldId!)
+            uploader(nextPending.file, sectionId!, fieldId!)
                 .then((result) => {
                     if (!mountedRef.current) return;
 
@@ -150,7 +148,7 @@ export function PhotoUploadField({
         if (activeUploadsRef.current < MAX_CONCURRENT) {
             setTimeout(() => processQueue(), 0);
         }
-    }, [reportId, sectionId, fieldId, tenantId, onChange]);
+    }, [sectionId, fieldId, uploader, onChange]);
 
     /* ---------------------------------------------------------------- */
     /*  Handlers                                                        */
@@ -158,7 +156,7 @@ export function PhotoUploadField({
 
     const handleFiles = useCallback(
         (files: FileList) => {
-            if (!reportId || !sectionId || !fieldId || !tenantId) {
+            if (!uploader || !sectionId || !fieldId) {
                 toast.error("Save the report first before uploading photos");
                 return;
             }
@@ -189,7 +187,7 @@ export function PhotoUploadField({
             // Kick off processing after state updates
             setTimeout(() => processQueue(), 0);
         },
-        [reportId, sectionId, fieldId, tenantId, processQueue]
+        [uploader, sectionId, fieldId, processQueue]
     );
 
     const handleRetry = useCallback(

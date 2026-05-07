@@ -1,10 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Inter, Bricolage_Grotesque } from "next/font/google";
 import localFont from "next/font/local";
 import { Toaster } from "sonner";
 import "./globals.css";
 
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const plexSans = IBM_Plex_Sans({ weight: ["400", "500", "600", "700"], subsets: ["latin"], variable: "--font-plex-sans" });
+const plexMono = IBM_Plex_Mono({ weight: ["400", "500", "600"], subsets: ["latin"], variable: "--font-plex-mono", display: "swap" });
+const bricolage = Bricolage_Grotesque({ weight: ["400", "600", "700", "800"], subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
 
 const bebasNeuePro = localFont({
     src: [
@@ -38,7 +41,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    template: "%s | THOR",
+    template: "%s • THOR",
     default: "THOR",
   },
   description: "THOR administration platform",
@@ -50,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${plexSans.variable} ${bebasNeuePro.variable} ${paladinsCond.variable}`}>
+    <html lang="en" className={`${inter.variable} ${plexSans.variable} ${plexMono.variable} ${bricolage.variable} ${bebasNeuePro.variable} ${paladinsCond.variable}`}>
       <body className="font-sans min-h-dvh flex flex-col">
         {children}
         <Toaster position="top-center" richColors />

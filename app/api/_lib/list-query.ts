@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parsePagination } from "./pagination";
+import { applyArchiveFilter, parseArchiveScope, type ArchiveScope } from "./archive";
 
 export type TenantListOptions = {
     /** Postgrest select string (with relations). Defaults to "*". */
@@ -12,6 +13,13 @@ export type TenantListOptions = {
     orderBy?: { column: string; ascending?: boolean; nullsFirst?: boolean };
     /** Columns combined into an `ilike` OR clause when `search` is present. */
     searchColumns?: string[];
+    /**
+     * When true, the table has an `archived_at` column and the query should
+     * respect the `?archive=active|archived|all` query param (default `active`).
+     * Tables without the column should leave this off — applying the filter
+     * would error.
+     */
+    archivable?: boolean;
 };
 
 /**
@@ -40,6 +48,9 @@ export function tenantListQuery(
     const pagination = parsePagination(options.request);
     const { limit, offset, search } = pagination;
     const order = options.orderBy ?? { column: "created_at", ascending: false };
+    const archiveScope: ArchiveScope = options.archivable
+        ? parseArchiveScope(options.request)
+        : "all";
 
     let query = supabase
         .from(table)
@@ -51,6 +62,10 @@ export function tenantListQuery(
         })
         .range(offset, offset + limit - 1);
 
+    if (options.archivable) {
+        query = applyArchiveFilter(query, archiveScope);
+    }
+
     if (search && options.searchColumns?.length) {
         const orClause = options.searchColumns
             .map((c) => `${c}.ilike.%${search}%`)
@@ -58,5 +73,5 @@ export function tenantListQuery(
         query = query.or(orClause);
     }
 
-    return { query, pagination };
+    return { query, pagination, archiveScope };
 }

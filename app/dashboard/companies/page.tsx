@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { CreateCompanyModal } from "@/components/modals/CreateCompanyModal";
 import { CompanySideSheet } from "@/components/sheets/CompanySideSheet";
-import { useCompanies } from "@/lib/swr";
+import { useCompanies, type ArchiveScope } from "@/lib/swr";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { useDebouncedValue } from "@/lib/hooks/use-debounce";
 
 type Company = {
@@ -65,10 +66,11 @@ export default function CompaniesPage() {
     const [showCreate, setShowCreate] = useState(false);
     useMobileHeaderAction(useCallback(() => setShowCreate(true), []));
     const [search, setSearch] = useState("");
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 20;
     const debouncedSearch = useDebouncedValue(search);
-    const { data, isLoading, mutate } = useCompanies(debouncedSearch || undefined, page * PAGE_SIZE, PAGE_SIZE);
+    const { data, isLoading, error, mutate } = useCompanies(debouncedSearch || undefined, page * PAGE_SIZE, PAGE_SIZE, archiveScope);
     const companies: Company[] = data?.items || [];
     const total: number = data?.total || 0;
     const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
@@ -77,7 +79,11 @@ export default function CompaniesPage() {
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Companies</h1>
+                        </div>
+                        <DashboardControls>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -88,12 +94,20 @@ export default function CompaniesPage() {
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
                             </div>
+                            <ArchiveScopedStatusSelect
+                                archive={archiveScope}
+                                onArchiveChange={setArchiveScope}
+                                status="All"
+                                onStatusChange={() => { }}
+                                statuses={[]}
+                            />
                         </div>
                         <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Add Company
                         </Button>
                     </DashboardControls>
+                    </div>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
@@ -101,6 +115,7 @@ export default function CompaniesPage() {
                     items={companies}
                     columns={columns}
                     loading={isLoading}
+                    error={error}
                     emptyMessage="No companies found."
                     onRowClick={setSelectedCompany}
                 />

@@ -7,6 +7,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const { searchParams } = new URL(request.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
+    const jobId = searchParams.get("job_id");
 
     let query = supabase
         .from("job_schedule_entries")
@@ -25,7 +26,6 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
                 created_at,
                 company:companies(id, name),
                 contact:contacts(id, first_name, last_name),
-                service:products!jobs_service_id_fkey(id, name),
                 assignees:job_assignees (
                     user:profiles (
                         id,
@@ -41,9 +41,10 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 
     if (start) query = query.gte("date", start);
     if (end) query = query.lte("date", end);
+    if (jobId) query = query.eq("job_id", jobId);
 
     const { data, error } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data });
 });
@@ -75,7 +76,6 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
                 created_at,
                 company:companies(id, name),
                 contact:contacts(id, first_name, last_name),
-                service:products!jobs_service_id_fkey(id, name),
                 assignees:job_assignees (
                     user:profiles (
                         id,
@@ -87,7 +87,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         `)
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ item: data }, { status: 201 });
 });
 
@@ -106,7 +106,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ item: data });
 });
 
@@ -121,6 +121,6 @@ export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
         .eq("id", id)
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ success: true });
 });

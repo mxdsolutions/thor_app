@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { requirePermission } from "@/app/api/_lib/permissions";
-import { buildXeroAuthUrl } from "@/lib/xero";
+import { buildXeroAuthUrl, generatePkceVerifier, pkceChallengeFromVerifier } from "@/lib/xero";
 import { v4 as uuid } from "uuid";
 
 export async function GET() {
@@ -27,15 +27,20 @@ export async function GET() {
     if (denied) return denied;
 
     const state = uuid();
+    const codeVerifier = generatePkceVerifier();
+    const codeChallenge = pkceChallengeFromVerifier(codeVerifier);
+
     const cookieStore = await cookies();
-    cookieStore.set("xero_oauth_state", state, {
+    const cookieOpts = {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: "lax" as const,
         maxAge: 600,
         path: "/",
-    });
+    };
+    cookieStore.set("xero_oauth_state", state, cookieOpts);
+    cookieStore.set("xero_pkce_verifier", codeVerifier, cookieOpts);
 
-    const authUrl = buildXeroAuthUrl(state);
+    const authUrl = buildXeroAuthUrl(state, codeChallenge);
     return NextResponse.redirect(authUrl);
 }

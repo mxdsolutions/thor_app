@@ -5,6 +5,7 @@ import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
+import { useArchiveAction } from "./use-archive-action";
 import { toast } from "sonner";
 
 type Contact = {
@@ -22,6 +23,7 @@ type Contact = {
     status: string;
     company?: { id: string; name: string } | null;
     created_at: string;
+    archived_at?: string | null;
 };
 
 interface ContactSideSheetProps {
@@ -53,6 +55,16 @@ export function ContactSideSheet({ contact, open, onOpenChange, onUpdate }: Cont
         }
     }, [data, onUpdate]);
 
+    const archive = useArchiveAction({
+        entityName: "contact",
+        endpoint: data ? `/api/contacts/${data.id}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
+
     if (!data) return null;
 
     const initials = `${data.first_name[0] || ""}${data.last_name[0] || ""}`.toUpperCase();
@@ -77,6 +89,8 @@ export function ContactSideSheet({ contact, open, onOpenChange, onUpdate }: Cont
                 label: statusLabel,
                 dotColor: data.status === "active" ? "bg-emerald-500" : "bg-amber-500",
             }}
+            actions={archive.menu}
+            banner={archive.banner}
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}

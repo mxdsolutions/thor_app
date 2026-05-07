@@ -66,12 +66,19 @@ export function UserSideSheet({ user, open, onOpenChange, onUpdate }: UserSideSh
             .select("job:jobs ( id, job_title, status, amount, scheduled_date, company:companies ( name ) )")
             .eq("user_id", data.id)
             .then(({ data: rows }) => {
-                const list = (rows || [])
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    .map((r: any) => r.job)
-                    .filter(Boolean)
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    .map((j: any) => ({
+                type JobRow = {
+                    id: string;
+                    job_title: string;
+                    status: string;
+                    amount: number;
+                    scheduled_date: string | null;
+                    company: { name: string } | null;
+                };
+                type AssigneeRow = { job: JobRow | null };
+                const list = ((rows as AssigneeRow[] | null) || [])
+                    .map((r) => r.job)
+                    .filter((j): j is JobRow => Boolean(j))
+                    .map((j) => ({
                         id: j.id,
                         job_title: j.job_title,
                         status: j.status,
@@ -100,13 +107,23 @@ export function UserSideSheet({ user, open, onOpenChange, onUpdate }: UserSideSh
 
     const handleSave = useCallback(async (column: string, value: string | number | null) => {
         if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("profiles")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (error) {
-            toast.error("Failed to save");
+        // Profile field updates go through the admin-gated API so an owner/admin
+        // can edit other users' fields. RLS only permits self-update, so a direct
+        // client write would silently fail for cross-user edits.
+        const body: Record<string, unknown> = {};
+        body[column] = value;
+        try {
+            const res = await fetch(`/api/users/${data.id}/profile`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.error || "Failed to save");
+            }
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Failed to save");
             return;
         }
         setData(prev => prev ? {
@@ -158,6 +175,15 @@ export function UserSideSheet({ user, open, onOpenChange, onUpdate }: UserSideSh
                                     rawValue: data.user_metadata.position || null,
                                 },
                                 { label: "Email", value: data.email },
+                                {
+                                    label: "Hourly Rate",
+                                    value: data.user_metadata.hourly_rate != null
+                                        ? new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(Number(data.user_metadata.hourly_rate))
+                                        : "$0.00",
+                                    dbColumn: "hourly_rate",
+                                    type: "number",
+                                    rawValue: data.user_metadata.hourly_rate ?? 0,
+                                },
                                 {
                                     label: "Joined",
                                     value: new Date(data.created_at).toLocaleDateString("en-AU", { dateStyle: "medium" }),

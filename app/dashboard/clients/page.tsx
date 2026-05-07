@@ -8,6 +8,7 @@ import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { usePermissionOptional } from "@/lib/tenant-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 import {
     tableBase,
     tableHead,
@@ -95,6 +96,7 @@ function ClientsPageContent() {
     const contacts: Contact[] = contactsData?.items || [];
     const contactsTotal: number = contactsData?.total || 0;
     const [showCreateContact, setShowCreateContact] = useState(false);
+    useCreateDeepLink(() => setShowCreateContact(true));
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
     // Companies state
@@ -128,8 +130,8 @@ function ClientsPageContent() {
 
     const contactsHeader = (
         <DashboardControls>
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="relative w-full sm:flex-1 sm:min-w-[320px] sm:max-w-xl">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search contacts..."
@@ -151,8 +153,8 @@ function ClientsPageContent() {
 
     const companiesHeader = (
         <DashboardControls>
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-                <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="relative w-full sm:flex-1 sm:min-w-[320px] sm:max-w-xl">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search companies..."
@@ -304,7 +306,14 @@ function ClientsPageContent() {
     return (
         <>
             <ScrollableTableLayout
-                header={tab === "contacts" ? contactsHeader : companiesHeader}
+                header={
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Clients</h1>
+                        </div>
+                        {tab === "contacts" ? contactsHeader : companiesHeader}
+                    </div>
+                }
                 footer={tab === "contacts"
                     ? <TablePagination page={contactsPage} pageSize={PAGE_SIZE} total={contactsTotal} onPageChange={setContactsPage} />
                     : <TablePagination page={companiesPage} pageSize={PAGE_SIZE} total={companiesTotal} onPageChange={setCompaniesPage} />

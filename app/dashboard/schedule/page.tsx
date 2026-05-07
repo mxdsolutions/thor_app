@@ -7,6 +7,7 @@ import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLay
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { useScheduleEntries, useStatusConfig } from "@/lib/swr";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 import { DEFAULT_JOB_STATUSES, toStatusConfig } from "@/lib/status-config";
 import { CalendarGrid } from "@/components/schedule/CalendarGrid";
 import type { CalendarView } from "@/components/schedule/CalendarGrid";
@@ -51,6 +52,7 @@ function SchedulePageContent() {
     const [selectedJob, setSelectedJob] = useState<any>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    useCreateDeepLink(() => { setEditingEntry(null); setModalOpen(true); });
     const [editingEntry, setEditingEntry] = useState<ScheduleEntry | null>(null);
 
     // Compute date range for data fetching based on view.
@@ -222,7 +224,11 @@ function SchedulePageContent() {
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Schedule</h1>
+                        </div>
+                        <DashboardControls>
                         {/* Desktop: Today + View toggle */}
                         <div className="hidden md:flex items-center gap-2">
                             <Button
@@ -321,6 +327,7 @@ function SchedulePageContent() {
                             </Button>
                         </div>
                     </DashboardControls>
+                    </div>
                 }
             >
                 {/* Mobile: Day list only (no calendar grid) */}

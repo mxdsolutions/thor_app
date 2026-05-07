@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
+import { applyArchiveFilter, parseArchiveScope } from "@/app/api/_lib/archive";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { invoiceSchema, invoiceUpdateSchema } from "@/lib/validation";
 import { pushInvoiceToXero } from "@/lib/xero-sync";
@@ -15,6 +16,8 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
+    query = applyArchiveFilter(query, parseArchiveScope(request));
+
     if (search) {
         query = query.or(
             `invoice_number.ilike.%${search}%,reference.ilike.%${search}%`
@@ -28,7 +31,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     if (jobId) query = query.eq("job_id", jobId);
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data, total: count || 0 });
 });
@@ -67,7 +70,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         .select("*, company:companies(id, name)")
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     // Insert line items
     if (processedItems.length > 0) {
@@ -127,7 +130,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select("*, company:companies(id, name)")
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data });
 });

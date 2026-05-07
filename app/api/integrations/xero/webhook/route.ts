@@ -202,14 +202,16 @@ async function handleInvoiceWebhook(
                 company_id: companyId,
                 updated_at: new Date().toISOString(),
             })
-            .eq("id", mapping.mxd_id);
+            .eq("id", mapping.mxd_id)
+            .eq("tenant_id", tenantId);
 
         // Update line items
         const items = mapXeroInvoiceLineItems(xi);
         await supabase
             .from("invoice_line_items")
             .delete()
-            .eq("invoice_id", mapping.mxd_id);
+            .eq("invoice_id", mapping.mxd_id)
+            .eq("tenant_id", tenantId);
         if (items.length > 0) {
             await supabase.from("invoice_line_items").insert(
                 items.map((li) => ({

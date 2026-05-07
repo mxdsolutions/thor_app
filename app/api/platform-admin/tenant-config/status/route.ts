@@ -39,7 +39,7 @@ export const GET = withPlatformAuth(async (request: NextRequest, { adminClient }
         .select("*")
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data || [] });
 });

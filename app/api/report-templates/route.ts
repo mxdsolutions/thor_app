@@ -12,7 +12,7 @@ export const GET = withAuth(async () => {
         .eq("is_active", true)
         .order("name", { ascending: true });
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data || [] });
 });

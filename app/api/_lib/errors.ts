@@ -15,12 +15,36 @@ export function validationError(error: ZodError) {
 }
 
 /**
- * Return a standardized 500 response.
+ * Return a standardized 500 response. Pass the underlying error/context
+ * so it gets logged server-side — callers were swallowing details.
  */
-export function serverError() {
+export function serverError(cause?: unknown, context?: string) {
+    if (cause !== undefined) {
+        console.error(context ? `[${context}]` : "[serverError]", cause);
+    }
     return NextResponse.json(
         { error: "Internal server error" },
         { status: 500 }
+    );
+}
+
+/**
+ * Return a standardized 401 response.
+ */
+export function unauthorizedError() {
+    return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+    );
+}
+
+/**
+ * Return a standardized 403 response.
+ */
+export function forbiddenError(message = "Forbidden") {
+    return NextResponse.json(
+        { error: message },
+        { status: 403 }
     );
 }
 

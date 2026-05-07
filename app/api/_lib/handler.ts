@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
+import { unauthorizedError, forbiddenError, serverError } from "./errors";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 export type AuthContext = {
@@ -28,10 +29,7 @@ export function withAuth(handler: Handler) {
             } = await supabase.auth.getUser();
 
             if (authError || !user) {
-                return NextResponse.json(
-                    { error: "Unauthorized" },
-                    { status: 401 }
-                );
+                return unauthorizedError();
             }
 
             const tenantId = await getTenantId();
@@ -41,16 +39,9 @@ export function withAuth(handler: Handler) {
                 err instanceof Error &&
                 err.message === "No tenant context available"
             ) {
-                return NextResponse.json(
-                    { error: "No tenant context" },
-                    { status: 403 }
-                );
+                return forbiddenError("No tenant context");
             }
-            console.error("API handler error:", err);
-            return NextResponse.json(
-                { error: "Internal server error" },
-                { status: 500 }
-            );
+            return serverError(err, "withAuth");
         }
     };
 }
@@ -83,27 +74,17 @@ export function withPlatformAuth(handler: PlatformHandler) {
             } = await supabase.auth.getUser();
 
             if (authError || !user) {
-                return NextResponse.json(
-                    { error: "Unauthorized" },
-                    { status: 401 }
-                );
+                return unauthorizedError();
             }
 
             if (user.app_metadata?.is_platform_admin !== true) {
-                return NextResponse.json(
-                    { error: "Forbidden" },
-                    { status: 403 }
-                );
+                return forbiddenError();
             }
 
             const adminClient = await createAdminClient();
             return await handler(request, { supabase, user, adminClient });
         } catch (err) {
-            console.error("Platform admin handler error:", err);
-            return NextResponse.json(
-                { error: "Internal server error" },
-                { status: 500 }
-            );
+            return serverError(err, "withPlatformAuth");
         }
     };
 }

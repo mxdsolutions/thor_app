@@ -31,7 +31,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             { tenant_id: tenantId, item_key: key, skipped_by: user.id, skipped_at: new Date().toISOString() },
             { onConflict: "tenant_id,item_key" }
         );
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ ok: true });
 });
 
@@ -52,6 +52,6 @@ export const DELETE = withAuth(async (request, { supabase, user, tenantId }) => 
         .delete()
         .eq("tenant_id", tenantId)
         .eq("item_key", key);
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ ok: true });
 });

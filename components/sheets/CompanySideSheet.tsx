@@ -5,7 +5,8 @@ import { DetailFields } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
-import { createClient } from "@/lib/supabase/client";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useArchiveAction } from "./use-archive-action";
 import { IconBuildingSkyscraper as BuildingOffice2Icon } from "@tabler/icons-react";
 
 type Company = {
@@ -21,7 +22,9 @@ type Company = {
     postcode?: string | null;
     status: string;
     notes?: string | null;
+    is_supplier?: boolean | null;
     created_at: string;
+    archived_at?: string | null;
 };
 
 interface CompanySideSheetProps {
@@ -38,18 +41,28 @@ export function CompanySideSheet({ company, open, onOpenChange, onUpdate }: Comp
     useEffect(() => { setData(company); }, [company]);
     useEffect(() => { if (data?.id) setActiveTab("details"); }, [data?.id]);
 
-    const handleSave = useCallback(async (column: string, value: string | number | null) => {
+    const handleSave = useCallback(async (column: string, value: string | number | boolean | null) => {
         if (!data) return;
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("companies")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
+        const res = await fetch("/api/companies", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.id, [column]: value }),
+        });
+        if (res.ok) {
             setData((prev) => prev ? { ...prev, [column]: value } : prev);
             onUpdate?.();
         }
     }, [data, onUpdate]);
+
+    const archive = useArchiveAction({
+        entityName: "company",
+        endpoint: data ? `/api/companies/${data.id}/archive` : "",
+        archived: !!data?.archived_at,
+        onArchived: (archivedAt) => {
+            setData((prev) => prev ? { ...prev, archived_at: archivedAt } : prev);
+            onUpdate?.();
+        },
+    });
 
     if (!data) return null;
 
@@ -74,12 +87,29 @@ export function CompanySideSheet({ company, open, onOpenChange, onUpdate }: Comp
                 label: statusLabel,
                 dotColor: data.status === "active" ? "bg-emerald-500" : "bg-amber-500",
             }}
+            actions={archive.menu}
+            banner={archive.banner}
             tabs={tabs}
             activeTab={activeTab}
             onTabChange={setActiveTab}
         >
             {activeTab === "details" && (
                 <div className="space-y-4">
+                    {/* Supplier toggle — drives the supplier picker on POs */}
+                    <div className="rounded-xl border border-border bg-card p-4">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                            <Checkbox
+                                checked={!!data.is_supplier}
+                                onCheckedChange={(v) => void handleSave("is_supplier", v === true)}
+                            />
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium">Is a supplier</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Show this company when picking a vendor on purchase orders.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
                     <div className="rounded-xl border border-border bg-card p-5">
                         <DetailFields
                             onSave={handleSave}

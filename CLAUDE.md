@@ -195,7 +195,7 @@ export default function ThingsPage() {
 ```
 
 **Rules:**
-- Always call `usePageTitle("Title")` — do **not** render page titles in the page body
+- Always call `usePageTitle("Title")` to set the sticky-header title. List pages also render an inline `<h1 className="font-statement text-2xl font-extrabold tracking-tight">Title</h1>` inside their `header` slot (above the `DashboardControls` row) so the title is visible without the sticky header — keep both in sync
 - `DashboardControls` uses `justify-between`: left side = search + filters, right side = action button
 - Pages without controls (overview/settings) just call `usePageTitle()` with no `DashboardControls`
 
@@ -348,7 +348,7 @@ See `DESIGN_SYSTEM.md` for full tokens. Key rules:
 
 - **Tailwind v4** — uses `@theme` block in `globals.css` with CSS variables, not a `tailwind.config` file
 - Use `cn()` from `lib/utils` for conditional classes — never inline ternaries in className
-- Use Tabler Icons (`@tabler/icons-react`) for dashboard icons — sharper, more technical/industrial feel than Heroicons. Import as `import { IconFoo } from "@tabler/icons-react"`
+- Use Lucide (`lucide-react`) for icons. Import as `import { Foo } from "lucide-react"`. The codebase also still has some `@tabler/icons-react` imports from earlier work — leave those alone unless you're already in the file for another reason.
 - **Typography:** body text is IBM Plex Sans (`--font-plex-sans`, wired to `--font-sans`) — chosen for its industrial/engineered character to pair with the Antonio display face. All `h1`–`h6` headings use Antonio (`--font-antonio`, exposed as `--font-display` / `font-display` utility) via a base layer rule — apply heading styles to semantic `<h*>` tags so they pick this up automatically. Non-heading elements styled as headings (e.g. a `<div>` with `text-xl font-bold`) will render in Plex Sans — use `font-display` if you need Antonio on a non-heading. Antonio ships real weights 100–700, so `font-normal`/`font-medium`/`font-semibold`/`font-bold` all work as expected (no synthetic bold). The base layer applies `font-weight: 500` to headings by default. Apply `uppercase` when you want the all-caps display look.
 - **Radius scale** (industrial feel, deliberately tight): `rounded-sm`/`rounded-md` → 2px, `rounded-lg` → 6px (buttons/interactive), `rounded-xl`/`rounded-2xl`/`rounded-3xl` → 4px (surfaces). Don't introduce arbitrary values like `rounded-[8px]` — stick to the token scale.
 - Buttons: `rounded-lg` (6px) — this is the industrial default. Reserve `rounded-full` for avatars and pill badges only. Cards: `rounded-2xl border bg-card shadow-sm` (renders at 4px per the token override).
@@ -417,5 +417,28 @@ After the core code lands for any new integration, create the corresponding sub-
 
 ## Known Issues
 
-- **Line-items amount recalculation is not atomic** (`app/api/_lib/line-items.ts`) — concurrent requests can produce incorrect job totals. A proper fix requires a Postgres function (e.g. `recalc_job_amount` RPC) that computes and updates in a single transaction.
-- **Stripe integration is stubbed** — `app/dashboard/settings/company/subscription/page.tsx` has TODO placeholders for Stripe checkout/portal API calls.
+_None at this time._
+
+## Atomic write helpers (migrations 025, 032, 034)
+
+Concurrency-sensitive writes go through Postgres RPCs:
+
+- `allocate_tenant_reference(p_tenant_id)` — returns the next reference id under a row lock. Used by `POST /api/jobs`. Add a call here whenever you introduce a new entity that needs an auto-allocated reference.
+- `create_job_with_assignees(p_tenant_id, p_created_by, p_payload, p_assignees)` — atomic job + job_assignees insert. If the assignees insert fails the job rolls back.
+- `replace_job_assignees(p_tenant_id, p_job_id, p_assignees)` — atomic delete + reinsert of a job's assignees. Used by `PATCH /api/jobs` so a failed insert can't leave a job with zero assignees.
+- `recalc_quote_total(p_quote_id)` / `recalc_purchase_order_total(p_po_id)` — wrapped by `recalcQuoteTotal` / `recalcPurchaseOrderTotal` in `app/api/_lib/line-items.ts`. Always call the helper after mutating line items; never sum totals in JS.
+- `claim_seat(p_tenant_id)` — atomic seat allocation for the invite flow. Wraps the count-and-decide check in a transaction-scoped advisory lock so two concurrent invites can't both pass at quota - 1. Used by `app/actions/inviteUser.ts`.
+
+## Subscription / billing semantics
+
+- **Cancellation = read-only until period end.** When a tenant cancels, the webhook flips `tenant_subscriptions.status` to `canceled` but the middleware lock check only locks on `unpaid` / `incomplete_expired`. Existing members keep working until the natural period end; new invites are blocked because `getSeatUsage` treats canceled as "no active subscription". This is intentional — it preserves the soft-cancel UX. Don't change the lock predicate without coordinating with product.
+- **Middleware lock-state cache has a 60-second SLA.** [middleware.ts](middleware.ts) caches `getTenantLockState` per-worker for 60s. So a tenant who's just been flipped to `unpaid` by webhook can keep browsing for up to 60s, and a tenant who just paid stays locked for up to 60s. Acceptable for a CRM; flag if business needs sub-minute enforcement.
+- **Seat enforcement is server-side and atomic** — go through `claim_seat` (or `getSeatUsage` for read-only display). Don't reimplement the count-and-decide.
+
+## Token storage (third-party OAuth)
+
+Xero (`xero_connections`) and Outlook (`email_connections`) tokens use **optimistic locking on `refresh_token`** to handle concurrent refreshes safely. Pattern in `lib/xero.ts` `getValidXeroToken` and `lib/microsoft-graph.ts` `getValidToken` — copy this shape if adding a new OAuth integration. Tokens are stored plaintext in Postgres (Supabase encrypts at rest at the disk level); application-layer encryption is a known follow-up.
+
+## Email sending
+
+Always treat the recipient list as a suppression-checked surface. `lib/email/resend.ts` `sendReportShareEmail` accepts `supabase` as an optional arg — when provided, it consults `email_suppressions` and throws `EmailAddressSuppressed` for bounced/complained addresses. The Resend webhook at `app/api/webhooks/resend/route.ts` populates that table. New callers should pass `supabase` so reputation-damaged addresses are auto-skipped.

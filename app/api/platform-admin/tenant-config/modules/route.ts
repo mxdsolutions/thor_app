@@ -17,7 +17,7 @@ export const GET = withPlatformAuth(async (request: NextRequest, { adminClient }
         .select("module_id, enabled")
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     if (!data || data.length === 0) {
         return NextResponse.json({ modules: DEFAULT_MODULES, is_default: true });

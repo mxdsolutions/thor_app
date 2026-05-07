@@ -11,6 +11,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { DatePicker, TimePicker } from "@/components/ui/date-time-input";
 import { Button } from "@/components/ui/button";
 import { JobSearchSelect } from "@/components/ui/job-search-select";
 import { toast } from "sonner";
@@ -24,6 +25,8 @@ interface ScheduleEntryModalProps {
     entry?: ScheduleEntry | null;
     /** Pre-fill date when creating from a calendar day click */
     defaultDate?: string;
+    /** Pre-fill + lock the job when creating from a job-scoped view */
+    defaultJobId?: string;
 }
 
 export function ScheduleEntryModal({
@@ -32,6 +35,7 @@ export function ScheduleEntryModal({
     onSaved,
     entry,
     defaultDate,
+    defaultJobId,
 }: ScheduleEntryModalProps) {
     const isEditing = !!entry;
     const [saving, setSaving] = useState(false);
@@ -62,10 +66,11 @@ export function ScheduleEntryModal({
             setNotes(entry.notes || "");
         } else {
             if (defaultDate) setDate(defaultDate);
+            if (defaultJobId) setJobId(defaultJobId);
             setStartTime("09:00");
             setEndTime("18:00");
         }
-    }, [open, entry, defaultDate]);
+    }, [open, entry, defaultDate, defaultJobId]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -131,8 +136,8 @@ export function ScheduleEntryModal({
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
                     <DialogBody className="space-y-4 pb-6">
-                    {/* Job selector (only for new entries) */}
-                    {!isEditing && (
+                    {/* Job selector (only for new entries, hidden when locked to a specific job) */}
+                    {!isEditing && !defaultJobId && (
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium">Job</label>
                             <JobSearchSelect
@@ -146,33 +151,18 @@ export function ScheduleEntryModal({
                     {/* Date */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium">Date</label>
-                        <Input
-                            type="date"
-                            value={date}
-                            onChange={(e) => setDate(e.target.value)}
-                            className="rounded-xl border-border/50"
-                        />
+                        <DatePicker value={date} onChange={setDate} />
                     </div>
 
                     {/* Time range */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium">Start Time</label>
-                            <Input
-                                type="time"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
-                                className="rounded-xl border-border/50"
-                            />
+                            <TimePicker value={startTime} onChange={setStartTime} />
                         </div>
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium">End Time</label>
-                            <Input
-                                type="time"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="rounded-xl border-border/50"
-                            />
+                            <TimePicker value={endTime} onChange={setEndTime} />
                         </div>
                     </div>
 

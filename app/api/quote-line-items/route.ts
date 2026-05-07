@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { serverError, missingParamError, notFoundError } from "@/app/api/_lib/errors";
+import { serverError, missingParamError, notFoundError, validationError } from "@/app/api/_lib/errors";
 import { recalcQuoteTotal } from "@/app/api/_lib/line-items";
 import { z } from "zod";
 
@@ -41,7 +41,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ lineItems: data });
 });
@@ -49,8 +49,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 export const POST = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const validation = quoteLineItemSchema.safeParse(body);
-    if (!validation.success)
-        return NextResponse.json({ error: validation.error.flatten() }, { status: 400 });
+    if (!validation.success) return validationError(validation.error);
 
     const d = validation.data;
 
@@ -74,7 +73,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const newTotal = await recalcQuoteTotal(supabase, d.quote_id);
 
@@ -84,8 +83,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
 export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     const body = await request.json();
     const validation = quoteLineItemUpdateSchema.safeParse(body);
-    if (!validation.success)
-        return NextResponse.json({ error: validation.error.flatten() }, { status: 400 });
+    if (!validation.success) return validationError(validation.error);
 
     const { id, ...updates } = validation.data;
 
@@ -116,7 +114,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const newTotal = await recalcQuoteTotal(supabase, data.quote_id);
 
@@ -142,7 +140,7 @@ export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
         .eq("id", id)
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const newTotal = await recalcQuoteTotal(supabase, item.quote_id);
 

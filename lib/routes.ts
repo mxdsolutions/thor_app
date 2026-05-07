@@ -12,9 +12,12 @@ export const ROUTES = {
     // Operations
     OPS_JOBS: "/dashboard/jobs",
     OPS_SCOPES: "/dashboard/scopes",
-    OPS_SERVICES: "/dashboard/services",
     OPS_REPORTS: "/dashboard/reports",
     OPS_SCHEDULE: "/dashboard/schedule",
+    OPS_TIMESHEETS: "/dashboard/timesheets",
+
+    // Files
+    FILES: "/dashboard/files",
 
     // Finance
     FINANCE_QUOTES: "/dashboard/quotes",

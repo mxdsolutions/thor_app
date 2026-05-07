@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { TablePagination } from "@/components/dashboard/TablePagination";
-import { usePricing, type PricingItem } from "@/lib/swr";
+import { usePricing, type PricingItem, type ArchiveScope } from "@/lib/swr";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { PricingSideSheet } from "@/components/sheets/PricingSideSheet";
 import { CreateMaterialModal } from "@/components/modals/CreateMaterialModal";
 
@@ -50,7 +52,7 @@ const columns: DataTableColumn<PricingRow>[] = [
 const PAGE_SIZE = 20;
 
 export default function PricingPage() {
-    usePageTitle("Materials");
+    usePageTitle("Pricing");
     const [createOpen, setCreateOpen] = useState(false);
     const canWritePricing = usePermissionOptional("finance.pricing", "write", true);
     useMobileHeaderAction(useCallback(() => {
@@ -58,11 +60,12 @@ export default function PricingPage() {
     }, [canWritePricing]));
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [page, setPage] = useState(0);
     const [selectedItem, setSelectedItem] = useState<PricingItem | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
 
-    const { data, isLoading } = usePricing(debouncedSearch || undefined, undefined, page * PAGE_SIZE, PAGE_SIZE);
+    const { data, isLoading, error } = usePricing(debouncedSearch || undefined, undefined, page * PAGE_SIZE, PAGE_SIZE, archiveScope);
     const total: number = data?.total || 0;
 
     // pg_trgm needs 3+ chars to use the GIN indexes
@@ -91,7 +94,11 @@ export default function PricingPage() {
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Pricing</h1>
+                        </div>
+                        <DashboardControls>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -102,6 +109,15 @@ export default function PricingPage() {
                                     onChange={(e) => handleSearch(e.target.value)}
                                 />
                             </div>
+                            <MobileFilters>
+                                <ArchiveScopedStatusSelect
+                                    archive={archiveScope}
+                                    onArchiveChange={setArchiveScope}
+                                    status="All"
+                                    onStatusChange={() => { }}
+                                    statuses={[]}
+                                />
+                            </MobileFilters>
                         </div>
                         {canWritePricing && (
                             <Button className="hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
@@ -110,6 +126,7 @@ export default function PricingPage() {
                             </Button>
                         )}
                     </DashboardControls>
+                    </div>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
@@ -117,6 +134,7 @@ export default function PricingPage() {
                     items={rows}
                     columns={columns}
                     loading={isLoading}
+                    error={error}
                     emptyMessage="No pricing items found."
                     onRowClick={(row) => { setSelectedItem(row); setSheetOpen(true); }}
                 />

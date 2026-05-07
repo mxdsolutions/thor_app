@@ -171,7 +171,7 @@ export function EmailSideSheet({ emailId, open, onOpenChange, matchedContacts = 
                                 </div>
                                 <div className="flex-1 min-w-0 pt-1">
                                     <div className="flex items-center gap-2.5">
-                                        <SheetTitle className="text-xl font-bold truncate">
+                                        <SheetTitle className="font-statement text-xl font-extrabold tracking-tight truncate">
                                             {email.subject || "(No subject)"}
                                         </SheetTitle>
                                         {!email.isRead && (

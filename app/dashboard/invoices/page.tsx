@@ -11,13 +11,23 @@ import { TablePagination } from "@/components/dashboard/TablePagination";
 import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
 import { invoiceStatusDotClass } from "@/lib/design-system";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
-import { useInvoices } from "@/lib/swr";
+import { useInvoices, type ArchiveScope } from "@/lib/swr";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateInvoiceModal } from "@/components/modals/CreateInvoiceModal";
 import { InvoiceSideSheet } from "@/components/sheets/InvoiceSideSheet";
+import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
+
+const INVOICE_STATUSES = [
+    { id: "draft", label: "Draft" },
+    { id: "submitted", label: "Submitted" },
+    { id: "authorised", label: "Authorised" },
+    { id: "paid", label: "Paid" },
+    { id: "voided", label: "Voided" },
+];
 
 type Invoice = {
     id: string;
@@ -57,17 +67,19 @@ const columns: DataTableColumn<Invoice>[] = [
 export default function InvoicesPage() {
     usePageTitle("Invoices");
     const [createOpen, setCreateOpen] = useState(false);
+    useCreateDeepLink(() => setCreateOpen(true));
     const canWriteInvoices = usePermissionOptional("finance.invoices", "write", true);
     useMobileHeaderAction(useCallback(() => {
         if (canWriteInvoices) setCreateOpen(true);
     }, [canWriteInvoices]));
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("All");
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [page, setPage] = useState(0);
     const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
 
     const PAGE_SIZE = 20;
-    const { data, isLoading, mutate } = useInvoices(page * PAGE_SIZE, PAGE_SIZE);
+    const { data, isLoading, error, mutate } = useInvoices(page * PAGE_SIZE, PAGE_SIZE, archiveScope);
     const total: number = data?.total || 0;
 
     const invoices = useMemo(() => (data?.items || [] as Invoice[]).filter((inv: Invoice) => {
@@ -80,11 +92,36 @@ export default function InvoicesPage() {
         return matchesSearch && matchesStatus;
     }), [data?.items, search, statusFilter]);
 
+    const metrics: PageMetric[] = useMemo(() => {
+        const all: Invoice[] = data?.items || [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const outstanding = all.reduce((sum, inv) => {
+            if (inv.status === "paid" || inv.status === "voided") return sum;
+            return sum + (inv.amount_due || 0);
+        }, 0);
+        const overdueCount = all.filter(inv => {
+            if (inv.status === "paid" || inv.status === "voided") return false;
+            if (!inv.due_date) return false;
+            return new Date(inv.due_date) < today;
+        }).length;
+        return [
+            { label: "Outstanding", value: formatCurrency(outstanding), accent: true, tone: outstanding > 0 ? "warning" : "default" },
+            { label: "Total invoices", value: total.toLocaleString() },
+            { label: "Overdue", value: overdueCount.toLocaleString(), tone: overdueCount > 0 ? "danger" : "default" },
+        ];
+    }, [data?.items, total]);
+
     return (
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Invoices</h1>
+                        </div>
+                        <PageMetrics metrics={metrics} />
+                        <DashboardControls>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -96,18 +133,13 @@ export default function InvoicesPage() {
                                 />
                             </div>
                             <MobileFilters>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {["All", "draft", "submitted", "authorised", "paid", "voided"].map((s) => (
-                                            <SelectItem key={s} value={s}>
-                                                {s === "All" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <ArchiveScopedStatusSelect
+                                    archive={archiveScope}
+                                    onArchiveChange={setArchiveScope}
+                                    status={statusFilter}
+                                    onStatusChange={setStatusFilter}
+                                    statuses={INVOICE_STATUSES}
+                                />
                             </MobileFilters>
                         </div>
                         {canWriteInvoices && (
@@ -116,7 +148,8 @@ export default function InvoicesPage() {
                                 Add Invoice
                             </Button>
                         )}
-                    </DashboardControls>
+                        </DashboardControls>
+                    </div>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
@@ -124,6 +157,7 @@ export default function InvoicesPage() {
                     items={invoices}
                     columns={columns}
                     loading={isLoading}
+                    error={error}
                     emptyMessage={!data?.items?.length ? "No invoices yet. Create your first invoice." : "No invoices match your filters."}
                     onRowClick={setSelectedInvoice}
                 />

@@ -27,7 +27,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .eq("entity_id", entityId)
         .order("created_at", { ascending: false });
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const notes = (data || []).map(n => ({
         ...n,
@@ -57,7 +57,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
             .single(),
     ]);
 
-    if (noteResult.error) return serverError();
+    if (noteResult.error) return serverError(noteResult.error);
 
     const profile = profileResult.data;
     const authorName = profile?.full_name || profile?.email || "Someone";

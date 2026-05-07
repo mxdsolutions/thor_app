@@ -2,31 +2,46 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { getJobStatusDot, avatarSurfaceClass } from "@/lib/design-system";
-import { DetailFields } from "@/components/sheets/DetailFields";
 import { NotesPanel } from "@/components/sheets/NotesPanel";
 import { ActivityTimeline } from "@/components/sheets/ActivityTimeline";
-import { LineItemsTable } from "@/features/line-items/LineItemsTable";
-import { createClient } from "@/lib/supabase/client";
-import { useProfiles, useStatusConfig, useJobQuotes, useJobInvoices, useJobReports } from "@/lib/swr";
+
+import {
+    useProfiles,
+    useStatusConfig,
+    useJobQuotes,
+    useJobInvoices,
+    useJobReports,
+    useJobScheduleEntries,
+    useJobCounts,
+    useCompanyOptions,
+    useContactOptions,
+    useJobFiles,
+    useJobReceipts,
+    useJobPurchaseOrders,
+    useJobTimesheets,
+} from "@/lib/swr";
+import type { EntityOption } from "@/components/ui/entity-search-dropdown";
 import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
-import { toast } from "sonner";
-import { IconPlus as PlusIcon, IconArrowLeft as ArrowLeftIcon, IconX as XMarkIcon } from "@tabler/icons-react";
+import {
+    IconPlus as PlusIcon,
+    IconChevronDown,
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { JobTasksPanel } from "@/components/jobs/JobTasksPanel";
-import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
-import { CreateInvoiceModal } from "@/components/modals/CreateInvoiceModal";
-import { CreateReportModal } from "@/components/modals/CreateReportModal";
-import { QuoteSideSheet } from "@/components/sheets/QuoteSideSheet";
-import { InvoiceSideSheet } from "@/components/sheets/InvoiceSideSheet";
-import { ReportSideSheet } from "@/components/sheets/ReportSideSheet";
-import { mutate } from "swr";
+import type { ScheduleEntry } from "@/components/schedule/types";
+
+import { JobDetailHeader } from "./JobDetailHeader";
+import { JobDetailModals } from "./JobDetailModals";
+import { JobDetailsTab } from "./tabs/JobDetailsTab";
+import { JobAppointmentsTab } from "./tabs/JobAppointmentsTab";
+import { JobQuotesTab } from "./tabs/JobQuotesTab";
+import { JobInvoicesTab } from "./tabs/JobInvoicesTab";
+import { JobReportsTab } from "./tabs/JobReportsTab";
+import { JobExpensesTab } from "./tabs/JobExpensesTab";
+import { JobFilesTab } from "./tabs/JobFilesTab";
 
 type Assignee = { id: string; full_name: string | null; email: string | null };
-
-type QuoteItem = { id: string; title: string | null; status: string; total_amount: number;[key: string]: unknown };
-type InvoiceItem = { id: string; invoice_number: string | null; status: string; amount: number; total: number;[key: string]: unknown };
-type ReportItem = { id: string; title: string | null; type: string | null; status: string;[key: string]: unknown };
 
 export type JobDetailJob = {
     id: string;
@@ -42,24 +57,8 @@ export type JobDetailJob = {
     assignees: Assignee[];
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
-    service?: { id: string; name: string } | null;
     created_at: string;
-};
-
-type LineItem = {
-    id: string;
-    job_id: string;
-    product_id: string;
-    quantity: number;
-    unit_price: number;
-    product: { id: string; name: string } | null;
-    created_at: string;
-};
-
-type Service = {
-    id: string;
-    name: string;
-    initial_value: number | null;
+    archived_at?: string | null;
 };
 
 interface JobDetailViewProps {
@@ -75,28 +74,58 @@ const paidStatusConfig = PAID_STATUS_CONFIG;
 export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewProps) {
     const [activeTab, setActiveTab] = useState("details");
     const [data, setData] = useState<JobDetailJob>(job);
-    const [jobProjects, setJobProjects] = useState<{ id: string; title: string; status: string }[]>([]);
-    const [companies, setCompanies] = useState<{ value: string; label: string }[]>([]);
-    const [contacts, setContacts] = useState<{ id: string; first_name: string; last_name: string }[]>([]);
-    const [lineItems, setLineItems] = useState<LineItem[]>([]);
-    const [services, setServices] = useState<Service[]>([]);
+
+    // Modal toggles — owned here so the Create dropdown can fire them
+    // independently of which tab is active.
     const [quoteModalOpen, setQuoteModalOpen] = useState(false);
     const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
     const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [editingDescription, setEditingDescription] = useState(false);
-    const [descriptionDraft, setDescriptionDraft] = useState("");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [selectedQuote, setSelectedQuote] = useState<any>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [selectedReport, setSelectedReport] = useState<any>(null);
+    const [appointmentModalOpen, setAppointmentModalOpen] = useState(false);
+    const [editingAppointment, setEditingAppointment] = useState<ScheduleEntry | null>(null);
+    const [fileUploadOpen, setFileUploadOpen] = useState(false);
+    const [receiptModalOpen, setReceiptModalOpen] = useState(false);
+    const [poModalOpen, setPoModalOpen] = useState(false);
+    const [timesheetModalOpen, setTimesheetModalOpen] = useState(false);
+    const [createMenuOpen, setCreateMenuOpen] = useState(false);
+    const [createMenuMobileOpen, setCreateMenuMobileOpen] = useState(false);
+    const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+
     const { data: statusData } = useStatusConfig("job");
     const statusConfig = toStatusConfig(statusData?.statuses ?? DEFAULT_JOB_STATUSES);
+
+    // Counts always fetch (cheap — Postgres count(*) head-only).
+    const { data: countsData } = useJobCounts(data.id);
+    // Lists are lazy: only fetched while their tab is active.
     const { data: quotesData } = useJobQuotes(activeTab === "quotes" ? data.id : null);
     const { data: invoicesData } = useJobInvoices(activeTab === "invoices" ? data.id : null);
     const { data: reportsData } = useJobReports(activeTab === "reports" ? data.id : null);
+    const { data: appointmentsData } = useJobScheduleEntries(activeTab === "appointments" ? data.id : null);
+    const { data: filesData } = useJobFiles(activeTab === "files" ? data.id : null);
+    const { data: receiptsData } = useJobReceipts(activeTab === "expenses" ? data.id : null);
+    const { data: posData } = useJobPurchaseOrders(activeTab === "expenses" ? data.id : null);
+    const { data: timesheetsData } = useJobTimesheets(activeTab === "expenses" ? data.id : null);
     const { data: profilesData } = useProfiles();
+    const { data: companiesData, isLoading: companiesLoading, mutate: mutateCompanies } = useCompanyOptions();
+    const { data: contactsData, isLoading: contactsLoading, mutate: mutateContacts } = useContactOptions();
+
+    type ContactRow = { id: string; first_name: string; last_name: string; email?: string | null; company_id?: string | null };
+    type CompanyRow = { id: string; name: string };
+
+    const companyOptions: EntityOption[] = useMemo(
+        () => (companiesData?.items ?? []).map((c: CompanyRow) => ({ id: c.id, label: c.name })),
+        [companiesData]
+    );
+
+    const contactOptions: EntityOption[] = useMemo(
+        () => (contactsData?.items ?? []).map((c: ContactRow) => ({
+            id: c.id,
+            label: `${c.first_name} ${c.last_name}`,
+            subtitle: c.email,
+            company_id: c.company_id,
+        })),
+        [contactsData]
+    );
+
     const users: { value: string; label: string }[] = useMemo(() =>
         (profilesData?.users || []).map((u: { id: string; email?: string; user_metadata?: { full_name?: string } }) => ({
             value: u.id,
@@ -107,193 +136,124 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
 
     useEffect(() => { setData(job); }, [job]);
 
-    useEffect(() => {
-        const supabase = createClient();
-        supabase.from("companies").select("id, name").then(({ data: comps }) => {
-            if (comps) setCompanies(comps.map((c) => ({ value: c.id, label: c.name })));
-        });
-        supabase.from("contacts").select("id, first_name, last_name").then(({ data: conts }) => {
-            if (conts) setContacts(conts);
-        });
-        supabase.from("products").select("id, name, initial_value").eq("status", "active").then(({ data: prods }) => {
-            if (prods) setServices(prods);
-        });
-    }, []);
-
-    const fetchLineItems = useCallback(async (jobId: string) => {
-        const res = await fetch(`/api/job-line-items?job_id=${jobId}`);
-        if (res.ok) {
-            const { lineItems: items } = await res.json();
-            setLineItems(items || []);
-        }
-    }, []);
-
-    const fetchJobProjects = useCallback(async (jobId: string) => {
-        const supabase = createClient();
-        const { data: projs } = await supabase
-            .from("projects")
-            .select("id, title, status")
-            .eq("job_id", jobId)
-            .order("created_at", { ascending: true });
-        setJobProjects(projs || []);
-    }, []);
-
-    useEffect(() => {
-        if (data.id) {
-            fetchLineItems(data.id);
-            fetchJobProjects(data.id);
-        }
-    }, [data.id, fetchLineItems, fetchJobProjects]);
-
     const handleSave = useCallback(async (column: string, value: string | number | null) => {
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("jobs")
-            .update({ [column]: value, updated_at: new Date().toISOString() })
-            .eq("id", data.id);
-        if (!error) {
+        const res = await fetch("/api/jobs", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: data.id, [column]: value }),
+        });
+        if (res.ok) {
             setData((prev) => ({ ...prev, [column]: value }));
             onUpdate?.();
         }
     }, [data.id, onUpdate]);
 
-    const handleAddLineItem = async (productId: string, quantity: number, unitPrice: number) => {
-        const res = await fetch("/api/job-line-items", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ job_id: data.id, product_id: productId, quantity, unit_price: unitPrice }),
-        });
-        if (res.ok) {
-            const { lineItem, jobAmount } = await res.json();
-            setLineItems((prev) => [...prev, lineItem]);
-            setData((prev) => ({ ...prev, amount: jobAmount }));
-            onUpdate?.();
-        } else {
-            toast.error("Failed to add service");
+    const handleContactChange = useCallback(async (id: string, option?: EntityOption) => {
+        await handleSave("contact_id", id || null);
+        const contact = (contactsData?.items ?? []).find((c: ContactRow) => c.id === id);
+        setData((prev) => ({
+            ...prev,
+            contact: contact ? { id: contact.id, first_name: contact.first_name, last_name: contact.last_name } : null,
+        }));
+        // Auto-cascade company when the picked contact has one and it differs from the current company.
+        if (id && option?.company_id && option.company_id !== data.company?.id) {
+            await handleSave("company_id", option.company_id);
+            const company = (companiesData?.items ?? []).find((c: CompanyRow) => c.id === option.company_id);
+            setData((prev) => ({
+                ...prev,
+                company: company ? { id: company.id, name: company.name } : prev.company,
+            }));
         }
-    };
+    }, [handleSave, contactsData, companiesData, data.company?.id]);
 
-    const handleUpdateLineItem = async (id: string, field: "quantity" | "unit_price", value: number) => {
-        const res = await fetch("/api/job-line-items", {
+    const handleCompanyChange = useCallback(async (id: string) => {
+        await handleSave("company_id", id || null);
+        const company = (companiesData?.items ?? []).find((c: CompanyRow) => c.id === id);
+        setData((prev) => ({
+            ...prev,
+            company: company ? { id: company.id, name: company.name } : null,
+        }));
+    }, [handleSave, companiesData]);
+
+    const handleArchive = useCallback(async (archived: boolean) => {
+        const res = await fetch(`/api/jobs/${data.id}/archive`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id, [field]: value }),
+            body: JSON.stringify({ archived }),
         });
-        if (res.ok) {
-            const { lineItem, jobAmount } = await res.json();
-            setLineItems((prev) => prev.map((li) => li.id === id ? lineItem : li));
-            setData((prev) => ({ ...prev, amount: jobAmount }));
-            onUpdate?.();
-        } else {
-            toast.error("Failed to update");
-        }
-    };
+        if (!res.ok) return;
+        const json = await res.json();
+        setData((prev) => ({
+            ...prev,
+            archived_at: json.item?.archived_at ?? (archived ? new Date().toISOString() : null),
+        }));
+        onUpdate?.();
+    }, [data.id, onUpdate]);
 
-    const handleDeleteLineItem = async (id: string) => {
-        const res = await fetch(`/api/job-line-items?id=${id}`, { method: "DELETE" });
-        if (res.ok) {
-            const { jobAmount } = await res.json();
-            setLineItems((prev) => prev.filter((li) => li.id !== id));
-            setData((prev) => ({ ...prev, amount: jobAmount }));
-            onUpdate?.();
-        } else {
-            toast.error("Failed to remove service");
+    // Auto-progress a "new" job to "in_progress" when work artefacts are created against it.
+    const ensureInProgress = useCallback(async () => {
+        if (data.status === "new") {
+            await handleSave("status", "in_progress");
         }
-    };
+    }, [data.status, handleSave]);
 
-    const status = statusConfig[data.status] || statusConfig.new;
+    // Tab counts: come from the counts endpoint, regardless of which tab is open.
+    // While the active tab's list is loaded, prefer its actual length so the badge
+    // stays in sync after an optimistic add/remove the counts endpoint hasn't
+    // revalidated yet.
+    const labelWithCount = (base: string, count: number | undefined) =>
+        count != null ? `${base} (${count})` : base;
+
+    const quotesCount = quotesData?.items?.length ?? countsData?.quotes;
+    const invoicesCount = invoicesData?.items?.length ?? countsData?.invoices;
+    const reportsCount = reportsData?.items?.length ?? countsData?.reports;
+    const appointmentsCount = appointmentsData?.items?.length ?? countsData?.appointments;
 
     const tabs = [
         { id: "details", label: "Details" },
-        { id: "scopes", label: `Scopes (${jobProjects.length})` },
-        { id: "quotes", label: `Quotes${quotesData?.items?.length ? ` (${quotesData.items.length})` : ""}` },
-        { id: "reports", label: `Reports${reportsData?.items?.length ? ` (${reportsData.items.length})` : ""}` },
-        { id: "invoices", label: `Invoices${invoicesData?.items?.length ? ` (${invoicesData.items.length})` : ""}` },
-        { id: "services", label: `Services (${lineItems.length})` },
+        { id: "appointments", label: labelWithCount("Appointments", appointmentsCount) },
+        { id: "quotes", label: labelWithCount("Quotes", quotesCount) },
+        { id: "reports", label: labelWithCount("Reports", reportsCount) },
+        { id: "invoices", label: labelWithCount("Invoices", invoicesCount) },
+        { id: "expenses", label: "Expenses" },
+        { id: "files", label: "Files" },
         // Sheet mode shows Tasks as a tab; inline mode shows Tasks in a right rail instead.
         ...(mode === "sheet" ? [{ id: "tasks", label: "Tasks" }] : []),
         { id: "notes", label: "Notes" },
         { id: "activity", label: "Activity" },
     ];
 
+    const createOptions: { id: string; label: string; onClick: () => void }[] = [
+        { id: "quote", label: "Quote", onClick: () => setQuoteModalOpen(true) },
+        { id: "purchase-order", label: "Purchase Order", onClick: () => setPoModalOpen(true) },
+        { id: "report", label: "Report", onClick: () => setReportModalOpen(true) },
+        { id: "invoice", label: "Invoice", onClick: () => setInvoiceModalOpen(true) },
+        {
+            id: "appointment",
+            label: "Appointment",
+            onClick: () => {
+                setEditingAppointment(null);
+                setAppointmentModalOpen(true);
+            },
+        },
+        { id: "receipt", label: "Receipt", onClick: () => setReceiptModalOpen(true) },
+        { id: "timesheet", label: "Timesheet", onClick: () => setTimesheetModalOpen(true) },
+    ];
+
     return (
         <div className="flex flex-col h-full min-h-0 bg-background">
-            {/* Back link (inline mode only) */}
-            {mode === "inline" && onClose && (
-                <div className="px-6 pt-4 shrink-0">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        <ArrowLeftIcon className="w-3.5 h-3.5" />
-                        Back to All Jobs
-                    </button>
-                </div>
-            )}
-
-            {/* Header */}
-            <div className={cn("px-6 pb-4 border-b border-border shrink-0", mode === "inline" ? "pt-3" : "pt-6")}>
-                <div className="flex items-start gap-4">
-                    <div className={cn("w-[60px] h-[60px] rounded-xl flex items-center justify-center shrink-0", avatarSurfaceClass)}>
-                        <span className="text-lg font-bold uppercase tracking-wide">{(data.job_title || "?").charAt(0).toUpperCase()}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold leading-tight truncate">{data.job_title}</h1>
-                            <span className="inline-flex items-center shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider bg-secondary text-foreground">
-                                <span className={cn("w-2 h-2 rounded-full mr-2", status.color)} />
-                                {status.label}
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                            {data.reference_id && (
-                                <>
-                                    <span className="font-mono">{data.reference_id}</span>
-                                    <span>·</span>
-                                </>
-                            )}
-                            <span>${data.amount.toLocaleString()}</span>
-                            {data.scheduled_date && (
-                                <>
-                                    <span>·</span>
-                                    <span>{new Date(data.scheduled_date).toLocaleDateString("en-AU", { dateStyle: "medium" })}</span>
-                                </>
-                            )}
-                            {(data.assignees || []).length > 0 && (
-                                <>
-                                    <span>·</span>
-                                    <div className="flex -space-x-1.5 items-center">
-                                        {(data.assignees || []).map((a, idx) => {
-                                            const name = a.full_name || a.email || "Unknown";
-                                            const initials = (a.full_name || a.email || "?").split(/[\s@]/).filter(Boolean).map(w => w[0]).join("").slice(0, 2).toUpperCase();
-                                            return (
-                                                <div
-                                                    key={a.id ?? idx}
-                                                    title={name}
-                                                    className="w-6 h-6 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-[10px] font-bold text-foreground"
-                                                >
-                                                    {initials}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                    {mode === "sheet" && onClose && (
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="w-9 h-9 rounded-xl hover:bg-secondary flex items-center justify-center shrink-0 transition-colors"
-                            aria-label="Close"
-                        >
-                            <XMarkIcon className="w-5 h-5" />
-                        </button>
-                    )}
-                </div>
-            </div>
+            <JobDetailHeader
+                data={data}
+                statusConfig={statusConfig}
+                mode={mode}
+                onClose={onClose}
+                onArchive={(archived) => void handleArchive(archived)}
+                createOptions={createOptions}
+                moreMenuOpen={moreMenuOpen}
+                setMoreMenuOpen={setMoreMenuOpen}
+                createMenuOpen={createMenuOpen}
+                setCreateMenuOpen={setCreateMenuOpen}
+            />
 
             {/* Tabs */}
             <div className="px-6 border-b border-border/50 bg-background shrink-0">
@@ -304,9 +264,7 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                             onClick={() => setActiveTab(tab.id)}
                             className={cn(
                                 "pb-3 text-[17px] font-medium transition-colors relative focus:outline-none whitespace-nowrap",
-                                activeTab === tab.id
-                                    ? "text-foreground"
-                                    : "text-muted-foreground hover:text-foreground"
+                                activeTab === tab.id ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             {tab.label}
@@ -318,339 +276,144 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                 </div>
             </div>
 
-            {/* Content + optional right rail for inline mode */}
+            {/* Tab body + optional right rail */}
             <div className="flex-1 flex min-h-0 bg-secondary/20">
-            <div className="flex-1 overflow-y-auto p-6 min-w-0">
-                {activeTab === "details" && (
-                    <div className="space-y-4">
-                        {/* Stage progress bar — chevron/arrow shape */}
-                        {(() => {
-                            const stageOrder = Object.keys(statusConfig).filter(k => k !== "cancelled");
-                            if (stageOrder.length === 0) return null;
-                            const currentIdx = stageOrder.indexOf(data.status);
-                            return (
-                                <div className="flex items-stretch w-full">
-                                    {stageOrder.map((key, idx) => {
-                                        const cfg = statusConfig[key];
-                                        const isReached = currentIdx > -1 && idx <= currentIdx;
-                                        const isFirst = idx === 0;
-                                        const isLast = idx === stageOrder.length - 1;
-                                        const clipPath = isFirst
-                                            ? "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%)"
-                                            : isLast
-                                                ? "polygon(0 0, 100% 0, 100% 100%, 0 100%, 14px 50%)"
-                                                : "polygon(0 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 0 100%, 14px 50%)";
-                                        return (
-                                            <button
-                                                key={key}
-                                                type="button"
-                                                onClick={() => handleSave("status", key)}
-                                                style={{ clipPath, marginLeft: isFirst ? 0 : -12 }}
-                                                className={cn(
-                                                    "flex-1 h-11 flex items-center justify-center px-5 text-[11px] font-bold uppercase tracking-wider transition-colors",
-                                                    isReached
-                                                        ? "bg-foreground text-background hover:bg-foreground/90"
-                                                        : "bg-muted/70 text-muted-foreground hover:bg-muted"
-                                                )}
-                                            >
-                                                {cfg.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })()}
+                <div className="flex-1 overflow-y-auto p-6 min-w-0">
+                    {activeTab === "details" && (
+                        <JobDetailsTab
+                            data={data}
+                            setData={setData}
+                            handleSave={handleSave}
+                            handleContactChange={handleContactChange}
+                            handleCompanyChange={handleCompanyChange}
+                            contactOptions={contactOptions}
+                            companyOptions={companyOptions}
+                            contactsLoading={contactsLoading}
+                            companiesLoading={companiesLoading}
+                            onContactCreated={() => mutateContacts()}
+                            onCompanyCreated={() => mutateCompanies()}
+                            statusConfig={statusConfig}
+                            paidStatusConfig={paidStatusConfig}
+                            users={users}
+                            onUpdate={onUpdate}
+                        />
+                    )}
+                    {activeTab === "appointments" && (
+                        <JobAppointmentsTab
+                            appointments={(appointmentsData?.items as ScheduleEntry[]) || []}
+                            onOpenAppointment={(entry) => {
+                                setEditingAppointment(entry);
+                                setAppointmentModalOpen(true);
+                            }}
+                        />
+                    )}
+                    {activeTab === "quotes" && (
+                        <JobQuotesTab
+                            jobId={data.id}
+                            quotes={quotesData?.items || []}
+                            onOpenCreate={() => setQuoteModalOpen(true)}
+                        />
+                    )}
+                    {activeTab === "invoices" && (
+                        <JobInvoicesTab
+                            jobId={data.id}
+                            invoices={invoicesData?.items || []}
+                            onOpenCreate={() => setInvoiceModalOpen(true)}
+                        />
+                    )}
+                    {activeTab === "reports" && (
+                        <JobReportsTab
+                            jobId={data.id}
+                            reports={reportsData?.items || []}
+                            onOpenCreate={() => setReportModalOpen(true)}
+                        />
+                    )}
+                    {activeTab === "expenses" && (
+                        <JobExpensesTab
+                            jobId={data.id}
+                            purchaseOrders={posData?.items || []}
+                            receipts={receiptsData?.items || []}
+                            timesheets={timesheetsData?.items || []}
+                            onOpenCreatePO={() => setPoModalOpen(true)}
+                            onOpenCreateReceipt={() => setReceiptModalOpen(true)}
+                            onOpenCreateTimesheet={() => setTimesheetModalOpen(true)}
+                        />
+                    )}
+                    {activeTab === "files" && (
+                        <JobFilesTab
+                            jobId={data.id}
+                            files={filesData?.items || []}
+                            onOpenUpload={() => setFileUploadOpen(true)}
+                        />
+                    )}
+                    {activeTab === "tasks" && mode === "sheet" && (
+                        <JobTasksPanel jobId={data.id} variant="tab" />
+                    )}
+                    {activeTab === "notes" && (
+                        <NotesPanel entityType="job" entityId={data.id} />
+                    )}
+                    {activeTab === "activity" && (
+                        <ActivityTimeline entityType="job" entityId={data.id} />
+                    )}
+                </div>
+                {mode === "inline" && (
+                    <aside className="hidden lg:flex w-[420px] xl:w-[460px] shrink-0 min-h-0">
+                        <JobTasksPanel jobId={data.id} variant="rail" />
+                    </aside>
+                )}
+            </div>
 
-                        <div className="rounded-xl border border-border bg-card p-5">
-                            <DetailFields
-                                onSave={handleSave}
-                                fields={[
-                                    { label: "Job ID", value: data.reference_id, dbColumn: "reference_id", type: "text", rawValue: data.reference_id },
-                                    { label: "Job Name", value: data.job_title, dbColumn: "job_title", type: "text", rawValue: data.job_title },
-                                    { label: "Type", value: data.service?.name, dbColumn: "service_id", type: "select", rawValue: data.service?.id ?? null, options: services.map((s) => ({ value: s.id, label: s.name })) },
-                                    { label: "Customer", value: data.contact ? `${data.contact.first_name} ${data.contact.last_name}` : null, dbColumn: "contact_id", type: "select", rawValue: data.contact?.id ?? null, options: contacts.map((c) => ({ value: c.id, label: `${c.first_name} ${c.last_name}` })) },
-                                    { label: "Company", value: data.company?.name, dbColumn: "company_id", type: "select", rawValue: data.company?.id ?? null, options: companies },
-                                    { label: "Status", value: status.label, dbColumn: "status", type: "select", rawValue: data.status, options: Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label })) },
-                                    { label: "Scheduled Date", value: data.scheduled_date ? new Date(data.scheduled_date).toLocaleDateString("en-AU", { dateStyle: "medium" }) : null, dbColumn: "scheduled_date", type: "date", rawValue: data.scheduled_date },
-                                    { label: "Paid Status", value: paidStatusConfig[data.paid_status]?.label || "Not Paid", dbColumn: "paid_status", type: "select", rawValue: data.paid_status, options: Object.entries(paidStatusConfig).map(([k, v]) => ({ value: k, label: v.label })) },
-                                    { label: "Payment Received", value: `$${(data.total_payment_received || 0).toLocaleString()}`, dbColumn: "total_payment_received", type: "number", rawValue: data.total_payment_received || 0 },
-                                    { label: "Amount", value: `$${(data.amount || 0).toLocaleString()}` },
-                                    { label: "Created", value: new Date(data.created_at).toLocaleDateString("en-AU", { dateStyle: "medium" }) },
-                                ]}
-                            />
-                        </div>
-
-                        {/* Description — its own card below main details */}
-                        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Description</p>
-                            {editingDescription ? (
-                                <textarea
-                                    autoFocus
-                                    value={descriptionDraft}
-                                    onChange={(e) => setDescriptionDraft(e.target.value)}
-                                    onBlur={async () => {
-                                        setEditingDescription(false);
-                                        const trimmed = descriptionDraft.trim();
-                                        const newVal = trimmed === "" ? null : trimmed;
-                                        if (newVal !== (data.description ?? null)) {
-                                            await handleSave("description", newVal);
-                                        }
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Escape") {
-                                            setEditingDescription(false);
-                                            setDescriptionDraft(data.description ?? "");
-                                        }
-                                    }}
-                                    rows={4}
-                                    className="w-full text-[15px] text-foreground bg-muted/40 border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background resize-none"
-                                />
-                            ) : (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setDescriptionDraft(data.description ?? "");
-                                        setEditingDescription(true);
-                                    }}
-                                    className="w-full text-left text-[15px] text-foreground whitespace-pre-wrap rounded-md px-2 py-1 -mx-2 hover:bg-muted/50 transition-colors cursor-text"
-                                >
-                                    {data.description || <span className="text-muted-foreground/40 italic text-sm">Click to add a description</span>}
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Assignees */}
-                        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Assignees</p>
-                            <div className="space-y-2">
-                                {(data.assignees || []).map((a, idx) => (
-                                    <div key={a.id ?? idx} className="flex items-center justify-between gap-3">
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                                {(a.full_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
-                                            </div>
-                                            <span className="text-sm font-medium">{a.full_name || a.email}</span>
-                                        </div>
-                                        <button
-                                            onClick={async () => {
-                                                const newIds = (data.assignees || []).filter(x => x.id !== a.id).map(x => x.id);
-                                                const res = await fetch("/api/jobs", {
-                                                    method: "PATCH",
-                                                    headers: { "Content-Type": "application/json" },
-                                                    body: JSON.stringify({ id: data.id, assignee_ids: newIds }),
-                                                });
-                                                if (res.ok) {
-                                                    setData(prev => ({ ...prev, assignees: prev.assignees.filter(x => x.id !== a.id) }));
-                                                    onUpdate?.();
-                                                }
-                                            }}
-                                            className="text-xs text-muted-foreground hover:text-rose-500 transition-colors"
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                            <select
-                                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-ring"
-                                value=""
-                                onChange={async (e) => {
-                                    const userId = e.target.value;
-                                    if (!userId) return;
-                                    const existing = (data.assignees || []).map(a => a.id);
-                                    if (existing.includes(userId)) return;
-                                    const newIds = [...existing, userId];
-                                    const res = await fetch("/api/jobs", {
-                                        method: "PATCH",
-                                        headers: { "Content-Type": "application/json" },
-                                        body: JSON.stringify({ id: data.id, assignee_ids: newIds }),
-                                    });
-                                    if (res.ok) {
-                                        const user = users.find(u => u.value === userId);
-                                        setData(prev => ({
-                                            ...prev,
-                                            assignees: [...prev.assignees, { id: userId, full_name: user?.label || null, email: null }],
-                                        }));
-                                        onUpdate?.();
-                                    }
+            {/* Mobile sticky Create bar */}
+            <div className="md:hidden shrink-0 px-3 py-3 border-t border-border bg-background">
+                <Popover open={createMenuMobileOpen} onOpenChange={setCreateMenuMobileOpen}>
+                    <PopoverTrigger asChild>
+                        <Button size="lg" className="w-full">
+                            <PlusIcon className="w-4 h-4 mr-2" />
+                            Create
+                            <IconChevronDown className="w-4 h-4 ml-2 -mr-1" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="center" side="top" sideOffset={6} className="p-1">
+                        {createOptions.map((opt) => (
+                            <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => {
+                                    setCreateMenuMobileOpen(false);
+                                    opt.onClick();
                                 }}
+                                className="w-full flex items-center rounded-lg px-3 py-2 text-sm text-left transition-colors hover:bg-secondary text-foreground"
                             >
-                                <option value="">Add assignee...</option>
-                                {users.filter(u => !(data.assignees || []).some(a => a.id === u.value)).map(u => (
-                                    <option key={u.value} value={u.value}>{u.label}</option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === "services" && (
-                    <div className="space-y-4">
-                        <LineItemsTable
-                            mode="live"
-                            items={lineItems}
-                            services={services}
-                            onAdd={handleAddLineItem}
-                            onUpdate={handleUpdateLineItem}
-                            onDelete={handleDeleteLineItem}
-                        />
-                    </div>
-                )}
-
-                {activeTab === "scopes" && (
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between mb-2">
-                            <p className="text-base font-semibold text-foreground">Scopes</p>
-                            <Button size="sm" disabled>
-                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
-                                New Scope
-                            </Button>
-                        </div>
-                        {jobProjects.length === 0 ? (
-                            <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-                                No scopes linked to this job
-                            </div>
-                        ) : (
-                            jobProjects.map((proj) => (
-                                <div key={proj.id} className="rounded-xl border border-border bg-card p-4 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center text-xs font-bold text-muted-foreground">
-                                            {proj.title.charAt(0).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">{proj.title}</p>
-                                            <p className="text-[11px] text-muted-foreground capitalize">{proj.status.replace(/_/g, " ")}</p>
-                                        </div>
-                                    </div>
-                                    <div className={cn("w-2 h-2 rounded-full", getJobStatusDot(proj.status))} />
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
-
-                {activeTab === "quotes" && (
-                    <div className="space-y-2 px-1">
-                        <div className="flex items-center justify-between mb-2">
-                            <p className="text-base font-semibold text-foreground">Quotes</p>
-                            <Button size="sm" onClick={() => setQuoteModalOpen(true)}>
-                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
-                                New Quote
-                            </Button>
-                        </div>
-                        {(quotesData?.items || []).length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-6">No quotes yet</p>
-                        ) : (quotesData?.items || []).map((q: QuoteItem) => (
-                            <div key={q.id} onClick={() => setSelectedQuote(q)} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm cursor-pointer hover:bg-secondary/50 transition-colors">
-                                <div>
-                                    <p className="font-medium">{q.title || "Untitled Quote"}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{q.status}</p>
-                                </div>
-                                <span className="font-semibold">${(q.total_amount || 0).toFixed(2)}</span>
-                            </div>
+                                <span>{opt.label}</span>
+                            </button>
                         ))}
-                        <CreateQuoteModal
-                            open={quoteModalOpen}
-                            onOpenChange={setQuoteModalOpen}
-                            defaultValues={{ jobId: data.id, companyId: data.company?.id }}
-                            onCreated={() => mutate(`/api/quotes?job_id=${data.id}`)}
-                        />
-                        <QuoteSideSheet
-                            quote={selectedQuote}
-                            open={!!selectedQuote}
-                            onOpenChange={(open) => { if (!open) setSelectedQuote(null); }}
-                            onUpdate={() => mutate(`/api/quotes?job_id=${data.id}`)}
-                        />
-                    </div>
-                )}
-
-                {activeTab === "invoices" && (
-                    <div className="space-y-2 px-1">
-                        <div className="flex items-center justify-between mb-2">
-                            <p className="text-base font-semibold text-foreground">Invoices</p>
-                            <Button size="sm" onClick={() => setInvoiceModalOpen(true)}>
-                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
-                                New Invoice
-                            </Button>
-                        </div>
-                        {(invoicesData?.items || []).length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-6">No invoices yet</p>
-                        ) : (invoicesData?.items || []).map((inv: InvoiceItem) => (
-                            <div key={inv.id} onClick={() => setSelectedInvoice(inv)} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm cursor-pointer hover:bg-secondary/50 transition-colors">
-                                <div>
-                                    <p className="font-medium">{inv.invoice_number || "Untitled Invoice"}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{inv.status}</p>
-                                </div>
-                                <span className="font-semibold">${(inv.amount || 0).toFixed(2)}</span>
-                            </div>
-                        ))}
-                        <CreateInvoiceModal
-                            open={invoiceModalOpen}
-                            onOpenChange={setInvoiceModalOpen}
-                            defaultValues={{ job_id: data.id, company_id: data.company?.id }}
-                            onCreated={() => mutate(`/api/invoices?job_id=${data.id}`)}
-                        />
-                        <InvoiceSideSheet
-                            invoice={selectedInvoice}
-                            open={!!selectedInvoice}
-                            onOpenChange={(open) => { if (!open) setSelectedInvoice(null); }}
-                            onUpdate={() => mutate(`/api/invoices?job_id=${data.id}`)}
-                        />
-                    </div>
-                )}
-
-                {activeTab === "reports" && (
-                    <div className="space-y-2 px-1">
-                        <div className="flex items-center justify-between mb-2">
-                            <p className="text-base font-semibold text-foreground">Reports</p>
-                            <Button size="sm" onClick={() => setReportModalOpen(true)}>
-                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
-                                New Report
-                            </Button>
-                        </div>
-                        {(reportsData?.items || []).length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-6">No reports yet</p>
-                        ) : (reportsData?.items || []).map((r: ReportItem) => (
-                            <div key={r.id} onClick={() => setSelectedReport(r)} className="flex items-center justify-between p-3 rounded-xl border bg-card text-sm cursor-pointer hover:bg-secondary/50 transition-colors">
-                                <div>
-                                    <p className="font-medium">{r.title || "Untitled Report"}</p>
-                                    <p className="text-xs text-muted-foreground capitalize">{r.type?.replace(/_/g, " ") || "Report"} · {r.status}</p>
-                                </div>
-                            </div>
-                        ))}
-                        <CreateReportModal
-                            open={reportModalOpen}
-                            onOpenChange={setReportModalOpen}
-                            defaultValues={{ job_id: data.id, company_id: data.company?.id }}
-                            onCreated={() => mutate(`/api/reports?job_id=${data.id}`)}
-                        />
-                        <ReportSideSheet
-                            report={selectedReport}
-                            open={!!selectedReport}
-                            onOpenChange={(open) => { if (!open) setSelectedReport(null); }}
-                            onUpdate={() => mutate(`/api/reports?job_id=${data.id}`)}
-                        />
-                    </div>
-                )}
-
-                {activeTab === "tasks" && mode === "sheet" && (
-                    <JobTasksPanel jobId={data.id} variant="tab" />
-                )}
-
-                {activeTab === "notes" && (
-                    <NotesPanel entityType="job" entityId={data.id} />
-                )}
-
-                {activeTab === "activity" && (
-                    <ActivityTimeline entityType="job" entityId={data.id} />
-                )}
+                    </PopoverContent>
+                </Popover>
             </div>
-            {mode === "inline" && (
-                <aside className="hidden lg:flex w-[420px] xl:w-[460px] shrink-0 min-h-0">
-                    <JobTasksPanel jobId={data.id} variant="rail" />
-                </aside>
-            )}
-            </div>
+
+            <JobDetailModals
+                jobId={data.id}
+                companyId={data.company?.id}
+                quoteModalOpen={quoteModalOpen}
+                setQuoteModalOpen={setQuoteModalOpen}
+                invoiceModalOpen={invoiceModalOpen}
+                setInvoiceModalOpen={setInvoiceModalOpen}
+                reportModalOpen={reportModalOpen}
+                setReportModalOpen={setReportModalOpen}
+                appointmentModalOpen={appointmentModalOpen}
+                setAppointmentModalOpen={setAppointmentModalOpen}
+                editingAppointment={editingAppointment}
+                setEditingAppointment={setEditingAppointment}
+                fileUploadOpen={fileUploadOpen}
+                setFileUploadOpen={setFileUploadOpen}
+                receiptModalOpen={receiptModalOpen}
+                setReceiptModalOpen={setReceiptModalOpen}
+                poModalOpen={poModalOpen}
+                setPoModalOpen={setPoModalOpen}
+                timesheetModalOpen={timesheetModalOpen}
+                setTimesheetModalOpen={setTimesheetModalOpen}
+                onArtefactCreated={() => void ensureInProgress()}
+            />
         </div>
     );
 }

@@ -21,8 +21,22 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { fadeInUp } from "@/lib/motion";
-import { useStats, useMyTasks, useJobs } from "@/lib/swr";
+import { useMyTasks, useJobs, useScheduleEntries, useOverviewMetrics } from "@/lib/swr";
 import { MetricsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
+import { useUserProfile } from "@/features/shell/use-user-profile";
+
+type Appointment = {
+    id: string;
+    date: string;
+    start_time: string | null;
+    end_time: string | null;
+    job: {
+        id: string;
+        job_title: string;
+        contact?: { id: string; first_name: string; last_name: string } | null;
+        company?: { id: string; name: string } | null;
+    } | null;
+};
 
 type ActiveJob = {
     id: string;
@@ -31,7 +45,6 @@ type ActiveJob = {
     amount: number;
     status: string;
     reference_id?: string | null;
-    service?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
     company?: { id: string; name: string } | null;
     assignees: Array<{ id: string; full_name: string | null; email: string | null }>;
@@ -51,20 +64,29 @@ const priorityLabels: Record<number, string> = { 1: "Urgent", 2: "High", 3: "Nor
 
 export default function OverviewPage() {
     usePageTitle("Overview");
-    const { data: statsData, isLoading: statsLoading } = useStats();
+    const { data: metrics, isLoading: metricsLoading } = useOverviewMetrics();
     const { data: tasksData, error: tasksError } = useMyTasks();
     const { data: jobsData, isLoading: jobsLoading } = useJobs();
+    const { displayName } = useUserProfile();
+    const firstName = (displayName || "").trim().split(/\s+/)[0] || null;
+    const todayDateStr = useMemo(
+        () => new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date()),
+        []
+    );
+    const todayIso = useMemo(() => new Date().toISOString().split("T")[0], []);
+    const weekAheadIso = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return d.toISOString().split("T")[0];
+    }, []);
+    const { data: scheduleData, isLoading: scheduleLoading } = useScheduleEntries(todayIso, weekAheadIso);
     const tasksLoading = !tasksData && !tasksError;
-    const [mobileTab, setMobileTab] = useState<"tasks" | "jobs">("tasks");
+    const [mobileTab, setMobileTab] = useState<"tasks" | "jobs" | "appointments">("tasks");
     const [jobsSearch, setJobsSearch] = useState("");
-    const [taskStatusFilter, setTaskStatusFilter] = useState("All");
     const [taskDueFilter, setTaskDueFilter] = useState("All");
+    const [appointmentDateFilter, setAppointmentDateFilter] = useState("week");
 
-    const stats = statsData?.stats || null;
-    const newJobsCount = useMemo(() => {
-        const items = (jobsData?.items || []) as Array<Record<string, unknown>>;
-        return items.filter((j) => String(j.status || "").toLowerCase() === "new").length;
-    }, [jobsData]);
+    const pluralize = (n: number, singular: string) => `${n.toLocaleString()} ${singular}${n === 1 ? "" : "s"}`;
     const activeJobs: ActiveJob[] = useMemo(() => {
         const items = (jobsData?.items || []) as Array<Record<string, unknown>>;
         return items
@@ -79,19 +101,65 @@ export default function OverviewPage() {
                 amount: Number(j.amount || 0),
                 status: String(j.status || ""),
                 reference_id: (j.reference_id as string | null) || null,
-                service: (j.service as { id: string; name: string } | null) || null,
                 contact: (j.contact as { id: string; first_name: string; last_name: string } | null) || null,
                 company: (j.company as { id: string; name: string } | null) || null,
                 assignees: (j.assignees as Array<{ id: string; full_name: string | null; email: string | null }> | null) || [],
             }));
     }, [jobsData]);
     const myTasks: Task[] = useMemo(() => tasksData?.items || [], [tasksData]);
+    const upcomingAppointments: Appointment[] = useMemo(() => {
+        const items = (scheduleData?.items || []) as Appointment[];
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date(todayStart);
+        todayEnd.setHours(23, 59, 59, 999);
+        const tomorrowStart = new Date(todayStart);
+        tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+        const tomorrowEnd = new Date(tomorrowStart);
+        tomorrowEnd.setHours(23, 59, 59, 999);
+        const weekEnd = new Date(todayStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
 
-    const newJobsCard = { label: "New Jobs", value: newJobsCount.toLocaleString(), href: "/dashboard/jobs" };
-    const totalRevenueCard = { label: "Total Revenue", value: formatCurrency(stats?.totalRevenue || 0), href: null };
-    const activeJobsCard = { label: "Active Jobs", value: stats?.activeJobs?.toLocaleString() || "0", href: "/dashboard/jobs" };
-    const desktopStatCards = [newJobsCard, totalRevenueCard, activeJobsCard];
-    const mobileStatCards = [activeJobsCard, totalRevenueCard];
+        return [...items]
+            .filter((a) => {
+                if (appointmentDateFilter === "week") return true;
+                const dt = new Date(`${a.date}T${a.start_time || "00:00:00"}`);
+                if (appointmentDateFilter === "today") return dt >= todayStart && dt <= todayEnd;
+                if (appointmentDateFilter === "tomorrow") return dt >= tomorrowStart && dt <= tomorrowEnd;
+                if (appointmentDateFilter === "week") return dt >= todayStart && dt <= weekEnd;
+                return true;
+            })
+            .sort((a, b) => {
+                const aKey = `${a.date}T${a.start_time || "00:00:00"}`;
+                const bKey = `${b.date}T${b.start_time || "00:00:00"}`;
+                return aKey.localeCompare(bKey);
+            })
+            .slice(0, 5);
+    }, [scheduleData, appointmentDateFilter]);
+
+    const pendingQuotes = metrics?.pendingQuotes ?? { count: 0, totalAmount: 0 };
+    const pendingInvoices = metrics?.pendingInvoices ?? { count: 0, totalAmount: 0 };
+    const activeJobsMetric = metrics?.activeJobs ?? { count: 0, totalAmount: 0 };
+
+    const pendingQuotesCard = {
+        label: "Pending Quotes",
+        value: formatCurrency(pendingQuotes.totalAmount),
+        sublabel: pluralize(pendingQuotes.count, "quote"),
+        href: "/dashboard/quotes",
+    };
+    const pendingInvoicesCard = {
+        label: "Pending Invoices",
+        value: formatCurrency(pendingInvoices.totalAmount),
+        sublabel: pluralize(pendingInvoices.count, "invoice"),
+        href: "/dashboard/invoices",
+    };
+    const activeJobsCard = {
+        label: "Active Jobs",
+        value: formatCurrency(activeJobsMetric.totalAmount),
+        sublabel: pluralize(activeJobsMetric.count, "job"),
+        href: "/dashboard/jobs",
+    };
+    const statCards = [pendingQuotesCard, pendingInvoicesCard, activeJobsCard];
 
     const filteredJobs = useMemo(() => {
         const q = jobsSearch.trim().toLowerCase();
@@ -100,7 +168,6 @@ export default function OverviewPage() {
             job.job_title.toLowerCase().includes(q) ||
             (job.description || "").toLowerCase().includes(q) ||
             (job.reference_id || "").toLowerCase().includes(q) ||
-            (job.service?.name || "").toLowerCase().includes(q) ||
             (job.contact ? `${job.contact.first_name} ${job.contact.last_name}`.toLowerCase().includes(q) : false) ||
             (job.company?.name || "").toLowerCase().includes(q)
         );
@@ -118,7 +185,6 @@ export default function OverviewPage() {
 
         return myTasks.filter((t) => {
             if (jobIds && (!t.job_id || !jobIds.has(t.job_id))) return false;
-            if (taskStatusFilter !== "All" && t.status !== taskStatusFilter) return false;
             if (taskDueFilter !== "All") {
                 if (!t.due_date) return taskDueFilter === "none";
                 const due = new Date(t.due_date);
@@ -129,17 +195,17 @@ export default function OverviewPage() {
             }
             return true;
         });
-    }, [myTasks, filteredJobs, jobsSearch, taskStatusFilter, taskDueFilter]);
+    }, [myTasks, filteredJobs, jobsSearch, taskDueFilter]);
 
     const renderJobsTable = () => (
         <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-                <h2 className="text-2xl font-bold uppercase tracking-wide leading-none shrink-0">Active Jobs</h2>
-                <div className="relative flex-1 max-w-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
+                <h2 className="text-xl font-semibold tracking-tight leading-none shrink-0">Active Jobs</h2>
+                <div className="relative w-full sm:flex-1 sm:max-w-xs">
                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         placeholder="Search jobs..."
-                        className="pl-9 h-9 rounded-xl border-border/50 text-sm"
+                        className="pl-9 rounded-xl border-border/50"
                         value={jobsSearch}
                         onChange={(e) => setJobsSearch(e.target.value)}
                     />
@@ -151,7 +217,6 @@ export default function OverviewPage() {
                         <thead className={tableHead}>
                             <tr>
                                 <th className={tableHeadCell + " pl-4 pr-4"}>Job Name</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Type</th>
                                 <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Customer</th>
                                 <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Assigned</th>
                                 <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
@@ -159,10 +224,10 @@ export default function OverviewPage() {
                         </thead>
                         <tbody>
                             {jobsLoading ? (
-                                <TableSkeleton rows={5} columns={5} />
+                                <TableSkeleton rows={5} columns={4} />
                             ) : filteredJobs.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="text-center py-12 text-sm text-muted-foreground">
+                                    <td colSpan={4} className="text-center py-12 text-sm text-muted-foreground">
                                         {jobsSearch ? "No jobs match your search." : "No new or active jobs."}
                                     </td>
                                 </tr>
@@ -179,9 +244,6 @@ export default function OverviewPage() {
                                                     <span className="text-[10px] text-muted-foreground font-mono hidden sm:block">{job.reference_id}</span>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[140px]"}>
-                                            {job.service?.name || "—"}
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[140px]"}>
                                             {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "—")}
@@ -211,11 +273,11 @@ export default function OverviewPage() {
 
     const renderTasksTable = () => (
         <div className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-                <h2 className="text-2xl font-bold uppercase tracking-wide leading-none shrink-0">My Tasks</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <h2 className="text-xl font-semibold tracking-tight leading-none shrink-0">My Tasks</h2>
                 <div className="flex items-center gap-2">
                     <Select value={taskDueFilter} onValueChange={setTaskDueFilter}>
-                        <SelectTrigger className="w-[130px]">
+                        <SelectTrigger className="w-full sm:w-[140px]">
                             <SelectValue placeholder="Due" />
                         </SelectTrigger>
                         <SelectContent>
@@ -224,18 +286,6 @@ export default function OverviewPage() {
                             <SelectItem value="today">Due today</SelectItem>
                             <SelectItem value="week">Next 7 days</SelectItem>
                             <SelectItem value="none">No due date</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={taskStatusFilter} onValueChange={setTaskStatusFilter}>
-                        <SelectTrigger className="w-[140px]">
-                            <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="All">All statuses</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">In progress</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -289,30 +339,139 @@ export default function OverviewPage() {
         </div>
     );
 
+    const renderActiveJobsCompact = () => (
+        <div className="space-y-3">
+            <h2 className="text-xl font-semibold tracking-tight leading-none">Active Jobs</h2>
+            <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+                {jobsLoading ? (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</div>
+                ) : activeJobs.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">No active jobs.</div>
+                ) : (
+                    activeJobs.slice(0, 6).map((job) => {
+                        const customer = job.contact
+                            ? `${job.contact.first_name} ${job.contact.last_name}`
+                            : job.company?.name || null;
+                        return (
+                            <div key={job.id} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <span className="font-medium text-sm truncate">{job.job_title}</span>
+                                    <span className="text-xs font-semibold tabular-nums shrink-0">${job.amount.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", getJobStatusDot(job.status))} />
+                                    <span className="capitalize truncate">{job.status.replace(/_/g, " ")}</span>
+                                    {customer && (
+                                        <>
+                                            <span>·</span>
+                                            <span className="truncate">{customer}</span>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+
+    const renderAppointments = () => (
+        <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+                <h2 className="text-xl font-semibold tracking-tight leading-none shrink-0">Appointments</h2>
+                <Select value={appointmentDateFilter} onValueChange={setAppointmentDateFilter}>
+                    <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="tomorrow">Tomorrow</SelectItem>
+                        <SelectItem value="week">Next 7 days</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
+                {scheduleLoading ? (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">Loading…</div>
+                ) : upcomingAppointments.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+                        {appointmentDateFilter === "today"
+                            ? "Nothing scheduled today."
+                            : appointmentDateFilter === "tomorrow"
+                                ? "Nothing scheduled tomorrow."
+                                : "No appointments in the next 7 days."}
+                    </div>
+                ) : (
+                    upcomingAppointments.map((a) => {
+                        const dt = new Date(a.date + (a.start_time ? `T${a.start_time}` : "T00:00:00"));
+                        const dayLabel = new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric" }).format(dt);
+                        const timeLabel = a.start_time
+                            ? new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(dt)
+                            : "All day";
+                        const customer = a.job?.contact
+                            ? `${a.job.contact.first_name} ${a.job.contact.last_name}`
+                            : a.job?.company?.name || null;
+                        return (
+                            <div key={a.id} className="px-4 py-3 hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        {dayLabel}
+                                    </span>
+                                    <span className="text-xs font-medium tabular-nums text-foreground">
+                                        {timeLabel}
+                                    </span>
+                                </div>
+                                <div className="font-medium text-sm truncate">
+                                    {a.job?.job_title || "Untitled"}
+                                </div>
+                                {customer && (
+                                    <div className="text-xs text-muted-foreground truncate">
+                                        {customer}
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+        </div>
+    );
+
     return (
-        <DashboardPage className="space-y-6">
+        <DashboardPage className="space-y-6 lg:max-w-[85%] lg:mx-auto">
+            {/* Welcome */}
+            <div className="px-4 md:px-6 lg:px-10">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                    {todayDateStr}
+                </p>
+                <h2 className="font-statement text-3xl font-extrabold tracking-tight">
+                    Welcome back{firstName ? `, ${firstName}` : ""}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                    Here&apos;s what&apos;s happening across your workspace today.
+                </p>
+            </div>
+
             {/* Stat Cards */}
-            {statsLoading ? (
-                <>
-                    <div className="md:hidden">
-                        <MetricsSkeleton count={2} />
-                    </div>
-                    <div className="hidden md:block">
-                        <MetricsSkeleton count={3} />
-                    </div>
-                </>
+            {metricsLoading ? (
+                <div className="px-4 md:px-6 lg:px-10">
+                    <MetricsSkeleton count={3} />
+                </div>
             ) : (
-                <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
-                    {/* Mobile: 2 cards in a row */}
-                    <div className="grid grid-cols-2 gap-3 md:hidden">
-                        {mobileStatCards.map((card, i) => (
-                            <StatCard key={i} label={card.label} value={card.value} href={card.href} />
+                <motion.div variants={fadeInUp}>
+                    {/* Mobile: horizontal scroll, all 3 cards */}
+                    <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
+                        {statCards.map((card, i) => (
+                            <div key={i} className="shrink-0 w-[75%] sm:w-[280px]">
+                                <StatCard label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
+                            </div>
                         ))}
                     </div>
-                    {/* Desktop: 3 cards */}
-                    <div className="hidden md:grid md:grid-cols-3 gap-3">
-                        {desktopStatCards.map((card, i) => (
-                            <StatCard key={i} label={card.label} value={card.value} href={card.href} />
+                    {/* md+: 3-col grid */}
+                    <div className="hidden md:grid md:grid-cols-3 gap-3 px-4 md:px-6 lg:px-10">
+                        {statCards.map((card, i) => (
+                            <StatCard key={i} label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
                         ))}
                     </div>
                 </motion.div>
@@ -324,21 +483,29 @@ export default function OverviewPage() {
                     value={mobileTab}
                     onChange={setMobileTab}
                     options={[
-                        { value: "tasks", label: "My Tasks" },
-                        { value: "jobs", label: "Active Jobs" },
+                        { value: "tasks", label: "Tasks" },
+                        { value: "appointments", label: "Appointments" },
+                        { value: "jobs", label: "Jobs" },
                     ]}
                 />
             </div>
 
-            {/* Desktop: 65:35 split */}
+            {/* Desktop: appointments left, stack of (tasks + active jobs) right */}
             <motion.div variants={fadeInUp} className="hidden lg:grid grid-cols-[2fr_1fr] gap-3 px-4 md:px-6 lg:px-10">
-                {renderJobsTable()}
-                {renderTasksTable()}
+                {renderAppointments()}
+                <div className="space-y-6">
+                    {renderTasksTable()}
+                    {renderActiveJobsCompact()}
+                </div>
             </motion.div>
 
             {/* Mobile: Tab content */}
             <motion.div variants={fadeInUp} className="lg:hidden px-4 md:px-6">
-                {mobileTab === "tasks" ? renderTasksTable() : renderJobsTable()}
+                {mobileTab === "tasks"
+                    ? renderTasksTable()
+                    : mobileTab === "appointments"
+                        ? renderAppointments()
+                        : renderJobsTable()}
             </motion.div>
         </DashboardPage>
     );

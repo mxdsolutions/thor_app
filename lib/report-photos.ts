@@ -35,6 +35,37 @@ export async function uploadReportPhoto(
     };
 }
 
+/** Upload a photo on the external-completion page. The page has no Supabase
+ *  session, so the upload routes through a public server endpoint that uses
+ *  the service role after validating the share token. */
+export async function uploadReportPhotoViaToken(
+    file: File,
+    token: string,
+    sectionId: string,
+    fieldId: string,
+): Promise<PhotoItem> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("section_id", sectionId);
+    form.append("field_id", fieldId);
+
+    const res = await fetch(`/api/public/reports/${encodeURIComponent(token)}/photos`, {
+        method: "POST",
+        body: form,
+    });
+
+    if (!res.ok) {
+        let msg = "Upload failed";
+        try {
+            const body = await res.json();
+            if (body?.error) msg = body.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+    }
+
+    return (await res.json()) as PhotoItem;
+}
+
 export async function deleteReportPhoto(url: string): Promise<void> {
     const supabase = createClient();
 

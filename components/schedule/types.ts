@@ -11,7 +11,6 @@ export type ScheduleEntryJob = {
     created_at?: string;
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
-    service?: { id: string; name: string } | null;
     assignees?: { user: { id: string; full_name: string | null; email?: string | null } }[];
 };
 

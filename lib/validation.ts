@@ -21,6 +21,12 @@ export const onboardingSchema = z.object({
 
 // --- API Route Schemas ---
 
+// Body schema for archive/unarchive endpoints (PATCH /api/{entity}/[id]/archive).
+export const archiveActionSchema = z.object({
+    archived: z.boolean(),
+});
+export type ArchiveActionInput = z.infer<typeof archiveActionSchema>;
+
 export const companySchema = z.object({
     name: z.string().min(1, "Company name is required"),
     industry: z.string().optional(),
@@ -32,7 +38,13 @@ export const companySchema = z.object({
     postcode: z.string().optional(),
     status: z.string().optional(),
     notes: z.string().optional(),
+    is_supplier: z.boolean().optional(),
 });
+
+export const companyUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+}).merge(companySchema.partial());
+export type CompanyUpdateInput = z.infer<typeof companyUpdateSchema>;
 
 export const contactSchema = z.object({
     first_name: z.string().min(1, "First name is required"),
@@ -53,38 +65,11 @@ export const contactUpdateSchema = z.object({
     id: z.string().uuid("Valid ID is required"),
 }).merge(contactSchema.partial());
 
-export const serviceSchema = z.object({
-    name: z.string().min(1, "Service name is required"),
-    description: z.string().optional(),
-    initial_value: z.number().optional().nullable(),
-    monthly_value: z.number().optional().nullable(),
-    yearly_value: z.number().optional().nullable(),
-});
-
-export const serviceUpdateSchema = z.object({
-    id: z.string().uuid("Valid ID is required"),
-}).merge(serviceSchema.partial());
-
 export const noteSchema = z.object({
     entity_type: z.string().min(1, "Entity type is required"),
     entity_id: z.string().uuid("Valid entity ID is required"),
     content: z.string().min(1, "Content is required"),
     mentioned_user_ids: z.array(z.string().uuid()).optional(),
-});
-
-// --- Line Item Schemas ---
-
-export const lineItemSchema = z.object({
-    job_id: z.string().uuid().optional(),
-    product_id: z.string().uuid(),
-    quantity: z.number().min(0, "Quantity must be non-negative"),
-    unit_price: z.number().min(0, "Unit price must be non-negative"),
-});
-
-export const lineItemUpdateSchema = z.object({
-    id: z.string().uuid("Valid ID is required"),
-    quantity: z.number().min(0).optional(),
-    unit_price: z.number().min(0).optional(),
 });
 
 // --- Job Schemas ---
@@ -99,7 +84,6 @@ export const jobSchema = z.object({
     scheduled_date: z.string().optional().nullable(),
     company_id: z.string().uuid().optional().nullable(),
     contact_id: z.string().uuid().optional().nullable(),
-    service_id: z.string().uuid().optional().nullable(),
     notes: z.string().optional().nullable(),
     paid_status: z.enum(["not_paid", "partly_paid", "paid_in_full"]).optional(),
     total_payment_received: z.number().min(0).optional(),
@@ -201,6 +185,36 @@ export const reportSchema = z.object({
 export const reportUpdateSchema = z.object({
     id: z.string().uuid("Valid ID is required"),
 }).merge(reportSchema.partial());
+
+// --- Report Share-Token Schemas ---
+
+/** Body for POST /api/reports/[id]/share-tokens. The dashboard mints a link
+ *  for an external party. Recipient name/email/message are optional metadata
+ *  and gate whether the THOR-branded email is sent. */
+export const createShareTokenSchema = z.object({
+    recipient_name: z.string().max(200).optional().nullable(),
+    recipient_email: z.string().email("Invalid email").max(320).optional().nullable(),
+    message: z.string().max(2000).optional().nullable(),
+    expires_in_days: z.number().int().min(1).max(90).optional(),
+});
+export type CreateShareTokenInput = z.infer<typeof createShareTokenSchema>;
+
+/** Body for PATCH /api/public/reports/[token] — autosave from the external
+ *  completion page. Only the data blob is mutable; everything else is locked
+ *  by the token row. */
+export const sharedReportAutosaveSchema = z.object({
+    data: z.record(z.string(), z.unknown()),
+});
+export type SharedReportAutosaveInput = z.infer<typeof sharedReportAutosaveSchema>;
+
+/** Body for POST /api/public/reports/[token]/submit. Identity is required so
+ *  the dashboard can show "Submitted by ..." */
+export const submitSharedReportSchema = z.object({
+    data: z.record(z.string(), z.unknown()),
+    submitted_by_name: z.string().min(1, "Your name is required").max(200),
+    submitted_by_email: z.string().email("Valid email is required").max(320),
+});
+export type SubmitSharedReportInput = z.infer<typeof submitSharedReportSchema>;
 
 // --- License Schemas ---
 
@@ -388,11 +402,7 @@ export type OnboardingInput = z.infer<typeof onboardingSchema>;
 export type CompanyInput = z.infer<typeof companySchema>;
 export type ContactInput = z.infer<typeof contactSchema>;
 export type ContactUpdateInput = z.infer<typeof contactUpdateSchema>;
-export type ServiceInput = z.infer<typeof serviceSchema>;
-export type ServiceUpdateInput = z.infer<typeof serviceUpdateSchema>;
 export type NoteInput = z.infer<typeof noteSchema>;
-export type LineItemInput = z.infer<typeof lineItemSchema>;
-export type LineItemUpdateInput = z.infer<typeof lineItemUpdateSchema>;
 export type JobInput = z.infer<typeof jobSchema>;
 export type JobUpdateInput = z.infer<typeof jobUpdateSchema>;
 export type SendEmailInput = z.infer<typeof sendEmailSchema>;
@@ -406,6 +416,112 @@ export type LicenseInput = z.infer<typeof licenseSchema>;
 export type LicenseUpdateInput = z.infer<typeof licenseUpdateSchema>;
 export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type InvoiceUpdateInput = z.infer<typeof invoiceUpdateSchema>;
+
+// --- File Schemas ---
+
+/** Hard cap mirrored from the storage bucket — keep in sync with the migration. */
+export const FILE_MAX_SIZE_BYTES = 50 * 1024 * 1024;
+
+/** Server-side metadata produced from a successful upload. The browser sends
+ *  the binary via multipart `FormData`, not JSON, so this schema validates
+ *  the *side data* (job_id) sent alongside the file. */
+export const fileUploadMetaSchema = z.object({
+    job_id: z.string().uuid().optional().nullable(),
+});
+export type FileUploadMetaInput = z.infer<typeof fileUploadMetaSchema>;
+
+export const fileUpdateSchema = z.object({
+    name: z.string().min(1, "Name is required").max(255),
+});
+export type FileUpdateInput = z.infer<typeof fileUpdateSchema>;
+
+// --- Receipt Schemas ---
+
+/** Fixed category list — mirror the CHECK constraint on `receipts.category`.
+ *  Kept as a fixed enum (not tenant-config) for v1 so analytics rollups
+ *  ("materials spend per job") have a stable shape. Can be promoted to a
+ *  tenant_status_configs-style config later. */
+export const RECEIPT_CATEGORIES = ["materials", "labour", "fuel", "tools", "meals", "other"] as const;
+export type ReceiptCategory = (typeof RECEIPT_CATEGORIES)[number];
+
+/** Body schema for `POST /api/receipts`. The photo upload happens first (via
+ *  the existing `/api/files` flow) and produces a `file_id`; the client then
+ *  posts the metadata + that file_id here. Date / amount fields are optional
+ *  on insert so an AI-extract draft can be saved before the user confirms
+ *  every value. */
+export const receiptSchema = z.object({
+    job_id: z.string().uuid("Job is required"),
+    file_id: z.string().uuid("File is required"),
+    receipt_date: z.string().optional().nullable(),
+    vendor_name: z.string().max(200).optional().nullable(),
+    amount: z.number().min(0).optional().nullable(),
+    gst_amount: z.number().min(0).optional().nullable(),
+    category: z.enum(RECEIPT_CATEGORIES).optional().nullable(),
+    notes: z.string().max(2000).optional().nullable(),
+});
+export type ReceiptInput = z.infer<typeof receiptSchema>;
+
+export const receiptUpdateSchema = z.object({
+    receipt_date: z.string().optional().nullable(),
+    vendor_name: z.string().max(200).optional().nullable(),
+    amount: z.number().min(0).optional().nullable(),
+    gst_amount: z.number().min(0).optional().nullable(),
+    category: z.enum(RECEIPT_CATEGORIES).optional().nullable(),
+    notes: z.string().max(2000).optional().nullable(),
+});
+export type ReceiptUpdateInput = z.infer<typeof receiptUpdateSchema>;
+
+// --- Purchase Order Schemas ---
+
+export const PURCHASE_ORDER_STATUSES = ["draft", "sent", "received", "paid"] as const;
+export type PurchaseOrderStatus = (typeof PURCHASE_ORDER_STATUSES)[number];
+
+const poLineItemInput = z.object({
+    description: z.string().min(1).max(500),
+    quantity: z.number().min(0),
+    unit_price: z.number().min(0),
+    source_quote_line_item_id: z.string().uuid().optional().nullable(),
+    sort_order: z.number().int().min(0).optional(),
+});
+
+/** Body schema for `POST /api/purchase-orders`. Always job-scoped and
+ *  always addressed to a supplier company. `line_items` is optional so a
+ *  bare-bones PO can be created and filled in later. */
+export const createPurchaseOrderSchema = z.object({
+    job_id: z.string().uuid("Job is required"),
+    company_id: z.string().uuid("Supplier is required"),
+    source_quote_id: z.string().uuid().optional().nullable(),
+    title: z.string().max(500).optional().nullable(),
+    reference_id: z.string().max(50).optional().nullable(),
+    status: z.enum(PURCHASE_ORDER_STATUSES).optional(),
+    expected_date: z.string().optional().nullable(),
+    gst_inclusive: z.boolean().optional(),
+    notes: z.string().max(5000).optional().nullable(),
+    line_items: z.array(poLineItemInput).optional(),
+});
+export type CreatePurchaseOrderInput = z.infer<typeof createPurchaseOrderSchema>;
+
+export const purchaseOrderUpdateSchema = z.object({
+    title: z.string().max(500).optional().nullable(),
+    reference_id: z.string().max(50).optional().nullable(),
+    status: z.enum(PURCHASE_ORDER_STATUSES).optional(),
+    expected_date: z.string().optional().nullable(),
+    company_id: z.string().uuid().optional(),
+    gst_inclusive: z.boolean().optional(),
+    notes: z.string().max(5000).optional().nullable(),
+});
+export type PurchaseOrderUpdateInput = z.infer<typeof purchaseOrderUpdateSchema>;
+
+export const purchaseOrderLineItemSchema = poLineItemInput;
+export type PurchaseOrderLineItemInput = z.infer<typeof purchaseOrderLineItemSchema>;
+
+export const purchaseOrderLineItemUpdateSchema = z.object({
+    description: z.string().min(1).max(500).optional(),
+    quantity: z.number().min(0).optional(),
+    unit_price: z.number().min(0).optional(),
+    sort_order: z.number().int().min(0).optional(),
+});
+export type PurchaseOrderLineItemUpdateInput = z.infer<typeof purchaseOrderLineItemUpdateSchema>;
 
 // ── Tasks ──────────────────────────────────────────
 export const taskSchema = z.object({
@@ -439,3 +555,68 @@ export const scheduleEntryUpdateSchema = z.object({
     notes: z.string().nullable().optional(),
 });
 export type ScheduleEntryUpdateInput = z.infer<typeof scheduleEntryUpdateSchema>;
+
+// --- Timesheet Schemas ---
+
+export const TIMESHEET_SOURCES = ["manual", "clock"] as const;
+export type TimesheetSource = (typeof TIMESHEET_SOURCES)[number];
+
+const isoDateTime = z.string().refine((v) => !Number.isNaN(Date.parse(v)), {
+    message: "Invalid date/time",
+});
+
+export const timesheetSchema = z.object({
+    user_id: z.string().uuid("Employee is required"),
+    job_id: z.string().uuid().optional().nullable(),
+    start_at: isoDateTime,
+    end_at: isoDateTime.optional().nullable(),
+    notes: z.string().optional().nullable(),
+    source: z.enum(TIMESHEET_SOURCES).optional(),
+}).refine(
+    (v) => v.end_at == null || Date.parse(v.end_at) >= Date.parse(v.start_at),
+    { message: "End must be after start", path: ["end_at"] },
+);
+export type TimesheetInput = z.infer<typeof timesheetSchema>;
+
+export const timesheetUpdateSchema = z.object({
+    id: z.string().uuid("Valid ID is required"),
+    user_id: z.string().uuid().optional(),
+    job_id: z.string().uuid().optional().nullable(),
+    start_at: isoDateTime.optional(),
+    end_at: isoDateTime.optional().nullable(),
+    notes: z.string().optional().nullable(),
+});
+export type TimesheetUpdateInput = z.infer<typeof timesheetUpdateSchema>;
+
+/** Clock-in: opens an entry with end_at NULL. */
+export const timesheetClockInSchema = z.object({
+    job_id: z.string().uuid().optional().nullable(),
+    notes: z.string().optional().nullable(),
+});
+export type TimesheetClockInInput = z.infer<typeof timesheetClockInSchema>;
+
+// --- Analytics ---
+
+export const ANALYTICS_PERIODS = ["30d", "90d", "qtd", "ytd", "all"] as const;
+export const analyticsQuerySchema = z.object({
+    period: z.enum(ANALYTICS_PERIODS).default("90d"),
+});
+export type AnalyticsPeriod = (typeof ANALYTICS_PERIODS)[number];
+
+// --- Profile ---
+
+/** PATCH /api/profile body. All fields optional — only provided keys update. */
+export const profileUpdateSchema = z.object({
+    firstName: z.string().min(1).optional(),
+    lastName: z.string().min(1).optional(),
+    hourlyRate: z.number().min(0, "Hourly rate must be ≥ 0").optional(),
+});
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+
+/** PATCH /api/users body for editing another user's profile fields. */
+export const userProfileUpdateSchema = z.object({
+    user_id: z.string().uuid("Valid user_id is required"),
+    hourly_rate: z.number().min(0, "Hourly rate must be ≥ 0").optional(),
+    position: z.string().optional().nullable(),
+});
+export type UserProfileUpdateInput = z.infer<typeof userProfileUpdateSchema>;

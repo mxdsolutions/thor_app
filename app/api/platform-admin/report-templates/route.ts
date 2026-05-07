@@ -23,7 +23,7 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
     }
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data, total: count || 0 });
 });

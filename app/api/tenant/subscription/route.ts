@@ -29,7 +29,7 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
 
     if (tenant?.billing_exempt) {
         const forged = plans.find((p) => p.id === "forged");
-        if (!forged) return serverError();
+        if (!forged) return serverError(!forged);
 
         return NextResponse.json({
             subscription: {

@@ -305,7 +305,12 @@
       "Bash(awk -F'\"' 'NF>1 {q+=NF-1} END {print \"double-quotes total:\", q}' .env.local)",
       "Bash(awk -F\"'\" \"NF>1 {q+=NF-1} END {print \\\\\"single-quotes total:\\\\\", q}\" .env.local)",
       "Bash(node -e ' *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(find /Users/dylanj/projects/ventures -name \"CLAUDE.md\" -path \"*THOR*\" | head -1)",
+      "mcp__supabase__get_advisors",
+      "Bash(ps -p 78458 -o command=)",
+      "Bash(kill 78458)",
+      "Bash(ps -p 73554 -o pid,ppid,command=)"
     ]
   }
 }

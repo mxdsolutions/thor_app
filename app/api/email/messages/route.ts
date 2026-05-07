@@ -24,7 +24,7 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
             endpoint = `/me/mailFolders/${folder}/messages?$top=${top}&$skip=${skip}&$orderby=receivedDateTime desc&${select}`;
         }
 
-        const res = await graphFetch(supabase, user.id, endpoint, { headers });
+        const res = await graphFetch(supabase, user.id, endpoint, { headers, tenantId });
 
         if (!res.ok) {
             const err = await res.json();

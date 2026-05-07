@@ -23,7 +23,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     const finalQuery = jobId ? query.eq("job_id", jobId) : query;
 
     const { data, error, count } = await finalQuery;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ items: data, total: count || 0 });
 });

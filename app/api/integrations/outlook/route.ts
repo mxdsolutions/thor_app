@@ -55,6 +55,11 @@ export async function DELETE() {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Microsoft Identity has no clean per-token revoke for delegated tokens —
+    // /me/revokeSignInSessions revokes ALL the user's MS sessions (incl.
+    // Office.com), which is too heavy. We delete locally and rely on natural
+    // refresh-token expiry. Document this for future review.
+
     const { error } = await supabase
         .from("email_connections")
         .delete()

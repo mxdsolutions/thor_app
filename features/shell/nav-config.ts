@@ -1,22 +1,23 @@
 import {
-    IconLayoutGrid as Squares2X2Icon,
-    IconBriefcase as BriefcaseIcon,
-    IconUsersGroup as UserGroupIcon,
-    IconCube as CubeIcon,
-    IconCalculator as CalculatorIcon,
-    IconCurrencyDollar as CurrencyDollarIcon,
-    IconCash as BanknotesIcon,
-    IconCalendar as CalendarDaysIcon,
-    IconChartBar as ChartBarIcon,
-    IconFileText as FileTextIcon,
-} from "@tabler/icons-react";
-import type { Icon } from "@tabler/icons-react";
+    Home as HomeIcon,
+    Briefcase as BriefcaseIcon,
+    Users as UserGroupIcon,
+    Calculator as CalculatorIcon,
+    DollarSign as CurrencyDollarIcon,
+    Banknote as BanknotesIcon,
+    CalendarDays as CalendarDaysIcon,
+    BarChart3 as ChartBarIcon,
+    FileText as FileTextIcon,
+    Folder as FolderIcon,
+    Clock as ClockIcon,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "@/lib/routes";
 
 export type NavItem = {
     href: string;
     label: string;
-    icon: Icon;
+    icon: LucideIcon;
     moduleId?: string;
     /** When set, active state matches on this prefix instead of `href`. */
     matchPrefix?: string;
@@ -31,7 +32,7 @@ export type NavItem = {
 export const OVERVIEW_ITEM: NavItem = {
     href: ROUTES.OVERVIEW,
     label: "Overview",
-    icon: Squares2X2Icon,
+    icon: HomeIcon,
 };
 
 export const ANALYTICS_ITEM: NavItem = {
@@ -41,15 +42,16 @@ export const ANALYTICS_ITEM: NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs", permissionKey: "ops.jobs" },
     { href: ROUTES.OPS_SCHEDULE, label: "Schedule", icon: CalendarDaysIcon, moduleId: "operations.schedule", permissionKey: "ops.schedule" },
-    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: FileTextIcon, moduleId: "operations.reports", permissionKey: "ops.reports" },
+    { href: ROUTES.OPS_JOBS, label: "Jobs", icon: BriefcaseIcon, moduleId: "operations.jobs", permissionKey: "ops.jobs" },
     { href: ROUTES.FINANCE_QUOTES, label: "Quotes", icon: CalculatorIcon, moduleId: "finance.quotes", permissionKey: "finance.quotes" },
     { href: ROUTES.FINANCE_INVOICES, label: "Invoices", icon: BanknotesIcon, moduleId: "finance.invoices", permissionKey: "finance.invoices" },
+    { href: ROUTES.OPS_REPORTS, label: "Reports", icon: FileTextIcon, moduleId: "operations.reports", permissionKey: "ops.reports" },
     { href: ROUTES.CRM_CLIENTS, label: "Clients", icon: UserGroupIcon, moduleId: "crm.contacts", permissionKey: "crm.clients" },
-    { href: ROUTES.OPS_SERVICES, label: "Services", icon: CubeIcon, moduleId: "operations.services", permissionKey: "ops.services" },
-    { href: ROUTES.FINANCE_PRICING, label: "Materials", icon: CurrencyDollarIcon, moduleId: "finance.pricing", permissionKey: "finance.pricing" },
+    { href: ROUTES.OPS_TIMESHEETS, label: "Timesheets", icon: ClockIcon, moduleId: "operations.timesheets", permissionKey: "ops.timesheets" },
+    { href: ROUTES.FINANCE_PRICING, label: "Pricing", icon: CurrencyDollarIcon, moduleId: "finance.pricing", permissionKey: "finance.pricing" },
     { href: ROUTES.ANALYTICS, label: "Analytics", icon: ChartBarIcon },
+    { href: ROUTES.FILES, label: "Files", icon: FolderIcon },
 ];
 
 /** Build flat list of nav items filtered by enabled modules. */

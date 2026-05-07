@@ -1,18 +1,21 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
-import { validationError, serverError, notFoundError } from "@/app/api/_lib/errors";
+import { tenantListQuery } from "@/app/api/_lib/list-query";
+import { validationError, serverError } from "@/app/api/_lib/errors";
 import { licenseSchema, licenseUpdateSchema } from "@/lib/validation";
 
-export const GET = withAuth(async (_request, { supabase, tenantId }) => {
-    const { data, error } = await supabase
-        .from("tenant_licenses")
-        .select("*")
-        .eq("tenant_id", tenantId)
-        .order("created_at", { ascending: false });
+export const GET = withAuth(async (request, { supabase, tenantId }) => {
+    const { query } = tenantListQuery(supabase, "tenant_licenses", {
+        tenantId,
+        request,
+        searchColumns: ["name", "license_number", "issuing_authority"],
+        archivable: true,
+    });
 
-    if (error) return serverError();
+    const { data, error, count } = await query;
+    if (error) return serverError(error);
 
-    return NextResponse.json({ items: data });
+    return NextResponse.json({ items: data, total: count || 0 });
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
@@ -26,7 +29,7 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data }, { status: 201 });
 });
@@ -46,24 +49,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data });
-});
-
-export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-
-    if (!id) return notFoundError("License");
-
-    const { error } = await supabase
-        .from("tenant_licenses")
-        .delete()
-        .eq("id", id)
-        .eq("tenant_id", tenantId);
-
-    if (error) return serverError();
-
-    return NextResponse.json({ success: true });
 });

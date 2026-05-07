@@ -15,8 +15,10 @@ const HANDLED_EVENTS = new Set<Stripe.Event.Type>([
     "customer.subscription.created",
     "customer.subscription.updated",
     "customer.subscription.deleted",
+    "customer.subscription.trial_will_end",
     "invoice.payment_succeeded",
     "invoice.payment_failed",
+    "invoice.payment_action_required",
 ]);
 
 export async function POST(request: NextRequest) {
@@ -103,6 +105,15 @@ async function dispatch(supabase: SupabaseAdmin, event: Stripe.Event): Promise<v
         case "invoice.payment_failed":
             await handleInvoicePaymentFailed(supabase, event.data.object);
             return;
+        case "customer.subscription.trial_will_end":
+            // Stripe fires this 3 days before trial end. Stripe also sends an
+            // email automatically; this row in `stripe_webhook_events` is the
+            // audit trail. If we want in-app banners, hook here.
+            return;
+        case "invoice.payment_action_required":
+            // 3DS / SCA challenge. Stripe emails the customer with a link.
+            // Audited via stripe_webhook_events; no DB write needed today.
+            return;
         case "invoice.payment_succeeded":
             // Nothing to do today — receipts are handled by Stripe's built-in
             // emails. Kept in HANDLED_EVENTS so it's logged as "processed".
@@ -123,6 +134,18 @@ async function handleCheckoutCompleted(
     const tenantId = session.client_reference_id;
     if (!tenantId) {
         throw new Error(`Checkout session ${session.id} has no client_reference_id`);
+    }
+
+    // Defense-in-depth: confirm client_reference_id resolves to a real tenant
+    // before writing. Stops a forged or stale reference from creating an
+    // orphaned tenant_subscriptions row keyed on a non-existent tenant.
+    const { data: tenantRow } = await supabase
+        .from("tenants")
+        .select("id")
+        .eq("id", tenantId)
+        .maybeSingle();
+    if (!tenantRow) {
+        throw new Error(`Checkout session ${session.id} has unknown tenant ${tenantId}`);
     }
 
     const customerId = typeof session.customer === "string"

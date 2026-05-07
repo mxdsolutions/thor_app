@@ -13,12 +13,22 @@ import { useDebouncedValue } from "@/lib/hooks/use-debounce";
 import { quoteStatusDotClass } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
-import { useQuotes } from "@/lib/swr";
+import { useQuotes, type ArchiveScope } from "@/lib/swr";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
 import { QuoteSideSheet } from "@/components/sheets/QuoteSideSheet";
+import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
+
+const QUOTE_STATUSES = [
+    { id: "draft", label: "Draft" },
+    { id: "sent", label: "Sent" },
+    { id: "accepted", label: "Accepted" },
+    { id: "rejected", label: "Rejected" },
+    { id: "expired", label: "Expired" },
+];
 
 type Quote = {
     id: string;
@@ -54,6 +64,7 @@ const columns: DataTableColumn<Quote>[] = [
 export default function QuotesPage() {
     usePageTitle("Quotes");
     const [createOpen, setCreateOpen] = useState(false);
+    useCreateDeepLink(() => setCreateOpen(true));
     const canWriteQuotes = usePermissionOptional("finance.quotes", "write", true);
     useMobileHeaderAction(useCallback(() => {
         if (canWriteQuotes) setCreateOpen(true);
@@ -61,11 +72,12 @@ export default function QuotesPage() {
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebouncedValue(search);
     const [statusFilter, setStatusFilter] = useState<string>("All");
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [page, setPage] = useState(0);
     const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
 
     const PAGE_SIZE = 20;
-    const { data, isLoading, mutate } = useQuotes(debouncedSearch || undefined, page * PAGE_SIZE, PAGE_SIZE);
+    const { data, isLoading, error, mutate } = useQuotes(debouncedSearch || undefined, page * PAGE_SIZE, PAGE_SIZE, archiveScope);
     const total: number = data?.total || 0;
 
     const quotes = useMemo(() => {
@@ -73,11 +85,28 @@ export default function QuotesPage() {
         return statusFilter === "All" ? all : all.filter(q => q.status === statusFilter);
     }, [data?.items, statusFilter]);
 
+    const metrics: PageMetric[] = useMemo(() => {
+        const all: Quote[] = data?.items || [];
+        const open = all.filter(q => q.status === "draft" || q.status === "sent");
+        const pipelineValue = open.reduce((sum, q) => sum + (q.total_amount || 0), 0);
+        const acceptedCount = all.filter(q => q.status === "accepted").length;
+        return [
+            { label: "Total quotes", value: total.toLocaleString(), accent: true },
+            { label: "Pipeline value", value: formatCurrency(pipelineValue), sublabel: `${open.length} open` },
+            { label: "Accepted", value: acceptedCount.toLocaleString(), tone: acceptedCount > 0 ? "success" : "default" },
+        ];
+    }, [data?.items, total]);
+
     return (
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Quotes</h1>
+                        </div>
+                        <PageMetrics metrics={metrics} />
+                        <DashboardControls>
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="relative flex-1 min-w-0 md:min-w-[320px] md:max-w-xl">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -89,18 +118,13 @@ export default function QuotesPage() {
                                 />
                             </div>
                             <MobileFilters>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {["All", "draft", "sent", "accepted", "rejected"].map(s => (
-                                            <SelectItem key={s} value={s}>
-                                                {s === "All" ? "All Statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <ArchiveScopedStatusSelect
+                                    archive={archiveScope}
+                                    onArchiveChange={setArchiveScope}
+                                    status={statusFilter}
+                                    onStatusChange={setStatusFilter}
+                                    statuses={QUOTE_STATUSES}
+                                />
                             </MobileFilters>
                         </div>
                         {canWriteQuotes && (
@@ -109,7 +133,8 @@ export default function QuotesPage() {
                                 Add Quote
                             </Button>
                         )}
-                    </DashboardControls>
+                        </DashboardControls>
+                    </div>
                 }
                 footer={<TablePagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />}
             >
@@ -117,6 +142,7 @@ export default function QuotesPage() {
                     items={quotes}
                     columns={columns}
                     loading={isLoading}
+                    error={error}
                     emptyMessage={!data?.items?.length ? "No quotes yet. Create your first quote." : "No quotes match your filters."}
                     onRowClick={setSelectedQuote}
                 />

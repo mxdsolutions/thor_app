@@ -28,13 +28,20 @@ import {
     IconArrowUpRight as ArrowUpRightIcon,
     IconLayoutGrid as Squares2X2Icon,
     IconList as ListBulletIcon,
+    IconChevronUp,
+    IconChevronDown,
+    IconSelector,
 } from "@tabler/icons-react";
 import { CreateJobModal } from "@/components/modals/CreateJobModal";
-import { useJobs, useStatusConfig, useServices, useProfiles } from "@/lib/swr";
+import { useJobs, useStatusConfig, useProfiles, type ArchiveScope } from "@/lib/swr";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { useKanbanPage } from "@/lib/hooks/use-kanban-page";
 import { DEFAULT_JOB_STATUSES, toKanbanColumns, toStatusConfig, type StatusItem } from "@/lib/status-config";
 import { TableSkeleton } from "@/components/ui/skeleton";
+import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
+import { formatCurrency } from "@/lib/utils";
+import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 
 type Assignee = { id: string; full_name: string | null; email: string | null };
 
@@ -52,7 +59,6 @@ type Job = {
     assignees: Assignee[];
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
-    service?: { id: string; name: string } | null;
     scheduled_date: string;
     created_at: string;
 };
@@ -84,7 +90,8 @@ function JobsPageContent() {
     const statuses = statusData?.statuses ?? DEFAULT_JOB_STATUSES;
     const statusColumns = toKanbanColumns(statuses);
     const jobStatusConfig = toStatusConfig(statuses);
-    const jobsHook = useJobs();
+    const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
+    const jobsHook = useJobs(0, 50, archiveScope);
     const { search, setSearch, filteredItems: filteredJobsRaw, isLoading: loading, handleMove, refresh: fetchJobs } = useKanbanPage<Job>({
         swr: jobsHook,
         endpoint: "/api/jobs",
@@ -94,16 +101,12 @@ function JobsPageContent() {
             (job.description?.toLowerCase().includes(q) ?? false) ||
             (job.reference_id?.toLowerCase().includes(q) ?? false) ||
             (job.contact ? `${job.contact.first_name} ${job.contact.last_name}`.toLowerCase().includes(q) : false) ||
-            (job.service?.name.toLowerCase().includes(q) ?? false) ||
             job.company?.name.toLowerCase().includes(q) ||
             job.assignees.some(a => a.full_name?.toLowerCase().includes(q)) || false,
     });
-    const { data: servicesData } = useServices();
-    const services: Array<{ id: string; name: string }> = servicesData?.items || [];
     const { data: profilesData } = useProfiles();
     const users: Array<{ id: string; full_name: string | null; email: string | null }> = profilesData?.users || [];
 
-    const [typeFilter, setTypeFilter] = useState("All");
     const [assignedFilter, setAssignedFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All");
     const [paidFilter, setPaidFilter] = useState("All");
@@ -111,7 +114,6 @@ function JobsPageContent() {
     const filteredJobs = useMemo(() => {
         return filteredJobsRaw
             .filter((job: Job) => {
-                if (typeFilter !== "All" && job.service?.id !== typeFilter) return false;
                 if (assignedFilter !== "All") {
                     if (assignedFilter === "unassigned") {
                         if (job.assignees.length > 0) return false;
@@ -124,12 +126,80 @@ function JobsPageContent() {
                 return true;
             })
             .map(job => ({ ...job, title: job.job_title }));
-    }, [filteredJobsRaw, typeFilter, assignedFilter, statusFilter, paidFilter]);
+    }, [filteredJobsRaw, assignedFilter, statusFilter, paidFilter]);
     const [showCreate, setShowCreate] = useState(false);
+    useCreateDeepLink(() => setShowCreate(true));
     const [view, setView] = useState<"table" | "kanban">("table");
     const [page, setPage] = useState(0);
     const PAGE_SIZE = 20;
-    const paginatedJobs = useMemo(() => filteredJobs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [filteredJobs, page]);
+
+    type SortKey = "job_title" | "customer" | "assigned" | "amount" | "paid_status" | "status";
+    const [sortKey, setSortKey] = useState<SortKey | null>(null);
+    const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+    const toggleSort = useCallback((key: SortKey) => {
+        setPage(0);
+        setSortKey((prevKey) => {
+            if (prevKey !== key) {
+                setSortDir("asc");
+                return key;
+            }
+            // Same key — cycle: asc → desc → off
+            setSortDir((prevDir) => (prevDir === "asc" ? "desc" : "asc"));
+            return key;
+        });
+    }, []);
+
+    const sortedJobs = useMemo(() => {
+        if (!sortKey) return filteredJobs;
+        const direction = sortDir === "asc" ? 1 : -1;
+        const statusOrder = (statuses as StatusItem[]).reduce<Record<string, number>>((acc, s, i) => { acc[s.id] = i; return acc; }, {});
+        const paidOrder: Record<string, number> = { not_paid: 0, partly_paid: 1, paid_in_full: 2 };
+        const valueOf = (job: Job & { title: string }): string | number => {
+            switch (sortKey) {
+                case "job_title": return job.job_title?.toLowerCase() ?? "";
+                case "customer": return (job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name ?? "")).toLowerCase();
+                case "assigned": return job.assignees[0]?.full_name?.toLowerCase() ?? job.assignees[0]?.email?.toLowerCase() ?? "";
+                case "amount": return job.amount ?? 0;
+                case "paid_status": return paidOrder[job.paid_status] ?? 99;
+                case "status": return statusOrder[job.status] ?? 99;
+            }
+        };
+        return [...filteredJobs].sort((a, b) => {
+            const av = valueOf(a);
+            const bv = valueOf(b);
+            // Push empty strings to the bottom regardless of direction so blank rows don't dominate the top
+            if (av === "" && bv !== "") return 1;
+            if (bv === "" && av !== "") return -1;
+            if (av < bv) return -1 * direction;
+            if (av > bv) return 1 * direction;
+            return 0;
+        });
+    }, [filteredJobs, sortKey, sortDir, statuses]);
+
+    const paginatedJobs = useMemo(() => sortedJobs.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE), [sortedJobs, page]);
+
+    const totalCost = useMemo(() => filteredJobs.reduce((sum, j) => sum + (j.amount || 0), 0), [filteredJobs]);
+    const awaitingPayment = useMemo(() =>
+        filteredJobs.reduce((sum, j) => {
+            if (j.paid_status === "paid_in_full") return sum;
+            return sum + Math.max(0, (j.amount || 0) - (j.total_payment_received || 0));
+        }, 0),
+        [filteredJobs]
+    );
+
+    const metrics: PageMetric[] = [
+        { label: "Active jobs", value: filteredJobs.length.toLocaleString(), accent: true },
+        { label: "Pipeline value", value: formatCurrency(totalCost) },
+        { label: "Awaiting payment", value: formatCurrency(awaitingPayment), tone: awaitingPayment > 0 ? "warning" : "default" },
+    ];
+
+    const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
+        if (sortKey !== columnKey) return <IconSelector className="w-3 h-3 opacity-40" />;
+        return sortDir === "asc"
+            ? <IconChevronUp className="w-3 h-3" />
+            : <IconChevronDown className="w-3 h-3" />;
+    };
 
     const openJob = (jobId: string) => router.push(`/dashboard/jobs/${jobId}`);
 
@@ -144,7 +214,12 @@ function JobsPageContent() {
         <>
             <ScrollableTableLayout
                 header={
-                    <DashboardControls>
+                    <div className="space-y-4">
+                        <div className="px-4 md:px-6 lg:px-10">
+                            <h1 className="font-statement text-2xl font-extrabold tracking-tight">Jobs</h1>
+                        </div>
+                        <PageMetrics metrics={metrics} />
+                        <DashboardControls>
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                             <div className="relative flex-1 min-w-0 md:min-w-[280px] md:max-w-sm">
                                 <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -156,17 +231,6 @@ function JobsPageContent() {
                                 />
                             </div>
                             <MobileFilters>
-                                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="All">All Types</SelectItem>
-                                        {services.map(s => (
-                                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                                 <Select value={assignedFilter} onValueChange={setAssignedFilter}>
                                     <SelectTrigger className="w-[150px]">
                                         <SelectValue placeholder="Assigned" />
@@ -179,17 +243,14 @@ function JobsPageContent() {
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="All">All Statuses</SelectItem>
-                                        {(statuses as StatusItem[]).map((s) => (
-                                            <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <ArchiveScopedStatusSelect
+                                    archive={archiveScope}
+                                    onArchiveChange={setArchiveScope}
+                                    status={statusFilter}
+                                    onStatusChange={setStatusFilter}
+                                    statuses={(statuses as StatusItem[]).map((s) => ({ id: s.id, label: s.label }))}
+                                />
+
                                 <Select value={paidFilter} onValueChange={setPaidFilter}>
                                     <SelectTrigger className="w-[140px]">
                                         <SelectValue placeholder="Payment" />
@@ -231,9 +292,12 @@ function JobsPageContent() {
                                 Add Job
                             </Button>
                         )}
-                    </DashboardControls>
+                        </DashboardControls>
+                    </div>
                 }
-                footer={view === "table" ? <TablePagination page={page} pageSize={PAGE_SIZE} total={filteredJobs.length} onPageChange={setPage} /> : undefined}
+                footer={view === "table" ? (
+                    <TablePagination page={page} pageSize={PAGE_SIZE} total={sortedJobs.length} onPageChange={setPage} />
+                ) : undefined}
             >
                 {view === "kanban" ? (
                     <Kanban
@@ -296,22 +360,45 @@ function JobsPageContent() {
                     <table className={tableBase + " border-collapse min-w-full"}>
                         <thead className={tableHead + " sticky top-0 z-10"}>
                             <tr>
-                                <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Job Name</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Type</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Customer</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Assigned</th>
-                                <th className={tableHeadCell + " px-4 text-right sm:text-left"}>Cost</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Payment</th>
-                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
+                                <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>
+                                    <button type="button" onClick={() => toggleSort("job_title")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Job Name <SortIcon columnKey="job_title" />
+                                    </button>
+                                </th>
+                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>
+                                    <button type="button" onClick={() => toggleSort("customer")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Customer <SortIcon columnKey="customer" />
+                                    </button>
+                                </th>
+                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>
+                                    <button type="button" onClick={() => toggleSort("assigned")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Assigned <SortIcon columnKey="assigned" />
+                                    </button>
+                                </th>
+                                <th className={tableHeadCell + " px-4 text-right sm:text-left"}>
+                                    <button type="button" onClick={() => toggleSort("amount")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Cost <SortIcon columnKey="amount" />
+                                    </button>
+                                </th>
+                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>
+                                    <button type="button" onClick={() => toggleSort("paid_status")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Payment <SortIcon columnKey="paid_status" />
+                                    </button>
+                                </th>
+                                <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>
+                                    <button type="button" onClick={() => toggleSort("status")} className="inline-flex items-center gap-1 hover:text-foreground transition-colors uppercase tracking-wider">
+                                        Status <SortIcon columnKey="status" />
+                                    </button>
+                                </th>
                                 <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
-                                <TableSkeleton rows={8} columns={8} />
+                                <TableSkeleton rows={8} columns={7} />
                             ) : filteredJobs.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="text-center py-12 text-sm text-muted-foreground">No jobs found.</td>
+                                    <td colSpan={7} className="text-center py-12 text-sm text-muted-foreground">No jobs found.</td>
                                 </tr>
                             ) : (
                                 paginatedJobs.map((job) => (
@@ -325,9 +412,6 @@ function JobsPageContent() {
                                                     </span>
                                                 )}
                                             </div>
-                                        </td>
-                                        <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[150px]"}>
-                                            {job.service?.name || "—"}
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[150px]"}>
                                             {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "—")}

@@ -37,8 +37,12 @@ interface DataTableProps<T extends { id: string }> {
     columns: DataTableColumn<T>[];
     /** Loading state — shows skeleton rows */
     loading?: boolean;
+    /** When set, renders an error row instead of items. Pass `swrResult.error` from SWR. */
+    error?: unknown;
     /** Text shown when items is empty and not loading */
     emptyMessage?: string;
+    /** Text shown when error is set (default: "Failed to load.") */
+    errorMessage?: string;
     /** Number of skeleton rows to show while loading */
     skeletonRows?: number;
     /** Row click handler */
@@ -51,7 +55,9 @@ export function DataTable<T extends { id: string }>({
     items,
     columns,
     loading,
+    error,
     emptyMessage = "No items found.",
+    errorMessage = "Failed to load.",
     skeletonRows = 8,
     onRowClick,
     showRowAction,
@@ -85,6 +91,12 @@ export function DataTable<T extends { id: string }>({
             <tbody>
                 {loading ? (
                     <TableSkeleton rows={skeletonRows} columns={colCount} />
+                ) : error ? (
+                    <tr>
+                        <td colSpan={colCount} className="text-center py-12 text-sm text-rose-600">
+                            {errorMessage}
+                        </td>
+                    </tr>
                 ) : items.length === 0 ? (
                     <tr>
                         <td colSpan={colCount} className="text-center py-12 text-sm text-muted-foreground">

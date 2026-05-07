@@ -26,7 +26,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
         .eq("quote_id", quoteId)
         .order("sort_order", { ascending: true });
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ sections: data });
 });
 
@@ -48,7 +48,7 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ section: data }, { status: 201 });
 });
 
@@ -67,7 +67,7 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
         .select()
         .single();
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ section: data });
 });
 
@@ -90,6 +90,6 @@ export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
         .eq("id", id)
         .eq("tenant_id", tenantId);
 
-    if (error) return serverError();
+    if (error) return serverError(error);
     return NextResponse.json({ success: true });
 });

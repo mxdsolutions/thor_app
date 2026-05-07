@@ -33,13 +33,19 @@ function AuthContent() {
       const result = await signIn(formData);
       if (result?.error) {
         toast.error(result.error);
-      } else if (result?.success) {
-        router.refresh();
-        router.push("/dashboard/overview");
+        setIsLoading(false);
+        return;
       }
+      if (result?.success) {
+        // Leave isLoading=true through navigation so the button stays
+        // disabled until the dashboard route unmounts this page —
+        // router.push doesn't return a promise that awaits navigation.
+        router.push("/dashboard/overview");
+        return;
+      }
+      setIsLoading(false);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "An unexpected error occurred");
-    } finally {
       setIsLoading(false);
     }
   };

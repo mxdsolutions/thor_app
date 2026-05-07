@@ -24,7 +24,7 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
     }
 
     const { data, error, count } = await query;
-    if (error) return serverError();
+    if (error) return serverError(error);
 
     const tenantIds = (data || []).map((t: { id: string }) => t.id);
     const ownerIds = (data || []).map((t: { owner_id: string | null }) => t.owner_id).filter(Boolean) as string[];
@@ -89,7 +89,7 @@ export const POST = withPlatformAuth(async (request, { adminClient, user }) => {
         }
         return serverError();
     }
-    if (!tenant) return serverError();
+    if (!tenant) return serverError(!tenant);
 
     // Create the owner user
     const nameParts = owner_name.trim().split(" ");

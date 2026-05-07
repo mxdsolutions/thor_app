@@ -51,7 +51,13 @@ export default function JobDetailPage() {
             mode="inline"
             onUpdate={() => {
                 mutate();
-                globalMutate("/api/jobs");
+                // useJobs() keys with query params (e.g. `/api/jobs?offset=0&limit=50`),
+                // so invalidate by prefix-match rather than the exact `/api/jobs` key.
+                globalMutate(
+                    (key) => typeof key === "string" && key.startsWith("/api/jobs"),
+                    undefined,
+                    { revalidate: true }
+                );
             }}
             onClose={() => router.push(ROUTES.OPS_JOBS)}
         />

@@ -1,23 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
 import { formatCurrency } from "@/lib/utils";
-import { useServiceOptions, type PricingItem } from "@/lib/swr";
+import { type PricingItem } from "@/lib/swr";
 
 const CreateMaterialModal = lazy(() =>
     import("@/components/modals/CreateMaterialModal").then(mod => ({ default: mod.CreateMaterialModal }))
 );
-const CreateServiceModal = lazy(() =>
-    import("@/components/modals/CreateServiceModal").then(mod => ({ default: mod.CreateServiceModal }))
-);
-
-type ServiceItem = {
-    id: string;
-    name: string;
-    initial_value: number | null;
-};
 
 function parseNum(val: string | null | undefined): number {
     if (!val) return 0;
@@ -41,13 +32,13 @@ interface PricingSearchDropdownProps {
     enabled: boolean;
     /** Placeholder hint showing which section items go into */
     activeSectionName?: string | null;
-    /** Called when a pricing/service item is selected or created */
+    /** Called when a pricing item is selected or created */
     onAddItem: (item: NewLineItem) => void;
 }
 
 /**
- * Shared pricing/service search with debounced API search, service filtering,
- * and "Create new material/service" options. Used by both Create and Edit quote modals.
+ * Shared materials search with debounced API search and inline "Create new material".
+ * Used by both Create and Edit quote modals.
  */
 export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }: PricingSearchDropdownProps) {
     const [search, setSearch] = useState("");
@@ -58,10 +49,15 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
     const requestIdRef = useRef(0);
 
     const [showCreateMaterial, setShowCreateMaterial] = useState(false);
-    const [showCreateService, setShowCreateService] = useState(false);
 
-    const { data: servicesData } = useServiceOptions(enabled);
-    const services: ServiceItem[] = useMemo(() => servicesData?.items ?? [], [servicesData]);
+    // `enabled` controls whether the parent modal is open; results clear when closed.
+    useEffect(() => {
+        if (!enabled) {
+            setSearch("");
+            setResults([]);
+            setShowDropdown(false);
+        }
+    }, [enabled]);
 
     useEffect(() => () => {
         if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -87,12 +83,6 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
         }, 150);
     }, []);
 
-    const filteredServices = useMemo(() => {
-        if (search.length < 3) return [];
-        const q = search.toLowerCase();
-        return services.filter(s => s.name.toLowerCase().includes(q));
-    }, [search, services]);
-
     const handleSelectPricing = (item: PricingItem) => {
         onAddItem({
             pricing_matrix_id: item.Matrix_ID,
@@ -108,24 +98,9 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
         setShowDropdown(false);
     };
 
-    const handleSelectService = (svc: ServiceItem) => {
-        onAddItem({
-            pricing_matrix_id: null,
-            description: svc.name,
-            line_description: "",
-            trade: "Service",
-            uom: "each",
-            quantity: 1,
-            material_cost: 0,
-            labour_cost: svc.initial_value || 0,
-        });
-        setSearch("");
-        setShowDropdown(false);
-    };
-
     const placeholder = activeSectionName
         ? `Search materials — adding to "${activeSectionName}"`
-        : "Search materials or services...";
+        : "Search materials...";
 
     return (
         <>
@@ -147,31 +122,8 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
                     <div className="absolute z-50 top-full mt-1 w-full bg-background border border-border rounded-xl shadow-lg flex flex-col max-h-72">
                         {/* Scrollable results */}
                         <div className="flex-1 overflow-y-auto min-h-0">
-                            {loading && filteredServices.length === 0 && (
+                            {loading && (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">Searching...</div>
-                            )}
-
-                            {filteredServices.length > 0 && (
-                                <>
-                                    <div className="px-3 py-1.5 text-[11px] font-bold text-muted-foreground uppercase tracking-wider bg-secondary/40 border-b border-border/50">
-                                        Services
-                                    </div>
-                                    {filteredServices.map(svc => (
-                                        <button
-                                            key={svc.id}
-                                            type="button"
-                                            className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors"
-                                            onClick={() => handleSelectService(svc)}
-                                        >
-                                            <div className="flex items-center justify-between gap-2">
-                                                <span className="font-medium truncate">{svc.name}</span>
-                                                {svc.initial_value != null && (
-                                                    <span className="text-xs text-muted-foreground shrink-0">{formatCurrency(svc.initial_value)}</span>
-                                                )}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </>
                             )}
 
                             {results.length > 0 && (
@@ -203,28 +155,20 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
                                 </>
                             )}
 
-                            {!loading && results.length === 0 && filteredServices.length === 0 && search.length >= 3 && (
+                            {!loading && results.length === 0 && search.length >= 3 && (
                                 <div className="px-3 py-2 text-sm text-muted-foreground">No items found</div>
                             )}
                         </div>
 
-                        {/* Sticky create buttons — always visible at bottom */}
+                        {/* Sticky create button — always visible at bottom */}
                         <div className="border-t border-border/50 shrink-0 bg-background rounded-b-xl">
                             <button
                                 type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+                                className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5 rounded-b-xl"
                                 onClick={() => { setShowDropdown(false); setShowCreateMaterial(true); }}
                             >
                                 <PlusIcon className="w-3.5 h-3.5" />
                                 Create new material{search.length >= 3 ? `: "${search}"` : ""}
-                            </button>
-                            <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5 rounded-b-xl"
-                                onClick={() => { setShowDropdown(false); setShowCreateService(true); }}
-                            >
-                                <PlusIcon className="w-3.5 h-3.5" />
-                                Create new service{search.length >= 3 ? `: "${search}"` : ""}
                             </button>
                         </div>
                     </div>
@@ -246,27 +190,6 @@ export function PricingSearchDropdown({ enabled, activeSectionName, onAddItem }:
                                 quantity: 1,
                                 material_cost: parseNum(String((item as { Material_Cost?: string }).Material_Cost)),
                                 labour_cost: parseNum(String((item as { Labour_Cost?: string }).Labour_Cost)),
-                            });
-                        }}
-                    />
-                </Suspense>
-            )}
-
-            {showCreateService && (
-                <Suspense fallback={null}>
-                    <CreateServiceModal
-                        open={showCreateService}
-                        onOpenChange={setShowCreateService}
-                        onCreated={(service) => {
-                            onAddItem({
-                                pricing_matrix_id: null,
-                                description: service.name,
-                                line_description: "",
-                                trade: "Service",
-                                uom: "each",
-                                quantity: 1,
-                                material_cost: 0,
-                                labour_cost: 0,
                             });
                         }}
                     />

@@ -4,6 +4,7 @@ import { useState, lazy, Suspense } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { IconPlus as PlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useContactOptions } from "@/lib/swr";
@@ -25,6 +26,7 @@ export function CreateCompanyModal({ open, onOpenChange, onCreated }: CreateComp
     const [saving, setSaving] = useState(false);
     const [name, setName] = useState("");
     const [website, setWebsite] = useState("");
+    const [isSupplier, setIsSupplier] = useState(false);
     const [contactId, setContactId] = useState("");
     const [contactSearch, setContactSearch] = useState("");
     const [showContactDropdown, setShowContactDropdown] = useState(false);
@@ -41,6 +43,7 @@ export function CreateCompanyModal({ open, onOpenChange, onCreated }: CreateComp
     const reset = () => {
         setName("");
         setWebsite("");
+        setIsSupplier(false);
         setContactId("");
         setContactSearch("");
     };
@@ -57,6 +60,7 @@ export function CreateCompanyModal({ open, onOpenChange, onCreated }: CreateComp
                 body: JSON.stringify({
                     name: name.trim(),
                     website: website.trim() || null,
+                    is_supplier: isSupplier,
                 }),
             });
             if (!res.ok) throw new Error("Failed to create company");
@@ -116,6 +120,18 @@ export function CreateCompanyModal({ open, onOpenChange, onCreated }: CreateComp
                                 className="rounded-xl"
                             />
                         </div>
+
+                        {/* Supplier flag — drives the supplier picker on purchase orders */}
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                            <Checkbox
+                                checked={isSupplier}
+                                onCheckedChange={(v) => setIsSupplier(v === true)}
+                            />
+                            <span className="text-sm font-medium">Is a supplier</span>
+                            <span className="text-xs text-muted-foreground">
+                                — show this company when picking a vendor on POs
+                            </span>
+                        </label>
 
                         {/* Contact selector */}
                         <div className="space-y-1.5">

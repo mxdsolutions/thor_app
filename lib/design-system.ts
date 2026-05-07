@@ -7,25 +7,22 @@
 /* ── Typography ── */
 
 /** Page title — used in DashboardControls / sticky header context.
- *  Renders in Antonio via the base `h1`–`h6` rule in globals.css, so
- *  this class string should be applied to semantic heading elements. */
-export const pageHeadingClass = "text-3xl font-bold uppercase";
+ *  Inter, semibold, sentence case — modern utility feel. Apply to a
+ *  semantic heading element so the base layer picks up correct tracking. */
+export const pageHeadingClass = "text-2xl font-semibold tracking-tight";
 
-/** Top-of-card / in-card section title.
- *  Renders in Antonio via the base `h1`–`h6` rule, so apply to a
- *  semantic heading element (`<h2>` / `<h3>`). Use this for the primary
- *  title at the top of a settings card, plan summary card, etc. — not
- *  for list-item headings or banner alert titles (those stay smaller). */
-export const sectionHeadingClass = "text-xl font-bold uppercase tracking-wide text-foreground";
+/** Top-of-card / in-card section title. Apply to `<h2>` / `<h3>`. */
+export const sectionHeadingClass = "text-base font-semibold text-foreground";
 
 // --- Stats ---
 
-/** Stat label — metric cards */
-export const statLabelClass = "text-[11px] text-muted-foreground uppercase tracking-wide";
+/** Stat label — metric cards. Uppercase + tracking is the deliberate
+ *  utility cue (kept for small labels / column headers). */
+export const statLabelClass = "text-[11px] text-muted-foreground uppercase tracking-wider font-medium";
 
-/** Stat value — large display number. Must be rendered in an `<h*>` tag so
- *  the base layer picks up Antonio automatically. */
-export const statValueClass = "text-4xl font-bold tracking-wide";
+/** Stat value — large display number with tabular numerics so columns
+ *  of figures align cleanly. Apply to a semantic heading element. */
+export const statValueClass = "text-3xl font-bold tracking-tight tabular-nums";
 
 /* ── Spacing ── */
 
@@ -104,3 +101,13 @@ export const paidStatusTextClass: Record<string, string> = {
 /** Helper — returns job status dot class with amber fallback for unknown states */
 export const getJobStatusDot = (status?: string | null): string =>
     (status && jobStatusDotClass[status]) || "bg-amber-500";
+
+/* ── Platform admin shell ── */
+
+/** Hover surface for items on the dark platform-admin sidebar. */
+export const platformAdminNavHoverSurfaceClass = "hover:bg-white/[0.07]";
+
+/** Composite inactive-link class for platform-admin nav rows.
+ *  Centralised so the hex doesn't leak across files. */
+export const platformAdminNavInactiveClass =
+    "text-[#7b819a] hover:text-white hover:bg-white/[0.07]";

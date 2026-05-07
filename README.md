@@ -9,7 +9,7 @@ Multi-tenant CRM + operations dashboard for trade and service businesses.
 ```bash
 npm install
 cp .env.example .env.local  # Configure Supabase keys
-npm run dev                  # localhost:3002
+npm run dev                  # localhost:8005
 ```
 
 ## Documentation
