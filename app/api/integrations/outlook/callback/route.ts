@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getTenantId } from "@/lib/tenant";
 import { exchangeCodeForTokens, parseIdTokenEmail } from "@/lib/microsoft-graph";
 
 export async function GET(request: NextRequest) {
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get("error");
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8005";
-    const redirectUrl = `${appUrl}/dashboard/settings/integrations`;
+    const redirectUrl = `${appUrl}/dashboard/settings/company/integrations`;
 
     if (error) {
         const description = searchParams.get("error_description") || "Unknown error";
@@ -37,6 +38,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(`${redirectUrl}?error=Unauthorized`);
     }
 
+    let tenantId: string;
+    try {
+        tenantId = await getTenantId();
+    } catch {
+        return NextResponse.redirect(`${redirectUrl}?error=No+tenant+context`);
+    }
+
     try {
         const tokens = await exchangeCodeForTokens(code);
         const emailAddress = parseIdTokenEmail(tokens.id_token);
@@ -52,6 +60,7 @@ export async function GET(request: NextRequest) {
             .from("email_connections")
             .upsert(
                 {
+                    tenant_id: tenantId,
                     user_id: user.id,
                     provider: "outlook",
                     email_address: emailAddress,
@@ -64,6 +73,7 @@ export async function GET(request: NextRequest) {
             );
 
         if (dbError) {
+            console.error("[outlook/callback] Failed to save connection", dbError);
             return NextResponse.redirect(`${redirectUrl}?error=Failed+to+save+connection`);
         }
 
