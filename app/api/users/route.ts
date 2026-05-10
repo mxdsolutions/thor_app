@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError } from "@/app/api/_lib/errors";
+import { createAdminClient } from "@/lib/supabase/server";
 
 const VALID_ROLES = ["owner", "admin", "manager", "member", "viewer"];
 
@@ -33,10 +34,13 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
     const userIds = memberships.map(m => m.user_id);
     const inviteEmails = invites.map(i => i.email);
 
-    // Profiles for both members (by id) and invitees (by email — auth.users
-    // exists from inviteUserByEmail and a profile is created via the
-    // handle_new_user trigger).
-    const [byIdRes, byEmailRes] = await Promise.all([
+    // Profiles + auth.users.last_sign_in_at all in parallel. Profiles are
+    // fetched twice (by id for members, by email for invitees — handle_new_user
+    // trigger creates the row when inviteUserByEmail provisions the auth user).
+    // last_sign_in_at lives on auth.users, which only the service-role client
+    // can read; without this, every member shows as "Pending" forever.
+    const adminClient = await createAdminClient();
+    const [byIdRes, byEmailRes, authRes] = await Promise.all([
         userIds.length > 0
             ? supabase
                 .from("profiles")
@@ -49,10 +53,23 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
                 .select("id, full_name, email, avatar_url, created_at, position, hourly_rate")
                 .in("email", inviteEmails)
             : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+        userIds.length > 0
+            ? adminClient
+                .schema("auth")
+                .from("users")
+                .select("id, last_sign_in_at")
+                .in("id", userIds)
+            : Promise.resolve({ data: [] as Array<{ id: string; last_sign_in_at: string | null }> }),
     ]);
 
     const profileById = new Map((byIdRes.data || []).map(p => [p.id as string, p]));
     const profileByEmail = new Map((byEmailRes.data || []).map(p => [p.email as string, p]));
+    const lastSignInById = new Map(
+        (authRes.data || []).map((u) => [
+            (u as { id: string }).id,
+            (u as { last_sign_in_at: string | null }).last_sign_in_at,
+        ]),
+    );
 
     const memberUsers = memberships.map(m => {
         const profile = profileById.get(m.user_id);
@@ -60,7 +77,7 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
             id: (profile?.id as string) || m.user_id,
             email: (profile?.email as string | undefined) ?? null,
             created_at: profile?.created_at,
-            last_sign_in_at: null,
+            last_sign_in_at: lastSignInById.get(m.user_id) ?? null,
             user_metadata: {
                 full_name: profile?.full_name,
                 avatar_url: profile?.avatar_url,

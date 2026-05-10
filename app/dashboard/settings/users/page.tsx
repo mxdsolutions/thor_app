@@ -20,6 +20,7 @@ import { useProfiles } from "@/lib/swr";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
+import { resendInvite } from "@/app/actions/resendInvite";
 
 type UserTab = "all" | "owner" | "admin" | "manager" | "member" | "viewer";
 
@@ -46,6 +47,23 @@ export default function UsersPage() {
         if (activeTab === "all") return true;
         return user.tenant_role === activeTab;
     });
+
+    const handleResend = (email: string) => {
+        toast.promise(
+            (async () => {
+                const res = await resendInvite(email);
+                if (!res.success) throw new Error(res.error);
+                mutate();
+                return res;
+            })(),
+            {
+                loading: `Resending invitation to ${email}…`,
+                success: `Invitation resent to ${email}`,
+                error: (err) =>
+                    err instanceof Error ? err.message : "Failed to resend invitation",
+            },
+        );
+    };
 
     return (
         <>
@@ -162,7 +180,20 @@ export default function UsersPage() {
                                             </Badge>
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                            {pending ? `Invited ${formatLastActive(user.created_at)}` : formatLastActive(user.last_sign_in_at)}
+                                            {pending ? (
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <span>Invited {formatLastActive(user.created_at)}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleResend(user.email); }}
+                                                        className="text-xs font-medium text-primary hover:underline"
+                                                    >
+                                                        Resend
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                formatLastActive(user.last_sign_in_at)
+                                            )}
                                         </td>
                                     </tr>
                                 );
