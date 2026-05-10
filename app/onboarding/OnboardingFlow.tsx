@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
-import { IconArrowRight as ArrowRightIcon, IconArrowLeft as ArrowLeftIcon, IconCheck as CheckIcon, IconCamera as CameraIcon, IconUserCircle as UserCircleIcon } from "@tabler/icons-react";
+import { ArrowRight, ArrowLeft, Check, Camera, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { completeOnboarding } from "@/app/actions/onboarding";
 import { updatePassword } from "@/app/actions/auth";
@@ -16,6 +17,16 @@ const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+const TOTAL_STEPS = 3;
+
+const labelClass =
+    "text-[11px] font-semibold text-muted-foreground uppercase tracking-wider";
+const eyebrowClass =
+    "text-[11px] font-semibold text-muted-foreground uppercase tracking-wider";
+const stepHeadingClass =
+    "font-display text-3xl md:text-4xl tracking-tight text-foreground";
+const subheadingClass = "text-base text-muted-foreground";
 
 export default function OnboardingFlow() {
     const [step, setStep] = useState(0);
@@ -29,8 +40,6 @@ export default function OnboardingFlow() {
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const totalSteps = 3;
 
     const updateField = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -56,7 +65,6 @@ export default function OnboardingFlow() {
     };
 
     const handleNext = async () => {
-        // Step 1: Set password
         if (step === 1) {
             if (formData.password.length < 8) {
                 toast.error("Password must be at least 8 characters.");
@@ -77,7 +85,6 @@ export default function OnboardingFlow() {
             }
         }
 
-        // Step 2: Name — just validate, save on final step
         if (step === 2) {
             if (!formData.first_name.trim() || !formData.last_name.trim()) {
                 toast.error("Please enter your first and last name.");
@@ -85,13 +92,11 @@ export default function OnboardingFlow() {
             }
         }
 
-        // Step 3: Avatar + complete
         if (step === 3) {
             setIsSubmitting(true);
             try {
                 let avatarUrl: string | null = null;
 
-                // Upload avatar if selected
                 if (avatarFile) {
                     const { data: { user } } = await supabase.auth.getUser();
                     if (user) {
@@ -116,9 +121,7 @@ export default function OnboardingFlow() {
                 const data = new FormData();
                 data.append("first_name", formData.first_name.trim());
                 data.append("last_name", formData.last_name.trim());
-                if (avatarUrl) {
-                    data.append("avatar_url", avatarUrl);
-                }
+                if (avatarUrl) data.append("avatar_url", avatarUrl);
 
                 const res = await completeOnboarding(data);
                 if (res?.error) {
@@ -143,314 +146,255 @@ export default function OnboardingFlow() {
         (step === 2 &&
             (!formData.first_name.trim() || !formData.last_name.trim()));
 
-    const inputClass =
-        "h-14 text-lg bg-white/5 border-white/10 text-white placeholder:text-slate-600 focus:border-primary/50 focus:bg-white/10 transition-all rounded-2xl";
-    const btnLgClass = "bg-white text-black hover:bg-white/90 rounded-full px-8";
-
     return (
-        <div className="min-h-screen bg-black flex flex-col relative overflow-hidden text-white">
-            {/* Progress bar */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-white/5 z-50">
-                {step > 0 && (
-                    <motion.div
-                        className="h-full bg-primary"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(step / totalSteps) * 100}%` }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
-                    />
-                )}
-            </div>
+        <div className="min-h-screen bg-background flex flex-col">
+            <header className="pt-10 pb-6 px-6">
+                <div className="max-w-md mx-auto flex flex-col items-center gap-5">
+                    <Logo width={88} />
+                    {step > 0 && (
+                        <div className="flex items-center gap-2" aria-label="Onboarding progress">
+                            {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((i) => (
+                                <span
+                                    key={i}
+                                    className={cn(
+                                        "h-1 w-10 rounded-full transition-colors",
+                                        i <= step ? "bg-foreground" : "bg-border",
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </header>
 
-            {/* Logo top-left */}
-            <div className="absolute top-6 left-6 z-10">
-                <Logo variant="dark" />
-            </div>
-
-            <div className="flex-1 flex items-center justify-center p-6 relative z-10">
-                <div className="w-full max-w-lg">
+            <main className="flex-1 flex items-start justify-center px-6 pb-16">
+                <div className="w-full max-w-md">
                     <AnimatePresence mode="wait">
-                        {/* Step 0: Welcome */}
                         {step === 0 && (
                             <motion.div
                                 key="welcome"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="text-center space-y-8"
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.3 }}
+                                className="text-center space-y-8 pt-6"
                             >
-                                <div className="space-y-4">
-                                    <p className="text-sm font-semibold text-primary uppercase tracking-widest">
-                                        Welcome aboard
-                                    </p>
-                                    <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight tracking-tight">
+                                <div className="space-y-3">
+                                    <p className={eyebrowClass}>Welcome aboard</p>
+                                    <h1 className="font-display text-4xl md:text-5xl tracking-tight text-foreground">
                                         Let&apos;s get you set up.
                                     </h1>
-                                    <p className="text-lg text-white/50 max-w-md mx-auto leading-relaxed">
+                                    <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
                                         Three quick steps to secure your account and
-                                        personalize your experience.
+                                        personalise your profile.
                                     </p>
                                 </div>
-                                <Button
-                                    size="lg"
-                                    className={cn("h-14 px-10 text-lg", btnLgClass)}
-                                    onClick={() => setStep(1)}
-                                >
-                                    Get Started{" "}
-                                    <ArrowRightIcon className="ml-2 w-5 h-5" />
+                                <Button size="lg" onClick={() => setStep(1)}>
+                                    Get started
+                                    <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
                             </motion.div>
                         )}
 
-                        {/* Step 1: Set password */}
                         {step === 1 && (
                             <motion.div
                                 key="password"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="space-y-10"
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
                             >
-                                <div className="text-center space-y-3">
-                                    <p className="text-sm font-semibold text-primary uppercase tracking-widest">
-                                        Step 1 of 3
-                                    </p>
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Secure your account
-                                    </h2>
-                                    <p className="text-white/50 text-lg">
+                                <div className="text-center space-y-2">
+                                    <p className={eyebrowClass}>Step 1 of 3</p>
+                                    <h2 className={stepHeadingClass}>Secure your account</h2>
+                                    <p className={subheadingClass}>
                                         Set a strong password for your new account.
                                     </p>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                                            New Password
-                                        </label>
-                                        <Input
-                                            type="password"
-                                            placeholder="At least 8 characters"
-                                            value={formData.password}
-                                            onChange={(e) =>
-                                                updateField("password", e.target.value)
-                                            }
-                                            data-no-focus-style className={inputClass}
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                                            Confirm Password
-                                        </label>
-                                        <Input
-                                            type="password"
-                                            placeholder="Repeat your password"
-                                            value={formData.confirmPassword}
-                                            onChange={(e) =>
-                                                updateField("confirmPassword", e.target.value)
-                                            }
-                                            data-no-focus-style className={inputClass}
-                                            onKeyDown={(e) =>
-                                                e.key === "Enter" &&
-                                                !nextDisabled &&
-                                                handleNext()
-                                            }
-                                        />
-                                    </div>
-                                </div>
+                                <Card className="rounded-2xl border bg-card shadow-sm">
+                                    <CardContent className="p-6 space-y-4">
+                                        <div className="space-y-1.5">
+                                            <label className={labelClass}>New password</label>
+                                            <Input
+                                                type="password"
+                                                placeholder="At least 8 characters"
+                                                value={formData.password}
+                                                onChange={(e) => updateField("password", e.target.value)}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className={labelClass}>Confirm password</label>
+                                            <Input
+                                                type="password"
+                                                placeholder="Repeat your password"
+                                                value={formData.confirmPassword}
+                                                onChange={(e) => updateField("confirmPassword", e.target.value)}
+                                                onKeyDown={(e) =>
+                                                    e.key === "Enter" && !nextDisabled && handleNext()
+                                                }
+                                            />
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
                                 <div className="flex items-center justify-between">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setStep(0)}
-                                        className="text-white/40 hover:text-white"
-                                    >
-                                        <ArrowLeftIcon className="mr-2 w-4 h-4" /> Back
+                                    <Button variant="ghost" onClick={() => setStep(0)}>
+                                        <ArrowLeft className="mr-2 w-4 h-4" />
+                                        Back
                                     </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={nextDisabled}
-                                        className={btnLgClass}
-                                    >
-                                        {isSubmitting ? "Saving..." : "Continue"}
-                                        {!isSubmitting && (
-                                            <ArrowRightIcon className="ml-2 w-4 h-4" />
+                                    <Button onClick={handleNext} disabled={nextDisabled}>
+                                        {isSubmitting ? "Saving…" : (
+                                            <>
+                                                Continue
+                                                <ArrowRight className="ml-2 w-4 h-4" />
+                                            </>
                                         )}
                                     </Button>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* Step 2: Name */}
                         {step === 2 && (
                             <motion.div
                                 key="name"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="space-y-10"
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
                             >
-                                <div className="text-center space-y-3">
-                                    <p className="text-sm font-semibold text-primary uppercase tracking-widest">
-                                        Step 2 of 3
-                                    </p>
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        What&apos;s your name?
-                                    </h2>
-                                    <p className="text-white/50 text-lg">
-                                        We&apos;ll use this to personalize your experience.
+                                <div className="text-center space-y-2">
+                                    <p className={eyebrowClass}>Step 2 of 3</p>
+                                    <h2 className={stepHeadingClass}>What&apos;s your name?</h2>
+                                    <p className={subheadingClass}>
+                                        We&apos;ll use this to personalise your experience.
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                                            First Name
-                                        </label>
-                                        <Input
-                                            placeholder="Jane"
-                                            value={formData.first_name}
-                                            onChange={(e) =>
-                                                updateField("first_name", e.target.value)
-                                            }
-                                            data-no-focus-style className={inputClass}
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-semibold text-white/40 uppercase tracking-widest">
-                                            Last Name
-                                        </label>
-                                        <Input
-                                            placeholder="Doe"
-                                            value={formData.last_name}
-                                            onChange={(e) =>
-                                                updateField("last_name", e.target.value)
-                                            }
-                                            data-no-focus-style className={inputClass}
-                                            onKeyDown={(e) =>
-                                                e.key === "Enter" &&
-                                                !nextDisabled &&
-                                                handleNext()
-                                            }
-                                        />
-                                    </div>
-                                </div>
+                                <Card className="rounded-2xl border bg-card shadow-sm">
+                                    <CardContent className="p-6">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className={labelClass}>First name</label>
+                                                <Input
+                                                    placeholder="Jane"
+                                                    value={formData.first_name}
+                                                    onChange={(e) => updateField("first_name", e.target.value)}
+                                                    autoFocus
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className={labelClass}>Last name</label>
+                                                <Input
+                                                    placeholder="Doe"
+                                                    value={formData.last_name}
+                                                    onChange={(e) => updateField("last_name", e.target.value)}
+                                                    onKeyDown={(e) =>
+                                                        e.key === "Enter" && !nextDisabled && handleNext()
+                                                    }
+                                                />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
 
                                 <div className="flex items-center justify-between">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setStep(1)}
-                                        className="text-white/40 hover:text-white"
-                                    >
-                                        <ArrowLeftIcon className="mr-2 w-4 h-4" /> Back
+                                    <Button variant="ghost" onClick={() => setStep(1)}>
+                                        <ArrowLeft className="mr-2 w-4 h-4" />
+                                        Back
                                     </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={nextDisabled}
-                                        className={btnLgClass}
-                                    >
+                                    <Button onClick={handleNext} disabled={nextDisabled}>
                                         Continue
-                                        <ArrowRightIcon className="ml-2 w-4 h-4" />
+                                        <ArrowRight className="ml-2 w-4 h-4" />
                                     </Button>
                                 </div>
                             </motion.div>
                         )}
 
-                        {/* Step 3: Profile Picture */}
                         {step === 3 && (
                             <motion.div
                                 key="avatar"
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.35 }}
-                                className="space-y-10"
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.3 }}
+                                className="space-y-6"
                             >
-                                <div className="text-center space-y-3">
-                                    <p className="text-sm font-semibold text-primary uppercase tracking-widest">
-                                        Step 3 of 3
-                                    </p>
-                                    <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-                                        Add a profile picture
-                                    </h2>
-                                    <p className="text-white/50 text-lg">
-                                        Help your team recognize you. You can skip this
-                                        for now.
+                                <div className="text-center space-y-2">
+                                    <p className={eyebrowClass}>Step 3 of 3</p>
+                                    <h2 className={stepHeadingClass}>Add a profile picture</h2>
+                                    <p className={subheadingClass}>
+                                        Help your team recognise you. You can skip this for now.
                                     </p>
                                 </div>
 
-                                <div className="flex flex-col items-center space-y-6">
-                                    <button
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="relative group w-36 h-36 rounded-full overflow-hidden border-2 border-dashed border-white/20 hover:border-primary/50 transition-all cursor-pointer bg-white/5 flex items-center justify-center"
-                                    >
-                                        {avatarPreview ? (
-                                            <>
-                                                {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded avatar preview, dimensions unknown */}
-                                                <img
-                                                    src={avatarPreview}
-                                                    alt="Avatar preview"
-                                                    className="w-full h-full object-cover"
-                                                />
-                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <CameraIcon className="w-8 h-8 text-white" />
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="flex flex-col items-center space-y-2 text-white/30 group-hover:text-white/50 transition-colors">
-                                                <UserCircleIcon className="w-16 h-16" />
-                                                <span className="text-xs font-medium">
-                                                    Upload
-                                                </span>
-                                            </div>
-                                        )}
-                                    </button>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleAvatarSelect}
-                                        className="hidden"
-                                    />
-                                    {avatarPreview && (
+                                <Card className="rounded-2xl border bg-card shadow-sm">
+                                    <CardContent className="p-6 flex flex-col items-center gap-4">
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setAvatarFile(null);
-                                                setAvatarPreview(null);
-                                            }}
-                                            className="text-sm text-white/30 hover:text-white/60 transition-colors"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className={cn(
+                                                "relative group w-32 h-32 rounded-full overflow-hidden",
+                                                "border-2 border-dashed border-border bg-secondary",
+                                                "hover:border-foreground/40 transition-colors",
+                                                "flex items-center justify-center",
+                                            )}
                                         >
-                                            Remove photo
+                                            {avatarPreview ? (
+                                                <>
+                                                    {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded avatar preview, dimensions unknown */}
+                                                    <img
+                                                        src={avatarPreview}
+                                                        alt="Avatar preview"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                    <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <Camera className="w-7 h-7 text-background" />
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-1.5 text-muted-foreground group-hover:text-foreground/70 transition-colors">
+                                                    <UserCircle className="w-12 h-12" strokeWidth={1.5} />
+                                                    <span className="text-xs font-medium">Upload</span>
+                                                </div>
+                                            )}
                                         </button>
-                                    )}
-                                </div>
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleAvatarSelect}
+                                            className="hidden"
+                                        />
+                                        {avatarPreview && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setAvatarFile(null);
+                                                    setAvatarPreview(null);
+                                                }}
+                                                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                            >
+                                                Remove photo
+                                            </button>
+                                        )}
+                                    </CardContent>
+                                </Card>
 
                                 <div className="flex items-center justify-between">
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => setStep(2)}
-                                        className="text-white/40 hover:text-white"
-                                    >
-                                        <ArrowLeftIcon className="mr-2 w-4 h-4" /> Back
+                                    <Button variant="ghost" onClick={() => setStep(2)}>
+                                        <ArrowLeft className="mr-2 w-4 h-4" />
+                                        Back
                                     </Button>
-                                    <Button
-                                        size="lg"
-                                        onClick={handleNext}
-                                        disabled={isSubmitting}
-                                        className={btnLgClass}
-                                    >
-                                        {isSubmitting
-                                            ? "Setting up..."
-                                            : "Complete Setup"}
-                                        {!isSubmitting && (
-                                            <CheckIcon className="ml-2 w-4 h-4" />
+                                    <Button onClick={handleNext} disabled={isSubmitting}>
+                                        {isSubmitting ? "Setting up…" : (
+                                            <>
+                                                Complete setup
+                                                <Check className="ml-2 w-4 h-4" />
+                                            </>
                                         )}
                                     </Button>
                                 </div>
@@ -458,10 +402,7 @@ export default function OnboardingFlow() {
                         )}
                     </AnimatePresence>
                 </div>
-            </div>
-
-            {/* Background gradient glow */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_bottom_right,rgba(240,90,40,0.08),transparent_50%)] pointer-events-none" />
+            </main>
         </div>
     );
 }
