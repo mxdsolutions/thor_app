@@ -13,7 +13,6 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [role, setRole] = useState<"admin" | "member">("member");
-    const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { data: subData, mutate: mutateSub } = useTenantSubscription();
     const { mutate: mutateGlobal } = useSWRConfig();
@@ -42,21 +41,46 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
     const seatsFull = subData != null && !subData.billing_exempt && available === 0;
     const blocked = noSubscription || seatsFull;
 
-    const handleInvite = async () => {
+    const handleInvite = () => {
         if (!email.trim() || !firstName.trim() || !lastName.trim()) return;
-        setLoading(true);
-        const res = await inviteUser(email.trim(), firstName.trim(), lastName.trim(), role);
-        setLoading(false);
-        if (!res.success) {
-            toast.error(res.error);
-            return;
-        }
-        toast.success(`Invitation sent to ${email}`);
-        // The new pending invite consumes a seat — refresh the usage line —
-        // and shows up as an "Invited" row in the users list.
-        mutateSub();
-        mutateGlobal("/api/users");
+
+        // Capture form values before closing — the open-effect clears state.
+        const captured = {
+            email: email.trim(),
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            role,
+        };
+
+        // Optimistic close. Supabase Auth → Resend SMTP send takes 2–4s
+        // because it's synchronous; toast.promise gives the user immediate
+        // feedback and keeps them productive while the request runs in the
+        // background. If it fails, the toast surfaces the error and they
+        // can re-open the modal to retry.
         onClose();
+
+        toast.promise(
+            (async () => {
+                const res = await inviteUser(
+                    captured.email,
+                    captured.firstName,
+                    captured.lastName,
+                    captured.role,
+                );
+                if (!res.success) throw new Error(res.error);
+                // The new pending invite consumes a seat — refresh the usage
+                // line — and shows up as an "Invited" row in the users list.
+                mutateSub();
+                mutateGlobal("/api/users");
+                return res;
+            })(),
+            {
+                loading: `Sending invitation to ${captured.email}…`,
+                success: `Invitation sent to ${captured.email}`,
+                error: (err) =>
+                    err instanceof Error ? err.message : "Failed to send invitation",
+            },
+        );
     };
 
     return (
@@ -184,14 +208,13 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                             className="flex-1 rounded-xl"
                             onClick={handleInvite}
                             disabled={
-                                loading ||
                                 blocked ||
                                 !email.trim() ||
                                 !firstName.trim() ||
                                 !lastName.trim()
                             }
                         >
-                            {loading ? "Sending..." : "Send Invitation"}
+                            Send Invitation
                         </Button>
                     </div>
                 </div>
