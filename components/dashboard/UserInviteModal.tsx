@@ -30,9 +30,14 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
 
     // null in `usage.available` means unlimited (billing-exempt). 0 means
     // capped and full — block invites and route to the subscription page.
+    // Only block on confirmed state (subData loaded). If subData is undefined
+    // — endpoint failed or still loading — let the user click; the server
+    // action's claim_seat RPC is the real authority and will reject if
+    // there's actually no quota. Otherwise a transient endpoint failure
+    // silently blocks billing-exempt tenants who should always be allowed.
     const available = subData?.usage.available;
-    const noSubscription = subData?.subscription == null && !subData?.billing_exempt;
-    const seatsFull = !subData?.billing_exempt && available === 0;
+    const noSubscription = subData != null && subData.subscription == null && !subData.billing_exempt;
+    const seatsFull = subData != null && !subData.billing_exempt && available === 0;
     const blocked = noSubscription || seatsFull;
 
     const handleInvite = async () => {

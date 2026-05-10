@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { serverError } from "@/app/api/_lib/errors";
-import { getPlans } from "@/lib/plans";
+import { getPlans, type Plan } from "@/lib/plans";
 import { getSeatUsage } from "@/lib/stripe-seats";
 
 export const GET = withAuth(async (_request, { supabase, tenantId }) => {
@@ -16,7 +16,6 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
         return serverError();
     }
 
-    const plans = getPlans();
     const usage = await getSeatUsage(supabase, tenantId);
 
     // `Infinity` doesn't survive JSON.stringify — surface it as null so the
@@ -28,14 +27,25 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
     };
 
     if (tenant?.billing_exempt) {
-        const forged = plans.find((p) => p.id === "forged");
-        if (!forged) return serverError(!forged);
+        // Billing-exempt tenants can't checkout via Stripe, so the response
+        // doesn't strictly need plan/price data. Try to load plans for the
+        // tier display, but degrade gracefully when STRIPE_PRICE_* env vars
+        // aren't configured — otherwise this whole endpoint 500s and the
+        // invite modal silently blocks because subData stays undefined.
+        let plans: Plan[] = [];
+        let stripe_price_id: string | null = null;
+        try {
+            plans = getPlans();
+            stripe_price_id = plans.find((p) => p.id === "forged")?.monthly.price_id ?? null;
+        } catch (e) {
+            console.error("[subscription] Falling back to empty plans for billing-exempt tenant:", e);
+        }
 
         return NextResponse.json({
             subscription: {
                 status: "active" as const,
                 quantity: Math.max(1, usage.used),
-                stripe_price_id: forged.monthly.price_id,
+                stripe_price_id,
                 trial_end: null,
                 current_period_end: null,
                 cancel_at_period_end: false,
@@ -46,6 +56,8 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
             usage: usageJson,
         });
     }
+
+    const plans = getPlans();
 
     const { data: subscription, error } = await supabase
         .from("tenant_subscriptions")
