@@ -111,7 +111,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ tok
             .insert({
                 entity_type: "report",
                 entity_id: row.report_id,
-                action: "submitted_via_share",
+                action: "submitted",
                 changes: {
                     submitted_by_email,
                     submitted_by_name,

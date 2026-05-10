@@ -4,6 +4,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { getCalendarDays, getWeekDays, todayKey } from "@/lib/calendar-utils";
 import type { CalendarDay } from "@/lib/calendar-utils";
 import type { ScheduleEntry } from "./types";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DAY_LABELS_SHORT = ["M", "T", "W", "T", "F", "S", "S"];
@@ -163,18 +164,19 @@ export function CalendarGrid({
                                                     {namedAssignees.length > 0 && (
                                                         <div className="flex -space-x-1">
                                                             {namedAssignees.slice(0, 2).map((a) => (
-                                                                <div
-                                                                    key={a.user.id}
-                                                                    className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-blue-600"
-                                                                    title={a.user.full_name || ""}
-                                                                >
-                                                                    {a.user.full_name!
-                                                                        .split(" ")
-                                                                        .map((w) => w[0])
-                                                                        .join("")
-                                                                        .slice(0, 2)
-                                                                        .toUpperCase()}
-                                                                </div>
+                                                                <EntityPreviewCard key={a.user.id} entityType="user" entityId={a.user.id}>
+                                                                    <div
+                                                                        className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-blue-600"
+                                                                        title={a.user.full_name || ""}
+                                                                    >
+                                                                        {a.user.full_name!
+                                                                            .split(" ")
+                                                                            .map((w) => w[0])
+                                                                            .join("")
+                                                                            .slice(0, 2)
+                                                                            .toUpperCase()}
+                                                                    </div>
+                                                                </EntityPreviewCard>
                                                             ))}
                                                             {namedAssignees.length > 2 && (
                                                                 <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-[9px] text-white/70 ring-1 ring-blue-600">

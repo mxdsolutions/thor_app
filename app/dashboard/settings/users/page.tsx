@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
     tableBase,
     tableHead,
@@ -16,6 +16,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { cn, type AppUser, getInitials, getDisplayName, formatLastActive } from "@/lib/utils";
 import { IconSearch as MagnifyingGlassIcon, IconUserPlus as UserPlusIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { useProfiles } from "@/lib/swr";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
@@ -25,28 +26,16 @@ type UserTab = "all" | "owner" | "admin" | "manager" | "member" | "viewer";
 export default function UsersPage() {
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState<UserTab>("all");
-    const [users, setUsers] = useState<AppUser[]>([]);
-    const [loading, setLoading] = useState(true);
     const [inviteOpen, setInviteOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<AppUser | null>(null);
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/users");
-            if (!res.ok) throw new Error("Failed to fetch users");
-            const data = await res.json();
-            setUsers((data.users || []) as AppUser[]);
-        } catch (err) {
-            console.error(err);
-            toast.error("Could not load users. Please check your Supabase connection.");
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { data, error, isLoading, mutate } = useProfiles();
+    const users: AppUser[] = (data?.users ?? []) as AppUser[];
 
-    useEffect(() => { fetchUsers(); }, []);
+    useEffect(() => {
+        if (error) toast.error("Could not load users. Please check your Supabase connection.");
+    }, [error]);
 
     const filteredUsers = users.filter((user) => {
         const name = getDisplayName(user).toLowerCase();
@@ -65,7 +54,7 @@ export default function UsersPage() {
                 open={isSheetOpen}
                 onOpenChange={setIsSheetOpen}
                 user={selectedUser}
-                onUpdate={fetchUsers}
+                onUpdate={() => { void mutate(); }}
             />
 
             <div className="flex items-center justify-between gap-3 mb-6">
@@ -113,7 +102,7 @@ export default function UsersPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {loading ? (
+                        {isLoading ? (
                             <tr>
                                 <td colSpan={4} className="text-center py-16 text-muted-foreground text-sm">
                                     Loading users...

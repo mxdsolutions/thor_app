@@ -180,6 +180,8 @@ export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: Invo
                         <LinkedEntityCard
                             label="Company"
                             title={data.company.name}
+                            entityType="company"
+                            entityId={data.company.id}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">
                                     {data.company.name[0]}
@@ -192,6 +194,8 @@ export function InvoiceSideSheet({ invoice, open, onOpenChange, onUpdate }: Invo
                         <LinkedEntityCard
                             label="Contact"
                             title={`${data.contact.first_name} ${data.contact.last_name}`}
+                            entityType="contact"
+                            entityId={data.contact.id}
                             icon={
                                 <span className="text-[9px] font-bold text-muted-foreground">
                                     {data.contact.first_name[0]}{data.contact.last_name[0]}

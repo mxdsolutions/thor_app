@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { IconPencil as PencilIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
 import type { ScheduleEntry } from "./types";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 interface DayDetailListProps {
     entries: ScheduleEntry[];
@@ -94,9 +95,11 @@ export function DayDetailList({
                                         </p>
                                         <div className="flex items-center gap-3 mt-1">
                                             {job?.company && (
-                                                <span className="text-xs text-muted-foreground truncate">
-                                                    {job.company.name}
-                                                </span>
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                    <span className="text-xs text-muted-foreground truncate">
+                                                        {job.company.name}
+                                                    </span>
+                                                </EntityPreviewCard>
                                             )}
                                             {entry.notes && (
                                                 <span className="text-xs text-muted-foreground/60 italic truncate">
@@ -118,18 +121,19 @@ export function DayDetailList({
                                         {assignees.length > 0 && (
                                             <div className="flex -space-x-1.5">
                                                 {assignees.slice(0, 3).map((a) => (
-                                                    <div
-                                                        key={a.user.id}
-                                                        className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground ring-2 ring-card"
-                                                        title={a.user.full_name || ""}
-                                                    >
-                                                        {(a.user.full_name || "?")
-                                                            .split(" ")
-                                                            .map((w) => w[0])
-                                                            .join("")
-                                                            .slice(0, 2)
-                                                            .toUpperCase()}
-                                                    </div>
+                                                    <EntityPreviewCard key={a.user.id} entityType="user" entityId={a.user.id}>
+                                                        <div
+                                                            className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-foreground ring-2 ring-card"
+                                                            title={a.user.full_name || ""}
+                                                        >
+                                                            {(a.user.full_name || "?")
+                                                                .split(" ")
+                                                                .map((w) => w[0])
+                                                                .join("")
+                                                                .slice(0, 2)
+                                                                .toUpperCase()}
+                                                        </div>
+                                                    </EntityPreviewCard>
                                                 ))}
                                             </div>
                                         )}

@@ -18,6 +18,7 @@ import { useInvoices, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateInvoiceModal } from "@/components/modals/CreateInvoiceModal";
 import { InvoiceSideSheet } from "@/components/sheets/InvoiceSideSheet";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
 import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 
@@ -47,7 +48,17 @@ type Invoice = {
 
 const columns: DataTableColumn<Invoice>[] = [
     { key: "number", label: "Invoice #", render: (inv) => <span className="font-semibold">{inv.invoice_number || inv.reference || "Draft"}</span> },
-    { key: "company", label: "Company", muted: true, className: "hidden sm:table-cell", render: (inv) => inv.company?.name || "—" },
+    {
+        key: "company",
+        label: "Company",
+        muted: true,
+        className: "hidden sm:table-cell",
+        render: (inv) => inv.company ? (
+            <EntityPreviewCard entityType="company" entityId={inv.company.id}>
+                <span>{inv.company.name}</span>
+            </EntityPreviewCard>
+        ) : "—",
+    },
     {
         key: "status",
         label: "Status",

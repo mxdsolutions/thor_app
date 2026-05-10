@@ -17,7 +17,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
                 id,
                 name
             )
-        `, { count: "exact" })
+        `, { count: "estimated" })
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);

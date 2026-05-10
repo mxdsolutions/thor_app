@@ -148,16 +148,29 @@ export const POST = withAuth(async (request: NextRequest, { supabase, user, tena
     }
 
     // Best-effort activity log — never fail the request because audit failed.
-    await supabase
-        .from("activity_logs")
-        .insert({
+    // Split into two semantic events so the activity feed can show "Link generated"
+    // and (if applicable) "Link sent to <recipient>" as distinct rows.
+    const activityRows: Array<Record<string, unknown>> = [
+        {
             entity_type: "report",
             entity_id: reportId,
-            action: "shared",
-            changes: { recipient_email: recipient_email ?? null, expires_at: expiresAt, email_sent: emailSent },
+            action: "link_generated",
+            changes: { expires_at: expiresAt },
+            performed_by: user.id,
+            tenant_id: tenantId,
+        },
+    ];
+    if (emailSent && recipient_email) {
+        activityRows.push({
+            entity_type: "report",
+            entity_id: reportId,
+            action: "link_sent",
+            changes: { recipient_email, recipient_name: recipient_name ?? null },
             performed_by: user.id,
             tenant_id: tenantId,
         });
+    }
+    await supabase.from("activity_logs").insert(activityRows);
 
     return NextResponse.json(
         {

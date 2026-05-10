@@ -12,7 +12,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 
     let query = supabase
         .from("reports")
-        .select("*, job:jobs(id, job_title, description), project:projects(id, title), company:companies(id, name), creator:profiles!reports_created_by_fkey(id, full_name)", { count: "exact" })
+        .select("*, job:jobs(id, job_title), project:projects(id, title), company:companies(id, name), creator:profiles!reports_created_by_fkey(id, full_name)", { count: "estimated" })
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);

@@ -386,6 +386,8 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                         <LinkedEntityCard
                             label="Job"
                             title={data.job.job_title}
+                            entityType="job"
+                            entityId={data.job.id}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">J</span>
                             }
@@ -406,6 +408,8 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                         <LinkedEntityCard
                             label="Company"
                             title={data.company.name}
+                            entityType="company"
+                            entityId={data.company.id}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">
                                     {data.company.name[0]}

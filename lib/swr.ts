@@ -1,4 +1,4 @@
-import useSWR, { mutate as globalMutate, type SWRConfiguration } from "swr";
+import useSWR, { mutate as globalMutate, preload, type SWRConfiguration } from "swr";
 
 /** Archive scope for any archivable list endpoint. Default is `active`. */
 export type ArchiveScope = "active" | "archived" | "all";
@@ -61,7 +61,7 @@ export function useJobs(offset = 0, limit = 50, archive?: ArchiveScope) {
     params.set("offset", String(offset));
     params.set("limit", String(limit));
     appendArchive(params, archive);
-    return useSWR(`/api/jobs?${params.toString()}`, fetcher, defaultConfig);
+    return useSWR(`/api/jobs?${params.toString()}`, fetcher, { ...defaultConfig, keepPreviousData: true });
 }
 
 export function useScopes() {
@@ -485,6 +485,26 @@ export function useSetupChecklist(enabled = true) {
         fetcher,
         defaultConfig
     );
+}
+
+// --- Entity Preview Hooks ---
+
+export type EntityPreviewType = "contact" | "company" | "job" | "invoice" | "quote" | "user";
+
+/** Lazy-fetched preview metadata for an entity. Used by EntityPreviewCard
+ *  hover/tap surfaces so we only hit the API when a card actually opens. */
+export function useEntityPreview(type: EntityPreviewType | null, id: string | null) {
+    const key = type && id ? `/api/entity-preview/${type}/${id}` : null;
+    return useSWR(key, fetcher, { ...defaultConfig, dedupingInterval: 30000 });
+}
+
+/** Warm the SWR cache for an entity preview ahead of opening the card.
+ *  Called on hover-enter (desktop) or pointer-down (mobile) so the request
+ *  is in flight before the user actually sees the popover render. Subsequent
+ *  hovers within the dedupe window are free. */
+export function preloadEntityPreview(type: EntityPreviewType, id: string): void {
+    if (!type || !id) return;
+    void preload(`/api/entity-preview/${type}/${id}`, fetcher);
 }
 
 export { fetcher };

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
 import { useTenantOptional, usePermissionOptional } from "@/lib/tenant-context";
-import { AnimatePresence, motion } from "framer-motion";
 import {
     LogOut as ArrowRightStartOnRectangleIcon,
     Menu as Bars2Icon,
@@ -41,6 +40,7 @@ import { AssistantProvider } from "@/features/assistant/AssistantContext";
 import { AssistantPanel } from "@/features/assistant/AssistantPanel";
 import { AssistantTrigger } from "@/features/assistant/AssistantTrigger";
 import { AssistantFab } from "@/features/assistant/AssistantFab";
+import { ThorMark } from "@/features/shell/ThorMark";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { RouteGuard } from "@/app/dashboard/RouteGuard";
 import { PageTitleProvider, useCurrentPageTitle } from "@/lib/page-title-context";
@@ -178,6 +178,139 @@ function CreateMenu({ onNavigate, compact = false }: { onNavigate?: () => void; 
     );
 }
 
+// Self-contained: owns its open state and the notifications hook. Toggling
+// the bell or revalidating notifications no longer re-renders the shell.
+function NotificationsBell() {
+    const [open, setOpen] = useState(false);
+    const { notifications, unreadCount, markAllRead, markOneRead, refresh } = useNotifications();
+
+    return (
+        <>
+            <button
+                title="Notifications"
+                aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
+                onClick={() => { setOpen(true); refresh(); }}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors relative"
+            >
+                <BellIcon className="w-[20px] h-[20px]" strokeWidth={2} />
+                {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
+                )}
+            </button>
+            <NotificationSheet
+                open={open}
+                onOpenChange={setOpen}
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkAllRead={markAllRead}
+                onMarkOneRead={markOneRead}
+            />
+        </>
+    );
+}
+
+// Self-contained: owns its open state. The trigger button mounts inline in
+// the mobile header; the backdrop and drawer use position: fixed so they
+// escape the header's bounds. CSS transitions replace framer-motion.
+function MobileMenu({
+    navItems,
+    pathname,
+    displayName,
+    initials,
+    userEmail,
+    onTriggerSignOut,
+}: {
+    navItems: NavItem[];
+    pathname: string;
+    displayName: string;
+    initials: string;
+    userEmail: string;
+    onTriggerSignOut: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const close = () => setOpen(false);
+
+    return (
+        <>
+            <div className="w-10">
+                <button
+                    onClick={() => setOpen(true)}
+                    className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                    aria-label="Open menu"
+                >
+                    <Bars2Icon className="w-5 h-5" strokeWidth={2} />
+                </button>
+            </div>
+
+            {/* Backdrop */}
+            <div
+                className={cn(
+                    "fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-200",
+                    open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+                )}
+                onClick={close}
+                aria-hidden={!open}
+            />
+
+            {/* Drawer */}
+            <aside
+                style={{ width: "80%" }}
+                className={cn(
+                    "fixed inset-y-0 left-0 bg-foreground z-50 md:hidden flex flex-col shadow-2xl transition-transform duration-300 ease-out",
+                    open ? "translate-x-0" : "-translate-x-full",
+                )}
+                aria-hidden={!open}
+            >
+                <div className="flex flex-col px-5 pt-5 pb-4 gap-0">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-col min-w-0 leading-tight flex-1">
+                            <span style={{ fontSize: 40, lineHeight: 1 }} className="font-paladins tracking-[0.08em] text-white">
+                                THOR<span className="font-sans text-[0.55em] font-semibold ml-[0.2em] align-super text-white/70">™</span>
+                            </span>
+                        </div>
+                        <button
+                            onClick={close}
+                            className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60"
+                            aria-label="Close menu"
+                        >
+                            <XMarkIcon className="w-5 h-5" strokeWidth={2} />
+                        </button>
+                    </div>
+                    <div className="mt-4 w-full">
+                        <CreateMenu onNavigate={close} />
+                    </div>
+                </div>
+
+                <nav className="flex-1 px-3 overflow-y-auto pt-0 pb-4">
+                    <SidebarNav items={navItems} pathname={pathname} onNavigate={close} />
+                    <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
+                        <Link
+                            href="/dashboard/settings/settings"
+                            onClick={close}
+                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+                                <span className="text-xs font-semibold text-white tracking-wide">{initials}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[13px] font-medium text-white truncate">{displayName}</p>
+                                <p className="text-[11px] text-white/40 truncate">{userEmail}</p>
+                            </div>
+                        </Link>
+                        <button
+                            onClick={() => { close(); onTriggerSignOut(); }}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors w-full"
+                        >
+                            <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
+                            Sign out
+                        </button>
+                    </div>
+                </nav>
+            </aside>
+        </>
+    );
+}
+
 export function DashboardShell(props: { children: React.ReactNode; showPlatformAdminLink?: boolean }) {
     return (
         <AssistantProvider>
@@ -188,32 +321,35 @@ export function DashboardShell(props: { children: React.ReactNode; showPlatformA
 
 function DashboardShellInner({ children, showPlatformAdminLink = false }: { children: React.ReactNode; showPlatformAdminLink?: boolean }) {
     const pathname = usePathname();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [notifOpen, setNotifOpen] = useState(false);
+    // signOut has triggers in both the desktop sidebar and the mobile drawer,
+    // so keep its state at the shell. Other toggles live in their own components.
     const [signOutOpen, setSignOutOpen] = useState(false);
 
     const tenant = useTenantOptional();
     const hasSettingsAccess = usePermissionOptional("settings", "read", true);
 
     const { initials, displayName, email: userEmail } = useUserProfile();
-    const { notifications, unreadCount, markAllRead, markOneRead, refresh: refreshNotifs } = useNotifications();
 
     const { data: modulesData } = useTenantModules();
-    const enabledModules = buildEnabledSet(modulesData?.modules ?? []);
+    const modulesList = modulesData?.modules;
     const modulesLoaded = !!modulesData;
-
-    const baseNavItems = buildNavItems({ enabledModules, modulesLoaded });
     const permissions = tenant?.permissions;
     const role = tenant?.role;
-    const visibleNavItems = baseNavItems.filter((item) => {
-        if (!item.permissionKey) return true;
-        if (!tenant) return true;
-        if (role === "owner") return true;
-        return permissions?.[item.permissionKey]?.read === true;
-    });
-    const navItems: NavItem[] = hasSettingsAccess
-        ? [...visibleNavItems, { href: ROUTES.SETTINGS_USERS, label: "Settings", icon: CogIcon, matchPrefix: "/dashboard/settings" }]
-        : visibleNavItems;
+
+    const enabledModules = useMemo(() => buildEnabledSet(modulesList ?? []), [modulesList]);
+
+    const navItems = useMemo<NavItem[]>(() => {
+        const baseNavItems = buildNavItems({ enabledModules, modulesLoaded });
+        const visibleNavItems = baseNavItems.filter((item) => {
+            if (!item.permissionKey) return true;
+            if (!tenant) return true;
+            if (role === "owner") return true;
+            return permissions?.[item.permissionKey]?.read === true;
+        });
+        return hasSettingsAccess
+            ? [...visibleNavItems, { href: ROUTES.SETTINGS_USERS, label: "Settings", icon: CogIcon, matchPrefix: "/dashboard/settings" }]
+            : visibleNavItems;
+    }, [enabledModules, modulesLoaded, tenant, role, permissions, hasSettingsAccess]);
 
     const tenantLabel = tenant?.company_name || tenant?.name;
 
@@ -227,9 +363,10 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
                 <aside className="w-[64px] bg-foreground hidden md:flex flex-col shrink-0 border-r border-white/10">
                     <Link
                         href="/dashboard/overview"
-                        className="flex items-center justify-center h-14 shrink-0"
+                        className="flex items-center justify-center h-14 shrink-0 p-1"
+                        aria-label="THOR home"
                     >
-                        <span className="font-paladins text-[14px] tracking-[0.08em] text-white leading-none">THOR</span>
+                        <ThorMark size={32} surface="dark" className="pr-[2px]" />
                     </Link>
                     <div className="px-3 pb-3">
                         <CreateMenu compact />
@@ -257,75 +394,6 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
                     </div>
                 </aside>
 
-                {/* Mobile Sidebar Overlay */}
-                <AnimatePresence>
-                    {mobileMenuOpen && (
-                        <>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="fixed inset-0 bg-foreground/40 backdrop-blur-sm z-40 md:hidden"
-                                onClick={() => setMobileMenuOpen(false)}
-                            />
-                            <motion.aside
-                                initial={{ x: "-100%" }}
-                                animate={{ x: 0 }}
-                                exit={{ x: "-100%" }}
-                                transition={{ type: "spring", damping: 28, stiffness: 300 }}
-                                style={{ width: "80%" }}
-                                className="fixed inset-y-0 left-0 bg-foreground z-50 md:hidden flex flex-col shadow-2xl"
-                            >
-                                <div className="flex flex-col px-5 pt-5 pb-4 gap-0">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex flex-col min-w-0 leading-tight flex-1">
-                                            <span style={{ fontSize: 40, lineHeight: 1 }} className="font-paladins tracking-[0.08em] text-white">
-                                                THOR<span className="font-sans text-[0.55em] font-semibold ml-[0.2em] align-super text-white/70">™</span>
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="shrink-0 p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60"
-                                        >
-                                            <XMarkIcon className="w-5 h-5" strokeWidth={2} />
-                                        </button>
-                                    </div>
-                                    <div className="mt-4 w-full">
-                                        <CreateMenu onNavigate={() => setMobileMenuOpen(false)} />
-                                    </div>
-                                </div>
-
-                                <nav className="flex-1 px-3 overflow-y-auto pt-0 pb-4">
-                                    <SidebarNav items={navItems} pathname={pathname} onNavigate={() => setMobileMenuOpen(false)} />
-                                    <div className="mt-4 pt-4 border-t border-white/10 space-y-0.5">
-                                        <Link
-                                            href="/dashboard/settings/settings"
-                                            onClick={() => setMobileMenuOpen(false)}
-                                            className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/[0.06] transition-colors cursor-pointer"
-                                        >
-                                            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                                                <span className="text-xs font-semibold text-white tracking-wide">{initials}</span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[13px] font-medium text-white truncate">{displayName}</p>
-                                                <p className="text-[11px] text-white/40 truncate">{userEmail}</p>
-                                            </div>
-                                        </Link>
-                                        <button
-                                            onClick={() => { setMobileMenuOpen(false); setSignOutOpen(true); }}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[15px] font-medium text-white/60 hover:text-white hover:bg-white/[0.06] transition-colors w-full"
-                                        >
-                                            <ArrowRightStartOnRectangleIcon className="w-[18px] h-[18px] shrink-0" strokeWidth={2} />
-                                            Sign out
-                                        </button>
-                                    </div>
-                                </nav>
-                            </motion.aside>
-                        </>
-                    )}
-                </AnimatePresence>
-
                 {/* Right column — header + (main + AI panel) */}
                 <div className="flex-1 min-w-0 flex flex-col bg-background">
 
@@ -346,17 +414,7 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
                                 </Link>
                             )}
                             {tenant?.role === "owner" && <SetupChecklist />}
-                            <button
-                                title="Notifications"
-                                aria-label={unreadCount > 0 ? `Notifications (${unreadCount} unread)` : "Notifications"}
-                                onClick={() => { setNotifOpen(true); refreshNotifs(); }}
-                                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors relative"
-                            >
-                                <BellIcon className="w-[20px] h-[20px]" strokeWidth={2} />
-                                {unreadCount > 0 && (
-                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-background" />
-                                )}
-                            </button>
+                            <NotificationsBell />
                             <Link
                                 href={ROUTES.CRM_EMAILS}
                                 title="Emails"
@@ -376,15 +434,14 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
                                 {/* Mobile header */}
                                 {!pathname.startsWith("/dashboard/jobs/") && (
                                     <header className="md:hidden h-16 border-b border-border flex items-center px-4 sticky top-0 z-20 bg-background shrink-0">
-                                        <div className="w-10">
-                                            <button
-                                                onClick={() => setMobileMenuOpen(true)}
-                                                className="p-2 rounded-lg hover:bg-secondary transition-colors"
-                                                aria-label="Open menu"
-                                            >
-                                                <Bars2Icon className="w-5 h-5" strokeWidth={2} />
-                                            </button>
-                                        </div>
+                                        <MobileMenu
+                                            navItems={navItems}
+                                            pathname={pathname}
+                                            displayName={displayName}
+                                            initials={initials}
+                                            userEmail={userEmail}
+                                            onTriggerSignOut={() => setSignOutOpen(true)}
+                                        />
                                         <div className="flex-1 text-center">
                                             <PageTitle className="font-statement font-extrabold tracking-tight text-lg text-foreground" />
                                         </div>
@@ -404,14 +461,6 @@ function DashboardShellInner({ children, showPlatformAdminLink = false }: { chil
 
                 <AssistantFab />
 
-                <NotificationSheet
-                    open={notifOpen}
-                    onOpenChange={setNotifOpen}
-                    notifications={notifications}
-                    unreadCount={unreadCount}
-                    onMarkAllRead={markAllRead}
-                    onMarkOneRead={markOneRead}
-                />
                 <SignOutDialog open={signOutOpen} onOpenChange={setSignOutOpen} />
             </div>
         </TooltipPrimitive.Provider>

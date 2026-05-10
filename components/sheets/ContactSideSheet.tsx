@@ -143,6 +143,8 @@ export function ContactSideSheet({ contact, open, onOpenChange, onUpdate }: Cont
                         <LinkedEntityCard
                             label="Company"
                             title={data.company.name}
+                            entityType="company"
+                            entityId={data.company.id}
                             icon={
                                 <span className="text-[10px] font-bold text-muted-foreground">
                                     {data.company.name[0]}

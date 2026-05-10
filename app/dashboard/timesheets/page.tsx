@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
+import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
@@ -23,6 +24,7 @@ import { TimesheetSideSheet, type TimesheetSideSheetItem } from "@/components/sh
 import { useTimesheets, useProfiles, type ArchiveScope } from "@/lib/swr";
 import { useDebouncedValue } from "@/lib/hooks/use-debounce";
 import { formatDuration } from "@/lib/utils";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type TimesheetUser = {
     id: string;
@@ -69,24 +71,29 @@ const columns: DataTableColumn<TimesheetRow>[] = [
         label: "Employee",
         render: (row) => {
             const name = row.user?.full_name || row.user?.email || "Unknown";
-            return (
+            const inner = (
                 <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
+                    <div className="hidden sm:flex w-9 h-9 rounded-full bg-secondary items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
                         {initials(row.user)}
                     </div>
                     <span className="font-semibold truncate">{name}</span>
                 </div>
             );
+            return row.user?.id ? (
+                <EntityPreviewCard entityType="user" entityId={row.user.id}>{inner}</EntityPreviewCard>
+            ) : inner;
         },
     },
     {
         key: "job",
         label: "Job",
         render: (row) => row.job ? (
-            <span className="truncate">
-                {row.job.job_title}
-                {row.job.reference_id ? <span className="text-muted-foreground"> · {row.job.reference_id}</span> : null}
-            </span>
+            <EntityPreviewCard entityType="job" entityId={row.job.id}>
+                <span className="truncate">
+                    {row.job.job_title}
+                    {row.job.reference_id ? <span className="text-muted-foreground"> · {row.job.reference_id}</span> : null}
+                </span>
+            </EntityPreviewCard>
         ) : <span className="text-muted-foreground">—</span>,
     },
     {
@@ -161,36 +168,38 @@ export default function TimesheetsPage() {
                                 <div className="relative flex-1 min-w-0 md:min-w-[280px] md:max-w-md">
                                     <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                                     <Input
-                                        placeholder="Search notes..."
+                                        placeholder="Search timesheets..."
                                         className="pl-9 rounded-xl border-border/50"
                                         value={search}
                                         onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                                     />
                                 </div>
-                                <Select value={employeeFilter} onValueChange={(v) => { setEmployeeFilter(v); setPage(0); }}>
-                                    <SelectTrigger className="w-[180px]">
-                                        <SelectValue placeholder="Employee" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All employees</SelectItem>
-                                        <SelectItem value="me">Me</SelectItem>
-                                        {employees.map((u) => (
-                                            <SelectItem key={u.id} value={u.id}>
-                                                {u.user_metadata?.full_name || u.email || u.id}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Select value={archiveScope} onValueChange={(v) => { setArchiveScope(v as ArchiveScope); setPage(0); }}>
-                                    <SelectTrigger className="w-[140px]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="archived">Archived</SelectItem>
-                                        <SelectItem value="all">All</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <MobileFilters>
+                                    <Select value={employeeFilter} onValueChange={(v) => { setEmployeeFilter(v); setPage(0); }}>
+                                        <SelectTrigger className="w-[180px]">
+                                            <SelectValue placeholder="Employee" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All employees</SelectItem>
+                                            <SelectItem value="me">Me</SelectItem>
+                                            {employees.map((u) => (
+                                                <SelectItem key={u.id} value={u.id}>
+                                                    {u.user_metadata?.full_name || u.email || u.id}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Select value={archiveScope} onValueChange={(v) => { setArchiveScope(v as ArchiveScope); setPage(0); }}>
+                                        <SelectTrigger className="w-[140px]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="archived">Archived</SelectItem>
+                                            <SelectItem value="all">All</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </MobileFilters>
                             </div>
                             <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setShowCreate(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />

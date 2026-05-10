@@ -4,10 +4,14 @@ import { useState, useEffect, useCallback } from "react";
 import { cn, timeAgo } from "@/lib/utils";
 import { toast } from "sonner";
 
+type FieldDiff = { old: unknown; new: unknown };
+
 type Activity = {
     id: string;
     action: string;
-    changes: Record<string, { old: unknown; new: unknown }> | null;
+    // Default trigger-driven events use { field: { old, new } }; custom semantic
+    // events (link_sent, submitted, link_bounced) carry flat metadata instead.
+    changes: Record<string, unknown> | null;
     created_at: string;
     entity_type?: string;
     entity_id?: string;
@@ -29,6 +33,12 @@ const actionConfig: Record<string, { label: string; color: string; icon: string 
     status_changed: { label: "Status changed", color: "bg-amber-500", icon: "→" },
     stage_changed: { label: "Stage changed", color: "bg-indigo-500", icon: "→" },
     note_added: { label: "Note added", color: "bg-violet-500", icon: "✎" },
+    archived: { label: "Archived", color: "bg-zinc-500", icon: "⊘" },
+    restored: { label: "Restored", color: "bg-emerald-500", icon: "↺" },
+    link_generated: { label: "Link generated", color: "bg-sky-500", icon: "↗" },
+    link_sent: { label: "Link sent", color: "bg-sky-500", icon: "✉" },
+    link_bounced: { label: "Link bounced", color: "bg-rose-500", icon: "!" },
+    submitted: { label: "Submitted", color: "bg-emerald-500", icon: "✓" },
 };
 
 // Maps trigger entity_type values to human labels for the prefix shown when an
@@ -57,7 +67,80 @@ function formatValue(val: unknown): string {
     if (typeof val === "string") {
         return val.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
     }
-    return JSON.stringify(val);
+    if (Array.isArray(val)) return `[${val.length} items]`;
+    const s = JSON.stringify(val);
+    return s.length > 60 ? "(updated)" : s;
+}
+
+function isFieldDiff(v: unknown): v is FieldDiff {
+    return typeof v === "object" && v !== null && ("old" in v || "new" in v);
+}
+
+// External submissions have performed_by=null. Fall back to the submitter
+// metadata carried in `changes` so the row reads "by Alice" not "by System".
+function performerLabel(activity: Activity): string {
+    if (activity.performer?.full_name) return activity.performer.full_name;
+    const c = activity.changes ?? {};
+    if (activity.action === "submitted") {
+        if (typeof c.submitted_by_name === "string" && c.submitted_by_name) return c.submitted_by_name;
+        if (typeof c.submitted_by_email === "string" && c.submitted_by_email) return c.submitted_by_email;
+    }
+    return "System";
+}
+
+function renderActionDetail(activity: Activity) {
+    const c = activity.changes ?? {};
+
+    if (activity.action === "link_sent" || activity.action === "link_bounced") {
+        const email = typeof c.recipient_email === "string" ? c.recipient_email : null;
+        const name = typeof c.recipient_name === "string" && c.recipient_name ? c.recipient_name : null;
+        const display = name && email ? `${name} <${email}>` : (email ?? name);
+        if (!display) return null;
+        return (
+            <div className="mt-1.5 text-[11px] text-muted-foreground">
+                <span className="text-foreground/80">{display}</span>
+            </div>
+        );
+    }
+
+    if (activity.action === "status_changed") {
+        const status = c.status;
+        if (!isFieldDiff(status)) return null;
+        return (
+            <div className="mt-1.5 text-[11px] text-muted-foreground">
+                <span className="line-through text-muted-foreground/50">{formatValue(status.old)}</span>
+                {" → "}
+                <span className="text-foreground/80">{formatValue(status.new)}</span>
+            </div>
+        );
+    }
+
+    // submitted, link_generated, archived, restored, updated, created — no detail line.
+    if ([
+        "submitted", "link_generated", "archived", "restored", "updated", "created", "deleted",
+    ].includes(activity.action)) {
+        return null;
+    }
+
+    // Default: render trigger-style { field: { old, new } } diffs.
+    const entries = Object.entries(c).filter(([, v]) => isFieldDiff(v)) as Array<[string, FieldDiff]>;
+    if (entries.length === 0) return null;
+    return (
+        <div className="mt-1.5 space-y-1">
+            {entries.map(([field, change]) => (
+                <div key={field} className="text-[11px] text-muted-foreground">
+                    <span className="font-medium">{formatFieldName(field)}</span>{" "}
+                    {change.old != null && (
+                        <>
+                            <span className="line-through text-muted-foreground/50">{formatValue(change.old)}</span>
+                            {" → "}
+                        </>
+                    )}
+                    <span className="text-foreground/80">{formatValue(change.new)}</span>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps) {
@@ -151,31 +234,14 @@ export function ActivityTimeline({ entityType, entityId }: ActivityTimelineProps
                                         {config.label}
                                     </span>
                                     <span className="text-[11px] text-muted-foreground">
-                                        by {activity.performer?.full_name || "System"}
+                                        by {performerLabel(activity)}
                                     </span>
                                     <span className="text-[10px] text-muted-foreground/50 ml-auto shrink-0">
                                         {timeAgo(activity.created_at)}
                                     </span>
                                 </div>
 
-                                {/* Show changes */}
-                                {activity.changes && Object.keys(activity.changes).length > 0 && (
-                                    <div className="mt-1.5 space-y-1">
-                                        {Object.entries(activity.changes).map(([field, change]) => (
-                                            <div key={field} className="text-[11px] text-muted-foreground">
-                                                <span className="font-medium">{formatFieldName(field)}</span>
-                                                {" "}
-                                                {change.old != null && (
-                                                    <>
-                                                        <span className="line-through text-muted-foreground/50">{formatValue(change.old)}</span>
-                                                        {" → "}
-                                                    </>
-                                                )}
-                                                <span className="text-foreground/80">{formatValue(change.new)}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                {renderActionDetail(activity)}
                             </div>
                         </div>
                     );

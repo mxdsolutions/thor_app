@@ -19,6 +19,7 @@ import { useQuotes, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";
 import { QuoteSideSheet } from "@/components/sheets/QuoteSideSheet";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
 import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
 
@@ -45,7 +46,17 @@ type Quote = {
 
 const columns: DataTableColumn<Quote>[] = [
     { key: "title", label: "Title", render: (q) => <span className="font-semibold">{q.title}</span> },
-    { key: "contact", label: "Contact", muted: true, className: "hidden sm:table-cell", render: (q) => q.contact ? `${q.contact.first_name} ${q.contact.last_name}` : "—" },
+    {
+        key: "contact",
+        label: "Contact",
+        muted: true,
+        className: "hidden sm:table-cell",
+        render: (q) => q.contact ? (
+            <EntityPreviewCard entityType="contact" entityId={q.contact.id}>
+                <span>{q.contact.first_name} {q.contact.last_name}</span>
+            </EntityPreviewCard>
+        ) : "—",
+    },
     {
         key: "status",
         label: "Status",

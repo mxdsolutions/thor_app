@@ -116,6 +116,40 @@ export async function POST(request: NextRequest) {
                 last_payload: event.data,
             });
         }
+
+        // Tie the bounce/complaint back to any recently-sent report share links
+        // for the same recipient. We can't carry email_id through Resend, so the
+        // best signal we have is "most recent send to this address".
+        if (reason === "bounced" || reason === "complained") {
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+            const { data: recentTokens } = await supabase
+                .from("report_share_tokens")
+                .select("report_id, tenant_id, email_sent_at")
+                .eq("recipient_email", email)
+                .not("email_sent_at", "is", null)
+                .gte("email_sent_at", sevenDaysAgo)
+                .order("email_sent_at", { ascending: false })
+                .limit(5);
+
+            const seen = new Set<string>();
+            const rows = (recentTokens ?? []).flatMap((t) => {
+                const key = `${t.tenant_id}:${t.report_id}`;
+                if (seen.has(key)) return [];
+                seen.add(key);
+                return [{
+                    entity_type: "report",
+                    entity_id: t.report_id,
+                    action: "link_bounced",
+                    changes: { recipient_email: email, reason },
+                    performed_by: null,
+                    tenant_id: t.tenant_id,
+                }];
+            });
+
+            if (rows.length > 0) {
+                await supabase.from("activity_logs").insert(rows);
+            }
+        }
     }
 
     return new NextResponse(null, { status: 200 });

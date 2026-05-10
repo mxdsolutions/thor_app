@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { useArchiveAction } from "./use-archive-action";
-import { Input } from "@/components/ui/input";
 import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
 import { IconClock as ClockIcon } from "@tabler/icons-react";
 import { toast } from "sonner";
 import { useJobOptions, refreshTimesheetCache } from "@/lib/swr";
-import { combineDateTime, formatDuration } from "@/lib/utils";
+import { cn, combineDateTime, formatDuration } from "@/lib/utils";
+
+const inlineFieldChrome =
+    "text-[15px] text-foreground bg-muted/40 border border-border rounded-lg py-1.5 px-2.5 " +
+    "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:ring-offset-background transition-shadow";
 
 export type TimesheetSideSheetItem = {
     id: string;
@@ -155,12 +158,12 @@ export function TimesheetSideSheet({ timesheet, open, onOpenChange, onUpdate }: 
                             options={jobOptions}
                             placeholder="Search jobs..."
                             entityType="job"
-                            className="max-w-xs"
+                            className="w-full sm:max-w-[260px]"
                         />
                     </Field>
 
                     <Field label="Date">
-                        <Input
+                        <input
                             type="date"
                             defaultValue={start.date}
                             onBlur={(e) => {
@@ -168,19 +171,19 @@ export function TimesheetSideSheet({ timesheet, open, onOpenChange, onUpdate }: 
                                 if (v && v !== start.date) saveBoundary("start", v, start.time);
                                 if (data.end_at && v && v !== end.date) saveBoundary("end", v, end.time);
                             }}
-                            className="rounded-lg max-w-xs"
+                            className={cn(inlineFieldChrome, "w-[140px]")}
                         />
                     </Field>
 
                     <Field label="Start">
-                        <Input
+                        <input
                             type="time"
                             defaultValue={start.time}
                             onBlur={(e) => {
                                 const v = e.target.value;
                                 if (v && v !== start.time) saveBoundary("start", start.date, v);
                             }}
-                            className="rounded-lg max-w-xs"
+                            className={cn(inlineFieldChrome, "w-[110px]")}
                         />
                     </Field>
 
@@ -188,20 +191,20 @@ export function TimesheetSideSheet({ timesheet, open, onOpenChange, onUpdate }: 
                         {running ? (
                             <span className="text-sm text-emerald-600 font-medium">Running</span>
                         ) : (
-                            <Input
+                            <input
                                 type="time"
                                 defaultValue={end.time}
                                 onBlur={(e) => {
                                     const v = e.target.value;
                                     if (v && v !== end.time) saveBoundary("end", end.date, v);
                                 }}
-                                className="rounded-lg max-w-xs"
+                                className={cn(inlineFieldChrome, "w-[110px]")}
                             />
                         )}
                     </Field>
 
                     <Field label="Source">
-                        <span className="text-sm text-muted-foreground capitalize pt-2">{data.source}</span>
+                        <span className="text-sm text-muted-foreground capitalize">{data.source}</span>
                     </Field>
 
                     <Field label="Notes">
@@ -212,7 +215,7 @@ export function TimesheetSideSheet({ timesheet, open, onOpenChange, onUpdate }: 
                                 const v = e.target.value.trim() || null;
                                 if (v !== (data.notes ?? null)) void patch({ notes: v });
                             }}
-                            className="w-full max-w-md rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                            className={cn(inlineFieldChrome, "w-full resize-none")}
                         />
                     </Field>
                 </div>
@@ -224,7 +227,7 @@ export function TimesheetSideSheet({ timesheet, open, onOpenChange, onUpdate }: 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
     return (
         <div className="flex items-start justify-between gap-4">
-            <span className="text-sm font-medium text-muted-foreground shrink-0 pt-2">{label}</span>
+            <span className="text-sm font-medium text-muted-foreground shrink-0 pt-1.5">{label}</span>
             <div className="flex-1 flex justify-end">{children}</div>
         </div>
     );

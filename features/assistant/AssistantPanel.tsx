@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Send, RefreshCw, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -102,31 +101,31 @@ export function AssistantPanel() {
     };
 
     return (
-        <AnimatePresence initial={false}>
-            {open && (
-                <>
-                    {/* Backdrop — mobile only (taps dismiss) */}
-                    <motion.div
-                        key="assistant-backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        onClick={() => setOpen(false)}
-                        className="md:hidden fixed inset-0 z-30 bg-foreground/40 backdrop-blur-sm"
-                    />
+        <>
+            {/* Backdrop — mobile only (taps dismiss) */}
+            <div
+                onClick={() => setOpen(false)}
+                aria-hidden={!open}
+                className={cn(
+                    "md:hidden fixed inset-0 z-30 bg-foreground/40 backdrop-blur-sm transition-opacity duration-200",
+                    open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+                )}
+            />
 
-                    {/* Panel — fixed overlay below xl, inline flex item at xl+ */}
-                    <motion.aside
-                        key="assistant-panel"
-                        initial={{ width: 0 }}
-                        animate={{ width: "var(--assistant-w)" }}
-                        exit={{ width: 0 }}
-                        transition={{ type: "spring", damping: 30, stiffness: 280 }}
-                        style={{ ["--assistant-w" as string]: "min(100vw, 420px)" }}
-                        className="fixed inset-y-0 right-0 z-40 overflow-hidden bg-background border-l border-border shadow-2xl xl:static xl:inset-auto xl:z-auto xl:shadow-none xl:shrink-0 xl:bg-secondary xl:border-l-0 xl:rounded-[12px] xl:m-3"
-                    >
-                        <div className="h-full flex flex-col" style={{ width: "min(100vw, 420px)" }}>
+            {/* Panel — fixed overlay below xl (translate-x slide), inline flex item at xl+ (width transition) */}
+            <aside
+                aria-hidden={!open}
+                className={cn(
+                    "fixed inset-y-0 right-0 z-40 overflow-hidden bg-background border-l border-border shadow-2xl",
+                    "w-[min(100vw,420px)]",
+                    "transition-transform duration-300 ease-out",
+                    open ? "translate-x-0" : "translate-x-full",
+                    "xl:static xl:inset-auto xl:z-auto xl:shadow-none xl:bg-secondary xl:border-l-0 xl:rounded-[12px]",
+                    "xl:translate-x-0 xl:transition-[width,margin] xl:duration-300",
+                    open ? "xl:w-[420px] xl:m-3 xl:shrink-0" : "xl:w-0 xl:m-0",
+                )}
+            >
+                <div className="h-full flex flex-col" style={{ width: "min(100vw, 420px)" }}>
                         <header className="h-14 px-5 flex items-center justify-center shrink-0 relative">
                             <p className="font-paladins text-[24px] tracking-[0.08em] text-foreground leading-none">
                                 THOR<span className="font-sans text-[0.4em] font-semibold ml-[0.25em] align-super text-foreground/70 mt-[-2px] inline-block">AI</span>
@@ -211,11 +210,9 @@ export function AssistantPanel() {
                                 </button>
                             </div>
                         </form>
-                        </div>
-                    </motion.aside>
-                </>
-            )}
-        </AnimatePresence>
+                </div>
+            </aside>
+        </>
     );
 }
 

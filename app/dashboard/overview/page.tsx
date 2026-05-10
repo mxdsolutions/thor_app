@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { usePageTitle } from "@/lib/page-title-context";
@@ -20,10 +19,10 @@ import { IconSearch as MagnifyingGlassIcon } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { fadeInUp } from "@/lib/motion";
 import { useMyTasks, useJobs, useScheduleEntries, useOverviewMetrics } from "@/lib/swr";
 import { MetricsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { useUserProfile } from "@/features/shell/use-user-profile";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Appointment = {
     id: string;
@@ -236,7 +235,9 @@ export default function OverviewPage() {
                                     <tr key={job.id} className={tableRow + " group"}>
                                         <td className={tableCell + " pl-4 pr-4"}>
                                             <div className="flex flex-col min-w-0">
-                                                <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
+                                                <EntityPreviewCard entityType="job" entityId={job.id}>
+                                                    <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
+                                                </EntityPreviewCard>
                                                 <span className="text-[10px] text-muted-foreground truncate sm:hidden">
                                                     {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "")}
                                                 </span>
@@ -246,12 +247,31 @@ export default function OverviewPage() {
                                             </div>
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[140px]"}>
-                                            {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "—")}
+                                            {job.contact ? (
+                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id}>
+                                                    <span>{job.contact.first_name} {job.contact.last_name}</span>
+                                                </EntityPreviewCard>
+                                            ) : job.company ? (
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                    <span>{job.company.name}</span>
+                                                </EntityPreviewCard>
+                                            ) : "—"}
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[160px]"}>
                                             {job.assignees.length === 0
                                                 ? "Unassigned"
-                                                : job.assignees.map(a => a.full_name || a.email || "—").join(", ")}
+                                                : (
+                                                    <span className="inline-flex flex-wrap gap-x-1">
+                                                        {job.assignees.map((a, i) => (
+                                                            <span key={a.id}>
+                                                                <EntityPreviewCard entityType="user" entityId={a.id}>
+                                                                    <span>{a.full_name || a.email || "—"}</span>
+                                                                </EntityPreviewCard>
+                                                                {i < job.assignees.length - 1 && <span>, </span>}
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                )}
                                         </td>
                                         <td className={tableCell + " px-4 hidden sm:table-cell"}>
                                             <div className="flex items-center gap-2">
@@ -349,22 +369,28 @@ export default function OverviewPage() {
                     <div className="px-4 py-8 text-center text-sm text-muted-foreground">No active jobs.</div>
                 ) : (
                     activeJobs.slice(0, 6).map((job) => {
-                        const customer = job.contact
-                            ? `${job.contact.first_name} ${job.contact.last_name}`
-                            : job.company?.name || null;
+                        const customerEntity = job.contact
+                            ? { type: "contact" as const, id: job.contact.id, label: `${job.contact.first_name} ${job.contact.last_name}` }
+                            : job.company
+                                ? { type: "company" as const, id: job.company.id, label: job.company.name }
+                                : null;
                         return (
                             <div key={job.id} className="px-4 py-3 hover:bg-muted/30 transition-colors">
                                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                                    <span className="font-medium text-sm truncate">{job.job_title}</span>
+                                    <EntityPreviewCard entityType="job" entityId={job.id}>
+                                        <span className="font-medium text-sm truncate">{job.job_title}</span>
+                                    </EntityPreviewCard>
                                     <span className="text-xs font-semibold tabular-nums shrink-0">${job.amount.toLocaleString()}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", getJobStatusDot(job.status))} />
                                     <span className="capitalize truncate">{job.status.replace(/_/g, " ")}</span>
-                                    {customer && (
+                                    {customerEntity && (
                                         <>
                                             <span>·</span>
-                                            <span className="truncate">{customer}</span>
+                                            <EntityPreviewCard entityType={customerEntity.type} entityId={customerEntity.id}>
+                                                <span className="truncate">{customerEntity.label}</span>
+                                            </EntityPreviewCard>
                                         </>
                                     )}
                                 </div>
@@ -423,11 +449,23 @@ export default function OverviewPage() {
                                     </span>
                                 </div>
                                 <div className="font-medium text-sm truncate">
-                                    {a.job?.job_title || "Untitled"}
+                                    {a.job ? (
+                                        <EntityPreviewCard entityType="job" entityId={a.job.id}>
+                                            <span>{a.job.job_title}</span>
+                                        </EntityPreviewCard>
+                                    ) : "Untitled"}
                                 </div>
                                 {customer && (
                                     <div className="text-xs text-muted-foreground truncate">
-                                        {customer}
+                                        {a.job?.contact ? (
+                                            <EntityPreviewCard entityType="contact" entityId={a.job.contact.id}>
+                                                <span>{customer}</span>
+                                            </EntityPreviewCard>
+                                        ) : a.job?.company ? (
+                                            <EntityPreviewCard entityType="company" entityId={a.job.company.id}>
+                                                <span>{customer}</span>
+                                            </EntityPreviewCard>
+                                        ) : <span>{customer}</span>}
                                     </div>
                                 )}
                             </div>
@@ -457,7 +495,7 @@ export default function OverviewPage() {
             {metricsLoading ? (
                 <MetricsSkeleton count={3} />
             ) : (
-                <motion.div variants={fadeInUp}>
+                <div>
                     {/* Mobile: horizontal scroll, all 3 cards */}
                     <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
                         {statCards.map((card, i) => (
@@ -472,7 +510,7 @@ export default function OverviewPage() {
                             <StatCard key={i} label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
                         ))}
                     </div>
-                </motion.div>
+                </div>
             )}
 
             {/* Mobile Tab Switcher */}
@@ -489,22 +527,22 @@ export default function OverviewPage() {
             </div>
 
             {/* Desktop: appointments left, stack of (tasks + active jobs) right */}
-            <motion.div variants={fadeInUp} className="hidden lg:grid grid-cols-[2fr_1fr] gap-3 px-4 md:px-6 lg:px-10">
+            <div className="hidden lg:grid grid-cols-[2fr_1fr] gap-3 px-4 md:px-6 lg:px-10">
                 {renderAppointments()}
                 <div className="space-y-6">
                     {renderTasksTable()}
                     {renderActiveJobsCompact()}
                 </div>
-            </motion.div>
+            </div>
 
             {/* Mobile: Tab content */}
-            <motion.div variants={fadeInUp} className="lg:hidden px-4 md:px-6">
+            <div className="lg:hidden px-4 md:px-6">
                 {mobileTab === "tasks"
                     ? renderTasksTable()
                     : mobileTab === "appointments"
                         ? renderAppointments()
                         : renderJobsTable()}
-            </motion.div>
+            </div>
         </DashboardPage>
     );
 }

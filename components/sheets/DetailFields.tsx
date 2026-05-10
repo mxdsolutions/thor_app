@@ -188,16 +188,29 @@ export function DetailFields({ fields, className, onSave }: DetailFieldsProps) {
     );
 }
 
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
+import type { EntityPreviewType } from "@/lib/swr";
+
 interface EntityCardProps {
     label: string;
     title: string;
     subtitle?: string | null;
     icon?: React.ReactNode;
+    /** When provided alongside entityId, the card becomes hover/tap-interactive
+     *  with a preview popover and a "View more" button that opens the related
+     *  entity in a stacked side sheet. */
+    entityType?: EntityPreviewType;
+    entityId?: string | null;
 }
 
-export function LinkedEntityCard({ label, title, subtitle, icon }: EntityCardProps) {
-    return (
-        <div className="rounded-xl border border-border bg-card p-3">
+export function LinkedEntityCard({ label, title, subtitle, icon, entityType, entityId }: EntityCardProps) {
+    const inner = (
+        <div
+            className={cn(
+                "rounded-xl border border-border bg-card p-3",
+                entityType && entityId && "hover:bg-muted/30 transition-colors cursor-pointer",
+            )}
+        >
             <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground/60 mb-2">
                 {label}
             </p>
@@ -216,4 +229,13 @@ export function LinkedEntityCard({ label, title, subtitle, icon }: EntityCardPro
             </div>
         </div>
     );
+
+    if (entityType && entityId) {
+        return (
+            <EntityPreviewCard entityType={entityType} entityId={entityId} className="block w-full">
+                {inner}
+            </EntityPreviewCard>
+        );
+    }
+    return inner;
 }

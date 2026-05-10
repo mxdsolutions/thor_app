@@ -11,7 +11,7 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 
     let query = supabase
         .from("invoices")
-        .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name)", { count: "exact" })
+        .select("*, company:companies(id, name), contact:contacts(id, first_name, last_name)", { count: "estimated" })
         .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);

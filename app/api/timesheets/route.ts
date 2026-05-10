@@ -53,11 +53,11 @@ export const GET = withAuth(async (request, { supabase, tenantId, user }) => {
     const jobId = searchParams.get("job_id");
     const userParam = searchParams.get("user_id");
 
-    const { query } = tenantListQuery(supabase, "timesheets", {
+    const { query, pagination } = tenantListQuery(supabase, "timesheets", {
         select: TIMESHEET_SELECT,
         tenantId,
         request,
-        searchColumns: ["notes"],
+        // Search is applied below across notes + joined job/user — see comment.
         orderBy: { column: "start_at", ascending: false },
         archivable: true,
     });
@@ -68,6 +68,30 @@ export const GET = withAuth(async (request, { supabase, tenantId, user }) => {
         q = q.eq("user_id", user.id);
     } else if (userParam) {
         q = q.eq("user_id", userParam);
+    }
+
+    // PostgREST can't OR across base + joined tables in one clause, so we
+    // pre-resolve matching job_ids and user_ids and fold them into the OR.
+    // `pagination.search` is already sanitised in parsePagination.
+    if (pagination.search) {
+        const term = pagination.search;
+        const [jobsRes, usersRes] = await Promise.all([
+            supabase
+                .from("jobs")
+                .select("id")
+                .eq("tenant_id", tenantId)
+                .or(`job_title.ilike.%${term}%,reference_id.ilike.%${term}%`),
+            supabase
+                .from("profiles")
+                .select("id")
+                .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`),
+        ]);
+        const jobIds = (jobsRes.data ?? []).map((r) => r.id);
+        const userIds = (usersRes.data ?? []).map((r) => r.id);
+        const orParts: string[] = [`notes.ilike.%${term}%`];
+        if (jobIds.length) orParts.push(`job_id.in.(${jobIds.join(",")})`);
+        if (userIds.length) orParts.push(`user_id.in.(${userIds.join(",")})`);
+        q = q.or(orParts.join(","));
     }
 
     const { data, error, count } = await q;

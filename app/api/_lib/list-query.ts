@@ -52,9 +52,12 @@ export function tenantListQuery(
         ? parseArchiveScope(options.request)
         : "all";
 
+    // `estimated` reads pg_class.reltuples for large filtered counts and falls
+    // back to exact for small ones. Pagination UI labels approximate totals
+    // above a threshold (see TablePagination).
     let query = supabase
         .from(table)
-        .select(options.select ?? "*", { count: "exact" })
+        .select(options.select ?? "*", { count: "estimated" })
         .eq("tenant_id", options.tenantId)
         .order(order.column, {
             ascending: order.ascending ?? false,

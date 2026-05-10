@@ -1,17 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { DashboardPage } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useAnalytics, type AnalyticsPeriod } from "@/lib/swr";
 import { ChartSkeleton, MetricsSkeleton } from "@/components/ui/skeleton";
-import { fadeInUp, staggerContainer } from "@/lib/motion";
 import { PeriodSelector } from "@/components/dashboard/analytics/PeriodSelector";
 import { KpiTilesRow } from "@/components/dashboard/analytics/KpiTilesRow";
-import { RevenueTrendChart } from "@/components/dashboard/analytics/RevenueTrendChart";
 import { JobProfitabilityTable } from "@/components/dashboard/analytics/JobProfitabilityTable";
-import { ARAgingChart } from "@/components/dashboard/analytics/ARAgingChart";
+
+// Charts pull in recharts (~200KB). Load only when this page actually renders
+// them so the rest of the dashboard bundle stays lean.
+const RevenueTrendChart = dynamic(
+    () => import("@/components/dashboard/analytics/RevenueTrendChart").then((m) => m.RevenueTrendChart),
+    { ssr: false, loading: () => <ChartSkeleton /> },
+);
+const ARAgingChart = dynamic(
+    () => import("@/components/dashboard/analytics/ARAgingChart").then((m) => m.ARAgingChart),
+    { ssr: false, loading: () => <ChartSkeleton /> },
+);
 
 export default function AnalyticsPage() {
     usePageTitle("Analytics");
@@ -35,28 +43,21 @@ export default function AnalyticsPage() {
                     </div>
                 </>
             ) : (
-                <motion.div
-                    variants={staggerContainer}
-                    initial="hidden"
-                    animate="show"
-                    className="space-y-6"
-                >
-                    <motion.div variants={fadeInUp}>
-                        <KpiTilesRow data={data} />
-                    </motion.div>
+                <div className="space-y-6">
+                    <KpiTilesRow data={data} />
 
-                    <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
+                    <div className="px-4 md:px-6 lg:px-10">
                         <RevenueTrendChart data={data.revenueChart} granularity={data.period.granularity} />
-                    </motion.div>
+                    </div>
 
-                    <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
+                    <div className="px-4 md:px-6 lg:px-10">
                         <JobProfitabilityTable rows={data.jobProfitability} />
-                    </motion.div>
+                    </div>
 
-                    <motion.div variants={fadeInUp} className="px-4 md:px-6 lg:px-10">
+                    <div className="px-4 md:px-6 lg:px-10">
                         <ARAgingChart data={data.arAging} />
-                    </motion.div>
-                </motion.div>
+                    </div>
+                </div>
             )}
         </DashboardPage>
     );

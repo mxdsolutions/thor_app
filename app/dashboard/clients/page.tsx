@@ -33,6 +33,7 @@ import { CompanySideSheet } from "@/components/sheets/CompanySideSheet";
 import { useContacts, useCompanies } from "@/lib/swr";
 import { useDebouncedValue } from "@/lib/hooks/use-debounce";
 import { TableSkeleton } from "@/components/ui/skeleton";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Contact = {
     id: string;
@@ -210,7 +211,11 @@ function ClientsPageContent() {
                                 {contact.email || "—"}
                             </td>
                             <td className={tableCell + " px-4"}>
-                                <span className="truncate">{contact.company?.name || "—"}</span>
+                                {contact.company ? (
+                                    <EntityPreviewCard entityType="company" entityId={contact.company.id}>
+                                        <span className="truncate">{contact.company.name}</span>
+                                    </EntityPreviewCard>
+                                ) : <span className="truncate">—</span>}
                             </td>
                             <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                 {contact.job_title || "—"}

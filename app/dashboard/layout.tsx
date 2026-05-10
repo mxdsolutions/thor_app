@@ -5,6 +5,7 @@ import { TenantProvider, type TenantContextData } from "@/lib/tenant-context";
 import { TenantBrandingStyle } from "@/components/TenantBrandingStyle";
 import { isPlatformAdminUser } from "@/lib/platform-admin";
 import { DashboardShell } from "./DashboardShell";
+import { GlobalEntitySheets } from "@/components/entity-preview/GlobalEntitySheets";
 
 export default async function DashboardLayout({
     children,
@@ -90,6 +91,7 @@ export default async function DashboardLayout({
             {!tenantData && (
                 <DashboardShell showPlatformAdminLink={showPlatformAdminLink}>{children}</DashboardShell>
             )}
+            <GlobalEntitySheets />
         </>
     );
 }

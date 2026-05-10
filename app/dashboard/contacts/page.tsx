@@ -16,6 +16,7 @@ import { ContactSideSheet } from "@/components/sheets/ContactSideSheet";
 import { useContacts, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { useDebouncedValue } from "@/lib/hooks/use-debounce";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Contact = {
     id: string;
@@ -48,7 +49,15 @@ const columns: DataTableColumn<Contact>[] = [
         ),
     },
     { key: "email", label: "Email", muted: true, className: "hidden sm:table-cell truncate max-w-[200px]", render: (c) => c.email || "—" },
-    { key: "company", label: "Company", render: (c) => <span className="truncate">{c.company?.name || "—"}</span> },
+    {
+        key: "company",
+        label: "Company",
+        render: (c) => c.company ? (
+            <EntityPreviewCard entityType="company" entityId={c.company.id}>
+                <span className="truncate">{c.company.name}</span>
+            </EntityPreviewCard>
+        ) : <span className="truncate">—</span>,
+    },
     { key: "jobTitle", label: "Job Title", muted: true, className: "hidden sm:table-cell", render: (c) => c.job_title || "—" },
     {
         key: "status",

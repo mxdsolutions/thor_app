@@ -42,6 +42,7 @@ import { TableSkeleton } from "@/components/ui/skeleton";
 import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
 import { formatCurrency } from "@/lib/utils";
 import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Assignee = { id: string; full_name: string | null; email: string | null };
 
@@ -322,9 +323,11 @@ function JobsPageContent() {
                                     {job.company && (
                                         <>
                                             <span className="text-muted-foreground mx-1.5">·</span>
-                                            <span className="text-muted-foreground truncate">
-                                                {job.company.name}
-                                            </span>
+                                            <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                <span className="text-muted-foreground truncate">
+                                                    {job.company.name}
+                                                </span>
+                                            </EntityPreviewCard>
                                         </>
                                     )}
                                 </div>
@@ -338,13 +341,14 @@ function JobsPageContent() {
                                 {job.assignees.length > 0 && (
                                     <div className="flex items-center -space-x-1.5 pt-1">
                                         {job.assignees.slice(0, 4).map((a) => (
-                                            <div
-                                                key={a.id}
-                                                title={a.full_name || a.email || ""}
-                                                className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold ring-2 ring-background"
-                                            >
-                                                {getInitials(a.full_name)}
-                                            </div>
+                                            <EntityPreviewCard key={a.id} entityType="user" entityId={a.id}>
+                                                <div
+                                                    title={a.full_name || a.email || ""}
+                                                    className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center text-[9px] font-bold ring-2 ring-background"
+                                                >
+                                                    {getInitials(a.full_name)}
+                                                </div>
+                                            </EntityPreviewCard>
                                         ))}
                                         {job.assignees.length > 4 && (
                                             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[9px] font-medium text-muted-foreground ring-2 ring-background">
@@ -414,12 +418,31 @@ function JobsPageContent() {
                                             </div>
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[150px]"}>
-                                            {job.contact ? `${job.contact.first_name} ${job.contact.last_name}` : (job.company?.name || "—")}
+                                            {job.contact ? (
+                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id}>
+                                                    <span>{job.contact.first_name} {job.contact.last_name}</span>
+                                                </EntityPreviewCard>
+                                            ) : job.company ? (
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                    <span>{job.company.name}</span>
+                                                </EntityPreviewCard>
+                                            ) : "—"}
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[180px]"}>
                                             {job.assignees.length === 0
                                                 ? <span className="text-muted-foreground">Unassigned</span>
-                                                : <span>{job.assignees.map(a => a.full_name || a.email || "—").join(", ")}</span>}
+                                                : (
+                                                    <span className="inline-flex flex-wrap gap-x-1">
+                                                        {job.assignees.map((a, i) => (
+                                                            <span key={a.id}>
+                                                                <EntityPreviewCard entityType="user" entityId={a.id}>
+                                                                    <span>{a.full_name || a.email || "—"}</span>
+                                                                </EntityPreviewCard>
+                                                                {i < job.assignees.length - 1 && <span>, </span>}
+                                                            </span>
+                                                        ))}
+                                                    </span>
+                                                )}
                                         </td>
                                         <td className={tableCell + " px-4 text-right sm:text-left"}>
                                             <span className="font-bold">${job.amount.toFixed(2)}</span>

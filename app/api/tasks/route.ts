@@ -12,7 +12,7 @@ export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
 
     let query = supabase
         .from("tasks")
-        .select("*, assigned_user:profiles!tasks_assigned_to_fkey(id, full_name)", { count: "exact" })
+        .select("*, assigned_user:profiles!tasks_assigned_to_fkey(id, full_name)", { count: "estimated" })
         .eq("tenant_id", tenantId)
         .order("due_date", { ascending: true, nullsFirst: false })
         .range(offset, offset + limit - 1);

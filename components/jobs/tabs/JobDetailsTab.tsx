@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { DetailFields } from "@/components/sheets/DetailFields";
 import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
 import type { JobDetailJob } from "../JobDetailView";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type DetailValue = string | number | null;
 type StatusConfig = Record<string, { label: string; color: string }>;
@@ -184,12 +185,14 @@ export function JobDetailsTab({
                 <div className="space-y-2">
                     {(data.assignees || []).map((a, idx) => (
                         <div key={a.id ?? idx} className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
-                                    {(a.full_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                            <EntityPreviewCard entityType="user" entityId={a.id} disabled={!a.id}>
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
+                                        {(a.full_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <span className="text-sm font-medium">{a.full_name || a.email}</span>
                                 </div>
-                                <span className="text-sm font-medium">{a.full_name || a.email}</span>
-                            </div>
+                            </EntityPreviewCard>
                             <button
                                 onClick={async () => {
                                     const newIds = (data.assignees || []).filter(x => x.id !== a.id).map(x => x.id);

@@ -31,6 +31,7 @@ import { useReports, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateReportModal } from "@/components/modals/CreateReportModal";
 import { ReportSideSheet } from "@/components/sheets/ReportSideSheet";
+import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Report = {
     id: string;
@@ -195,10 +196,22 @@ export default function ReportsPage() {
                                     </div>
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                    {report.job?.job_title || report.project?.title || report.company?.name || "—"}
+                                    {report.job ? (
+                                        <EntityPreviewCard entityType="job" entityId={report.job.id}>
+                                            <span>{report.job.job_title}</span>
+                                        </EntityPreviewCard>
+                                    ) : report.company ? (
+                                        <EntityPreviewCard entityType="company" entityId={report.company.id}>
+                                            <span>{report.company.name}</span>
+                                        </EntityPreviewCard>
+                                    ) : report.project?.title || "—"}
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
-                                    {report.creator?.full_name || "—"}
+                                    {report.creator ? (
+                                        <EntityPreviewCard entityType="user" entityId={report.creator.id}>
+                                            <span>{report.creator.full_name}</span>
+                                        </EntityPreviewCard>
+                                    ) : "—"}
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
                                     {timeAgo(report.created_at)}

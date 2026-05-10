@@ -12,7 +12,7 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
 
     let query = adminClient
         .from("tenants")
-        .select("*", { count: "exact" })
+        .select("*", { count: "estimated" })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
