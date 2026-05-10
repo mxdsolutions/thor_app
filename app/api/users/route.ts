@@ -2,21 +2,32 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError } from "@/app/api/_lib/errors";
-import { createAdminClient } from "@/lib/supabase/server";
 
 const VALID_ROLES = ["owner", "admin", "manager", "member", "viewer"];
 
+type TenantUserRow = {
+    user_id: string;
+    email: string | null;
+    full_name: string | null;
+    avatar_url: string | null;
+    job_title: string | null;
+    hourly_rate: number | null;
+    profile_created_at: string | null;
+    role: string;
+    joined_at: string;
+    last_sign_in_at: string | null;
+};
+
 export const GET = withAuth(async (_request, { supabase, tenantId }) => {
-    // Fetch members and outstanding invites in parallel. Outstanding invites
-    // (no accepted_at, not expired) get rendered as "Invited" rows so the
-    // owner can see the new teammate immediately after sending the invite,
-    // before they accept and a tenant_membership exists.
+    // Members come from a SECURITY DEFINER RPC that joins tenant_memberships
+    // + profiles + auth.users in one round-trip. We can't read auth.users via
+    // PostgREST (auth schema isn't exposed) so the function does it for us.
+    // Outstanding invites still come from tenant_invites — they don't have a
+    // membership row yet — and render as "Invited" rows so the owner sees the
+    // new teammate immediately after sending the invite.
     const nowIso = new Date().toISOString();
-    const [memberRes, inviteRes] = await Promise.all([
-        supabase
-            .from("tenant_memberships")
-            .select("user_id, role, joined_at")
-            .eq("tenant_id", tenantId),
+    const [membersRes, invitesRes] = await Promise.all([
+        supabase.rpc("get_tenant_users", { p_tenant_id: tenantId }),
         supabase
             .from("tenant_invites")
             .select("id, email, role, created_at")
@@ -25,71 +36,42 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
             .gt("expires_at", nowIso),
     ]);
 
-    if (memberRes.error) return serverError(memberRes.error);
-    if (inviteRes.error) return serverError(inviteRes.error);
+    if (membersRes.error) return serverError(membersRes.error);
+    if (invitesRes.error) return serverError(invitesRes.error);
 
-    const memberships = memberRes.data || [];
-    const invites = inviteRes.data || [];
+    const members = (membersRes.data ?? []) as TenantUserRow[];
+    const invites = invitesRes.data ?? [];
 
-    const userIds = memberships.map(m => m.user_id);
+    // Invitee profiles by email — the auth user already exists from
+    // inviteUserByEmail and the handle_new_user trigger creates a profile row.
     const inviteEmails = invites.map(i => i.email);
+    const inviteProfilesRes = inviteEmails.length > 0
+        ? await supabase
+            .from("profiles")
+            .select("id, full_name, email, avatar_url, created_at, position, hourly_rate")
+            .in("email", inviteEmails)
+        : { data: [] as Array<Record<string, unknown>> };
 
-    // Profiles + auth.users.last_sign_in_at all in parallel. Profiles are
-    // fetched twice (by id for members, by email for invitees — handle_new_user
-    // trigger creates the row when inviteUserByEmail provisions the auth user).
-    // last_sign_in_at lives on auth.users, which only the service-role client
-    // can read; without this, every member shows as "Pending" forever.
-    const adminClient = await createAdminClient();
-    const [byIdRes, byEmailRes, authRes] = await Promise.all([
-        userIds.length > 0
-            ? supabase
-                .from("profiles")
-                .select("id, full_name, email, avatar_url, created_at, position, hourly_rate")
-                .in("id", userIds)
-            : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
-        inviteEmails.length > 0
-            ? supabase
-                .from("profiles")
-                .select("id, full_name, email, avatar_url, created_at, position, hourly_rate")
-                .in("email", inviteEmails)
-            : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
-        userIds.length > 0
-            ? adminClient
-                .schema("auth")
-                .from("users")
-                .select("id, last_sign_in_at")
-                .in("id", userIds)
-            : Promise.resolve({ data: [] as Array<{ id: string; last_sign_in_at: string | null }> }),
-    ]);
-
-    const profileById = new Map((byIdRes.data || []).map(p => [p.id as string, p]));
-    const profileByEmail = new Map((byEmailRes.data || []).map(p => [p.email as string, p]));
-    const lastSignInById = new Map(
-        (authRes.data || []).map((u) => [
-            (u as { id: string }).id,
-            (u as { last_sign_in_at: string | null }).last_sign_in_at,
-        ]),
+    const profileByEmail = new Map(
+        (inviteProfilesRes.data || []).map(p => [p.email as string, p]),
     );
 
-    const memberUsers = memberships.map(m => {
-        const profile = profileById.get(m.user_id);
-        return {
-            id: (profile?.id as string) || m.user_id,
-            email: (profile?.email as string | undefined) ?? null,
-            created_at: profile?.created_at,
-            last_sign_in_at: lastSignInById.get(m.user_id) ?? null,
-            user_metadata: {
-                full_name: profile?.full_name,
-                avatar_url: profile?.avatar_url,
-                user_type: m.role,
-                position: profile?.position,
-                hourly_rate: profile?.hourly_rate,
-            },
-            tenant_role: m.role,
-            joined_at: m.joined_at,
-            is_pending: false,
-        };
-    });
+    const memberUsers = members.map(m => ({
+        id: m.user_id,
+        email: m.email,
+        created_at: m.profile_created_at,
+        last_sign_in_at: m.last_sign_in_at,
+        user_metadata: {
+            full_name: m.full_name,
+            avatar_url: m.avatar_url,
+            user_type: m.role,
+            position: m.job_title,
+            hourly_rate: m.hourly_rate,
+        },
+        tenant_role: m.role,
+        joined_at: m.joined_at,
+        is_pending: false,
+    }));
 
     const memberEmailSet = new Set(memberUsers.map(u => u.email).filter(Boolean));
     const inviteUsers = invites
@@ -101,7 +83,7 @@ export const GET = withAuth(async (_request, { supabase, tenantId }) => {
             return {
                 id: (profile?.id as string) || `invite:${i.id}`,
                 email: i.email,
-                created_at: profile?.created_at ?? i.created_at,
+                created_at: (profile?.created_at as string | undefined) ?? i.created_at,
                 last_sign_in_at: null,
                 user_metadata: {
                     full_name: profile?.full_name,
