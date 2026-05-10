@@ -3,14 +3,12 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, Check, Camera, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { completeOnboarding } from "@/app/actions/onboarding";
 import { updatePassword } from "@/app/actions/auth";
 import { toast } from "sonner";
-import { Logo } from "@/components/Logo";
 import { createBrowserClient } from "@supabase/ssr";
 
 const supabase = createBrowserClient(
@@ -20,13 +18,37 @@ const supabase = createBrowserClient(
 
 const TOTAL_STEPS = 3;
 
+// Same dark-surface tokens used in the signup flow — keeps the two onboarding
+// experiences (new tenant signup vs. invitee onboarding) visually consistent.
+const inputClass =
+    "h-12 text-base bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-white/40 focus:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-white/40 transition-all rounded-lg";
+const primaryBtnClass = "bg-white text-foreground hover:bg-white/90";
+const ghostBtnClass = "text-white/50 hover:text-white hover:bg-white/5";
 const labelClass =
-    "text-[11px] font-semibold text-muted-foreground uppercase tracking-wider";
+    "text-[10px] font-semibold text-white/40 uppercase tracking-[0.15em]";
 const eyebrowClass =
-    "text-[11px] font-semibold text-muted-foreground uppercase tracking-wider";
+    "text-[11px] font-semibold text-white/40 uppercase tracking-[0.2em]";
 const stepHeadingClass =
-    "font-display text-3xl md:text-4xl tracking-tight text-foreground";
-const subheadingClass = "text-base text-muted-foreground";
+    "font-display text-3xl md:text-4xl tracking-tight text-white";
+const subheadingClass = "text-sm md:text-base text-white/55";
+
+/** Brand wordmark — Paladins-Condensed THOR with a sans-serif ™ superscript.
+ *  Matches the pattern used in the dashboard mobile drawer. */
+function ThorWordmark({ size = 44 }: { size?: number }) {
+    return (
+        <span
+            style={{ fontSize: size, lineHeight: 1 }}
+            className="font-paladins tracking-[0.08em] text-white inline-flex items-start"
+        >
+            THOR
+            <span
+                className="font-sans text-[0.45em] font-semibold ml-[0.18em] mt-[0.15em] align-super text-white/60"
+            >
+                ™
+            </span>
+        </span>
+    );
+}
 
 export default function OnboardingFlow() {
     const [step, setStep] = useState(0);
@@ -147,10 +169,10 @@ export default function OnboardingFlow() {
             (!formData.first_name.trim() || !formData.last_name.trim()));
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <header className="pt-10 pb-6 px-6">
-                <div className="max-w-md mx-auto flex flex-col items-center gap-5">
-                    <Logo width={88} />
+        <div className="min-h-screen bg-foreground flex flex-col text-white">
+            <header className="pt-12 pb-8 px-6">
+                <div className="max-w-md mx-auto flex flex-col items-center gap-6">
+                    <ThorWordmark size={44} />
                     {step > 0 && (
                         <div className="flex items-center gap-2" aria-label="Onboarding progress">
                             {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((i) => (
@@ -158,7 +180,7 @@ export default function OnboardingFlow() {
                                     key={i}
                                     className={cn(
                                         "h-1 w-10 rounded-full transition-colors",
-                                        i <= step ? "bg-foreground" : "bg-border",
+                                        i <= step ? "bg-white" : "bg-white/10",
                                     )}
                                 />
                             ))}
@@ -181,15 +203,15 @@ export default function OnboardingFlow() {
                             >
                                 <div className="space-y-3">
                                     <p className={eyebrowClass}>Welcome aboard</p>
-                                    <h1 className="font-display text-4xl md:text-5xl tracking-tight text-foreground">
+                                    <h1 className="font-display text-4xl md:text-5xl tracking-tight text-white">
                                         Let&apos;s get you set up.
                                     </h1>
-                                    <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+                                    <p className="text-white/55 max-w-sm mx-auto leading-relaxed">
                                         Three quick steps to secure your account and
                                         personalise your profile.
                                     </p>
                                 </div>
-                                <Button size="lg" onClick={() => setStep(1)}>
+                                <Button size="lg" onClick={() => setStep(1)} className={primaryBtnClass}>
                                     Get started
                                     <ArrowRight className="ml-2 w-4 h-4" />
                                 </Button>
@@ -203,7 +225,7 @@ export default function OnboardingFlow() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -16 }}
                                 transition={{ duration: 0.3 }}
-                                className="space-y-6"
+                                className="space-y-8"
                             >
                                 <div className="text-center space-y-2">
                                     <p className={eyebrowClass}>Step 1 of 3</p>
@@ -213,39 +235,41 @@ export default function OnboardingFlow() {
                                     </p>
                                 </div>
 
-                                <Card className="rounded-2xl border bg-card shadow-sm">
-                                    <CardContent className="p-6 space-y-4">
-                                        <div className="space-y-1.5">
-                                            <label className={labelClass}>New password</label>
-                                            <Input
-                                                type="password"
-                                                placeholder="At least 8 characters"
-                                                value={formData.password}
-                                                onChange={(e) => updateField("password", e.target.value)}
-                                                autoFocus
-                                            />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className={labelClass}>Confirm password</label>
-                                            <Input
-                                                type="password"
-                                                placeholder="Repeat your password"
-                                                value={formData.confirmPassword}
-                                                onChange={(e) => updateField("confirmPassword", e.target.value)}
-                                                onKeyDown={(e) =>
-                                                    e.key === "Enter" && !nextDisabled && handleNext()
-                                                }
-                                            />
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>New password</label>
+                                        <Input
+                                            type="password"
+                                            placeholder="At least 8 characters"
+                                            value={formData.password}
+                                            onChange={(e) => updateField("password", e.target.value)}
+                                            data-no-focus-style
+                                            className={inputClass}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Confirm password</label>
+                                        <Input
+                                            type="password"
+                                            placeholder="Repeat your password"
+                                            value={formData.confirmPassword}
+                                            onChange={(e) => updateField("confirmPassword", e.target.value)}
+                                            data-no-focus-style
+                                            className={inputClass}
+                                            onKeyDown={(e) =>
+                                                e.key === "Enter" && !nextDisabled && handleNext()
+                                            }
+                                        />
+                                    </div>
+                                </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Button variant="ghost" onClick={() => setStep(0)}>
+                                    <Button variant="ghost" onClick={() => setStep(0)} className={ghostBtnClass}>
                                         <ArrowLeft className="mr-2 w-4 h-4" />
                                         Back
                                     </Button>
-                                    <Button onClick={handleNext} disabled={nextDisabled}>
+                                    <Button onClick={handleNext} disabled={nextDisabled} className={primaryBtnClass}>
                                         {isSubmitting ? "Saving…" : (
                                             <>
                                                 Continue
@@ -264,7 +288,7 @@ export default function OnboardingFlow() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -16 }}
                                 transition={{ duration: 0.3 }}
-                                className="space-y-6"
+                                className="space-y-8"
                             >
                                 <div className="text-center space-y-2">
                                     <p className={eyebrowClass}>Step 2 of 3</p>
@@ -274,39 +298,39 @@ export default function OnboardingFlow() {
                                     </p>
                                 </div>
 
-                                <Card className="rounded-2xl border bg-card shadow-sm">
-                                    <CardContent className="p-6">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1.5">
-                                                <label className={labelClass}>First name</label>
-                                                <Input
-                                                    placeholder="Jane"
-                                                    value={formData.first_name}
-                                                    onChange={(e) => updateField("first_name", e.target.value)}
-                                                    autoFocus
-                                                />
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                <label className={labelClass}>Last name</label>
-                                                <Input
-                                                    placeholder="Doe"
-                                                    value={formData.last_name}
-                                                    onChange={(e) => updateField("last_name", e.target.value)}
-                                                    onKeyDown={(e) =>
-                                                        e.key === "Enter" && !nextDisabled && handleNext()
-                                                    }
-                                                />
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>First name</label>
+                                        <Input
+                                            placeholder="Jane"
+                                            value={formData.first_name}
+                                            onChange={(e) => updateField("first_name", e.target.value)}
+                                            data-no-focus-style
+                                            className={inputClass}
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className={labelClass}>Last name</label>
+                                        <Input
+                                            placeholder="Doe"
+                                            value={formData.last_name}
+                                            onChange={(e) => updateField("last_name", e.target.value)}
+                                            data-no-focus-style
+                                            className={inputClass}
+                                            onKeyDown={(e) =>
+                                                e.key === "Enter" && !nextDisabled && handleNext()
+                                            }
+                                        />
+                                    </div>
+                                </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Button variant="ghost" onClick={() => setStep(1)}>
+                                    <Button variant="ghost" onClick={() => setStep(1)} className={ghostBtnClass}>
                                         <ArrowLeft className="mr-2 w-4 h-4" />
                                         Back
                                     </Button>
-                                    <Button onClick={handleNext} disabled={nextDisabled}>
+                                    <Button onClick={handleNext} disabled={nextDisabled} className={primaryBtnClass}>
                                         Continue
                                         <ArrowRight className="ml-2 w-4 h-4" />
                                     </Button>
@@ -321,7 +345,7 @@ export default function OnboardingFlow() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -16 }}
                                 transition={{ duration: 0.3 }}
-                                className="space-y-6"
+                                className="space-y-8"
                             >
                                 <div className="text-center space-y-2">
                                     <p className={eyebrowClass}>Step 3 of 3</p>
@@ -331,65 +355,63 @@ export default function OnboardingFlow() {
                                     </p>
                                 </div>
 
-                                <Card className="rounded-2xl border bg-card shadow-sm">
-                                    <CardContent className="p-6 flex flex-col items-center gap-4">
+                                <div className="flex flex-col items-center gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className={cn(
+                                            "relative group w-32 h-32 rounded-full overflow-hidden",
+                                            "border-2 border-dashed border-white/15 bg-white/[0.04]",
+                                            "hover:border-white/40 hover:bg-white/[0.06] transition-colors",
+                                            "flex items-center justify-center",
+                                        )}
+                                    >
+                                        {avatarPreview ? (
+                                            <>
+                                                {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded avatar preview, dimensions unknown */}
+                                                <img
+                                                    src={avatarPreview}
+                                                    alt="Avatar preview"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Camera className="w-7 h-7 text-white" />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="flex flex-col items-center gap-1.5 text-white/40 group-hover:text-white/60 transition-colors">
+                                                <UserCircle className="w-12 h-12" strokeWidth={1.5} />
+                                                <span className="text-xs font-medium">Upload</span>
+                                            </div>
+                                        )}
+                                    </button>
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarSelect}
+                                        className="hidden"
+                                    />
+                                    {avatarPreview && (
                                         <button
                                             type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className={cn(
-                                                "relative group w-32 h-32 rounded-full overflow-hidden",
-                                                "border-2 border-dashed border-border bg-secondary",
-                                                "hover:border-foreground/40 transition-colors",
-                                                "flex items-center justify-center",
-                                            )}
+                                            onClick={() => {
+                                                setAvatarFile(null);
+                                                setAvatarPreview(null);
+                                            }}
+                                            className="text-sm text-white/40 hover:text-white/70 transition-colors"
                                         >
-                                            {avatarPreview ? (
-                                                <>
-                                                    {/* eslint-disable-next-line @next/next/no-img-element -- user-uploaded avatar preview, dimensions unknown */}
-                                                    <img
-                                                        src={avatarPreview}
-                                                        alt="Avatar preview"
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                    <div className="absolute inset-0 bg-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                        <Camera className="w-7 h-7 text-background" />
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <div className="flex flex-col items-center gap-1.5 text-muted-foreground group-hover:text-foreground/70 transition-colors">
-                                                    <UserCircle className="w-12 h-12" strokeWidth={1.5} />
-                                                    <span className="text-xs font-medium">Upload</span>
-                                                </div>
-                                            )}
+                                            Remove photo
                                         </button>
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleAvatarSelect}
-                                            className="hidden"
-                                        />
-                                        {avatarPreview && (
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setAvatarFile(null);
-                                                    setAvatarPreview(null);
-                                                }}
-                                                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                                            >
-                                                Remove photo
-                                            </button>
-                                        )}
-                                    </CardContent>
-                                </Card>
+                                    )}
+                                </div>
 
                                 <div className="flex items-center justify-between">
-                                    <Button variant="ghost" onClick={() => setStep(2)}>
+                                    <Button variant="ghost" onClick={() => setStep(2)} className={ghostBtnClass}>
                                         <ArrowLeft className="mr-2 w-4 h-4" />
                                         Back
                                     </Button>
-                                    <Button onClick={handleNext} disabled={isSubmitting}>
+                                    <Button onClick={handleNext} disabled={isSubmitting} className={primaryBtnClass}>
                                         {isSubmitting ? "Setting up…" : (
                                             <>
                                                 Complete setup
