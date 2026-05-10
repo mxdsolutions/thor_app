@@ -180,20 +180,28 @@ export default function UsersPage() {
                                             </Badge>
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                            {pending ? (
-                                                <div className="flex items-center justify-between gap-3">
-                                                    <span>Invited {formatLastActive(user.created_at)}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => { e.stopPropagation(); handleResend(user.email); }}
-                                                        className="text-xs font-medium text-primary hover:underline"
-                                                    >
-                                                        Resend
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                formatLastActive(user.last_sign_in_at)
-                                            )}
+                                            {(() => {
+                                                // Resend on every row that hasn't actually used the app —
+                                                // both "Invited" (no membership yet) and "Pending"
+                                                // (membership but never signed in) need the email again.
+                                                const showResend = pending || !user.last_sign_in_at;
+                                                const lastActiveText = pending
+                                                    ? `Invited ${formatLastActive(user.created_at)}`
+                                                    : formatLastActive(user.last_sign_in_at);
+                                                if (!showResend) return lastActiveText;
+                                                return (
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <span>{lastActiveText}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); handleResend(user.email); }}
+                                                            className="text-xs font-medium text-primary hover:underline shrink-0"
+                                                        >
+                                                            Resend
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
                                     </tr>
                                 );
