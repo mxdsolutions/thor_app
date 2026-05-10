@@ -62,9 +62,15 @@ async function getTenantLockState(
     return locked;
 }
 
-// Platform domains that are NOT tenant custom domains
+// Platform domains that are NOT tenant custom domains.
+// `app.buildthor.com.au` is the production base URL — every tenant logs in
+// here and tenant resolution falls through to the JWT (`active_tenant_id`).
+// `admin.mxdsolutions.com.au` is the platform-admin surface. Custom-domain
+// per-tenant routing is a future feature; for now any non-platform host
+// would needlessly hit Supabase on every request.
 const PLATFORM_DOMAINS = [
     process.env.NEXT_PUBLIC_PLATFORM_DOMAIN || 'admin.mxdsolutions.com.au',
+    'app.buildthor.com.au',
     'localhost',
     'localhost:3000',
     'localhost:3001',
