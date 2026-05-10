@@ -37,7 +37,7 @@ export function AccountStep({
             className="w-full max-w-md space-y-8"
         >
             <div className="text-center space-y-3">
-                <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                <h2 className="font-statement text-4xl md:text-5xl text-white tracking-tight">
                     Create your account
                 </h2>
                 <p className="text-white/50 text-base">

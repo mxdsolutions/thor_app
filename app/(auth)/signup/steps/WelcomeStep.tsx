@@ -22,7 +22,7 @@ export function WelcomeStep({ onStart }: { onStart: () => void }) {
                     <p className={stepEyebrowClass}>Welcome to THOR</p>
                     <span className="h-px w-8 bg-white/15" />
                 </div>
-                <h1 className="font-display text-5xl md:text-7xl font-semibold text-white leading-[0.95] tracking-tight">
+                <h1 className="font-statement text-5xl md:text-7xl font-semibold text-white leading-[0.95] tracking-tight">
                     Built for teams<br />
                     <span className="text-white/50">that build things.</span>
                 </h1>

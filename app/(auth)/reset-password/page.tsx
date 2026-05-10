@@ -3,8 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ThorWordmark } from "@/components/ThorWordmark";
 import { updatePassword } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
+
+const inputClass =
+    "h-12 text-base bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-white/40 focus:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-white/40 transition-all rounded-lg";
+const primaryBtnClass = "bg-white text-foreground hover:bg-white/90";
+const labelClass =
+    "text-[10px] font-semibold text-white/40 uppercase tracking-[0.15em]";
 
 export default function ResetPasswordPage() {
     const [password, setPassword] = useState("");
@@ -14,7 +23,7 @@ export default function ResetPasswordPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Verify the user has a valid recovery session before showing the form
+        // Verify the user has a valid recovery session before showing the form.
         const supabase = createClient();
         supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
@@ -28,7 +37,11 @@ export default function ResetPasswordPage() {
 
     const handleUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
+        if (password.length < 8) {
+            toast.error("Password must be at least 8 characters.");
+            return;
+        }
         if (password !== confirmPassword) {
             toast.error("Passwords do not match");
             return;
@@ -61,52 +74,73 @@ export default function ResetPasswordPage() {
 
     if (!isAuthorized) {
         return (
-            <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-                <div className="w-8 h-8 border-2 border-black border-t-transparent rounded-full animate-spin" />
+            <div className="min-h-screen bg-foreground flex items-center justify-center">
+                <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-6">
-            <div className="w-full max-w-md bg-white p-8 rounded-xl border border-gray-200">
-                <div className="mb-8 text-center">
-                    <h1 className="text-2xl font-bold text-black font-sans">Set new password</h1>
-                    <p className="text-gray-500 font-sans">Please type your new password below</p>
+        <div className="min-h-screen bg-foreground flex items-center justify-center text-white px-6 py-12">
+            <div className="w-full max-w-md flex flex-col items-stretch gap-10">
+                <div className="flex flex-col items-center gap-6">
+                    <ThorWordmark size={44} />
                 </div>
 
-                <form className="space-y-4" onSubmit={handleUpdate}>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 font-sans">New Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-sans"
-                            placeholder="Enter new password"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1 font-sans">Confirm New Password</label>
-                        <input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                            className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-black font-sans"
-                            placeholder="Confirm new password"
-                        />
+                <div className="space-y-8">
+                    <div className="text-center space-y-2">
+                        <h1 className="font-statement text-3xl md:text-4xl tracking-tight text-white">
+                            Set a new password
+                        </h1>
+                        <p className="text-sm md:text-base text-white/55">
+                            Choose a password you haven&apos;t used before.
+                        </p>
                     </div>
 
-                    <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="w-full bg-black text-white py-2.5 rounded-lg font-medium hover:bg-gray-900 transition-colors font-sans disabled:opacity-50"
-                    >
-                        {isLoading ? "Updating..." : "Update Password"}
-                    </button>
-                </form>
+                    <form className="space-y-4" onSubmit={handleUpdate}>
+                        <div className="space-y-2">
+                            <label className={labelClass} htmlFor="password">
+                                New password
+                            </label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                placeholder="At least 8 characters"
+                                autoComplete="new-password"
+                                autoFocus
+                                data-no-focus-style
+                                className={inputClass}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className={labelClass} htmlFor="confirm">
+                                Confirm password
+                            </label>
+                            <Input
+                                id="confirm"
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                placeholder="Repeat your password"
+                                autoComplete="new-password"
+                                data-no-focus-style
+                                className={inputClass}
+                            />
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={isLoading || !password || !confirmPassword}
+                            className={`w-full h-12 ${primaryBtnClass}`}
+                        >
+                            {isLoading ? "Updating…" : "Update password"}
+                        </Button>
+                    </form>
+                </div>
             </div>
         </div>
     );

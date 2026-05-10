@@ -10,6 +10,7 @@ import { completeOnboarding } from "@/app/actions/onboarding";
 import { updatePassword } from "@/app/actions/auth";
 import { toast } from "sonner";
 import { createBrowserClient } from "@supabase/ssr";
+import { ThorWordmark } from "@/components/ThorWordmark";
 
 const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,26 +30,8 @@ const labelClass =
 const eyebrowClass =
     "text-[11px] font-semibold text-white/40 uppercase tracking-[0.2em]";
 const stepHeadingClass =
-    "font-display text-3xl md:text-4xl tracking-tight text-white";
+    "font-statement text-3xl md:text-4xl tracking-tight text-white";
 const subheadingClass = "text-sm md:text-base text-white/55";
-
-/** Brand wordmark — Paladins-Condensed THOR with a sans-serif ™ superscript.
- *  Matches the pattern used in the dashboard mobile drawer. */
-function ThorWordmark({ size = 44 }: { size?: number }) {
-    return (
-        <span
-            style={{ fontSize: size, lineHeight: 1 }}
-            className="font-paladins tracking-[0.08em] text-white inline-flex items-start"
-        >
-            THOR
-            <span
-                className="font-sans text-[0.45em] font-semibold ml-[0.18em] mt-[0.15em] align-super text-white/60"
-            >
-                ™
-            </span>
-        </span>
-    );
-}
 
 export default function OnboardingFlow() {
     const [step, setStep] = useState(0);
@@ -169,9 +152,9 @@ export default function OnboardingFlow() {
             (!formData.first_name.trim() || !formData.last_name.trim()));
 
     return (
-        <div className="min-h-screen bg-foreground flex flex-col text-white">
-            <header className="pt-12 pb-8 px-6">
-                <div className="max-w-md mx-auto flex flex-col items-center gap-6">
+        <div className="min-h-screen bg-foreground flex items-center justify-center text-white px-6 py-12">
+            <div className="w-full max-w-md flex flex-col items-stretch gap-10">
+                <div className="flex flex-col items-center gap-6">
                     <ThorWordmark size={44} />
                     {step > 0 && (
                         <div className="flex items-center gap-2" aria-label="Onboarding progress">
@@ -187,10 +170,8 @@ export default function OnboardingFlow() {
                         </div>
                     )}
                 </div>
-            </header>
 
-            <main className="flex-1 flex items-start justify-center px-6 pb-16">
-                <div className="w-full max-w-md">
+                <div className="w-full">
                     <AnimatePresence mode="wait">
                         {step === 0 && (
                             <motion.div
@@ -203,7 +184,7 @@ export default function OnboardingFlow() {
                             >
                                 <div className="space-y-3">
                                     <p className={eyebrowClass}>Welcome aboard</p>
-                                    <h1 className="font-display text-4xl md:text-5xl tracking-tight text-white">
+                                    <h1 className="font-statement text-4xl md:text-5xl tracking-tight text-white">
                                         Let&apos;s get you set up.
                                     </h1>
                                     <p className="text-white/55 max-w-sm mx-auto leading-relaxed">
@@ -424,7 +405,7 @@ export default function OnboardingFlow() {
                         )}
                     </AnimatePresence>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }
