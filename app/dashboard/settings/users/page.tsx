@@ -21,6 +21,9 @@ import { UserInviteModal } from "@/components/dashboard/UserInviteModal";
 import { UserSideSheet } from "@/components/dashboard/UserSideSheet";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { resendInvite } from "@/app/actions/resendInvite";
+import { revokeInvite } from "@/app/actions/revokeInvite";
+import { sendPasswordResetForUser } from "@/app/actions/sendPasswordResetForUser";
+import { UserRowMenu } from "@/components/dashboard/UserRowMenu";
 
 type UserTab = "all" | "owner" | "admin" | "manager" | "member" | "viewer";
 
@@ -61,6 +64,39 @@ export default function UsersPage() {
                 success: `Invitation resent to ${email}`,
                 error: (err) =>
                     err instanceof Error ? err.message : "Failed to resend invitation",
+            },
+        );
+    };
+
+    const handleRevoke = (email: string) => {
+        toast.promise(
+            (async () => {
+                const res = await revokeInvite(email);
+                if (!res.success) throw new Error(res.error);
+                mutate();
+                return res;
+            })(),
+            {
+                loading: `Revoking invitation for ${email}…`,
+                success: `Removed ${email} from this workspace`,
+                error: (err) =>
+                    err instanceof Error ? err.message : "Failed to revoke invitation",
+            },
+        );
+    };
+
+    const handlePasswordReset = (email: string) => {
+        toast.promise(
+            (async () => {
+                const res = await sendPasswordResetForUser(email);
+                if (!res.success) throw new Error(res.error);
+                return res;
+            })(),
+            {
+                loading: `Sending password reset to ${email}…`,
+                success: `Password reset email sent to ${email}`,
+                error: (err) =>
+                    err instanceof Error ? err.message : "Failed to send password reset",
             },
         );
     };
@@ -117,18 +153,19 @@ export default function UsersPage() {
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Role</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Status</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Last Active</th>
+                            <th className={tableHeadCell + " w-12 pr-2"} aria-label="Actions" />
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
                             <tr>
-                                <td colSpan={4} className="text-center py-16 text-muted-foreground text-sm">
+                                <td colSpan={5} className="text-center py-16 text-muted-foreground text-sm">
                                     Loading users...
                                 </td>
                             </tr>
                         ) : filteredUsers.length === 0 ? (
                             <tr>
-                                <td colSpan={4} className="text-center py-16 text-muted-foreground text-sm">
+                                <td colSpan={5} className="text-center py-16 text-muted-foreground text-sm">
                                     No users found.
                                 </td>
                             </tr>
@@ -180,28 +217,20 @@ export default function UsersPage() {
                                             </Badge>
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                            {(() => {
-                                                // Resend on every row that hasn't actually used the app —
-                                                // both "Invited" (no membership yet) and "Pending"
-                                                // (membership but never signed in) need the email again.
-                                                const showResend = pending || !user.last_sign_in_at;
-                                                const lastActiveText = pending
-                                                    ? `Invited ${formatLastActive(user.created_at)}`
-                                                    : formatLastActive(user.last_sign_in_at);
-                                                if (!showResend) return lastActiveText;
-                                                return (
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <span>{lastActiveText}</span>
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => { e.stopPropagation(); handleResend(user.email); }}
-                                                            className="text-xs font-medium text-primary hover:underline shrink-0"
-                                                        >
-                                                            Resend
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })()}
+                                            {pending
+                                                ? `Invited ${formatLastActive(user.created_at)}`
+                                                : formatLastActive(user.last_sign_in_at)}
+                                        </td>
+                                        <td className="py-4 md:py-5 align-middle pr-2 w-12">
+                                            <div className="flex justify-end">
+                                                <UserRowMenu
+                                                    isPending={pending}
+                                                    hasSignedIn={!!user.last_sign_in_at}
+                                                    onResend={() => handleResend(user.email)}
+                                                    onRevoke={() => handleRevoke(user.email)}
+                                                    onPasswordReset={() => handlePasswordReset(user.email)}
+                                                />
+                                            </div>
                                         </td>
                                     </tr>
                                 );
