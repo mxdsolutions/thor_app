@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
@@ -26,8 +26,20 @@ export async function sendPasswordResetForUser(
 
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { success: false, error: "Unauthorized" };
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const user = authData?.user;
+        if (authError || !user) {
+            const cookieStore = await cookies();
+            const supabaseCookies = cookieStore.getAll().filter(c => c.name.startsWith("sb-"));
+            console.error("[sendPasswordResetForUser] auth check failed", {
+                authError: authError?.message,
+                cookieCount: supabaseCookies.length,
+            });
+            return {
+                success: false,
+                error: authError?.message ?? "Unauthorized — try signing out and back in",
+            };
+        }
 
         const tenantId = await getTenantId();
         const admin = await createAdminClient();
