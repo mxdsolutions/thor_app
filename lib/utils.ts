@@ -25,6 +25,8 @@ export type AppUser = {
   created_at: string;
   last_sign_in_at: string | null;
   tenant_role?: string;
+  /** True when this row represents a pending tenant_invite (no membership yet). */
+  is_pending?: boolean;
   user_metadata: {
     first_name?: string;
     last_name?: string;

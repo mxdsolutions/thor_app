@@ -115,46 +115,58 @@ export default function UsersPage() {
                                 </td>
                             </tr>
                         ) : (
-                            filteredUsers.map((user) => (
-                                <tr
-                                    key={user.id}
-                                    className={cn(tableRow, "cursor-pointer hover:bg-muted/50 transition-colors")}
-                                    onClick={() => { setSelectedUser(user); setIsSheetOpen(true); }}
-                                >
-                                    <td className={tableCell + " pl-4 pr-4"}>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
-                                                {getInitials(user)}
+                            filteredUsers.map((user) => {
+                                const pending = user.is_pending === true;
+                                const statusLabel = pending ? "Invited" : user.last_sign_in_at ? "Active" : "Pending";
+                                const statusClass = pending
+                                    ? "bg-amber-500/10 text-amber-600 border-0"
+                                    : user.last_sign_in_at
+                                        ? "bg-emerald-500/10 text-emerald-600 border-0"
+                                        : "text-muted-foreground";
+                                return (
+                                    <tr
+                                        key={user.id}
+                                        className={cn(
+                                            tableRow,
+                                            pending
+                                                ? "cursor-default opacity-80"
+                                                : "cursor-pointer hover:bg-muted/50 transition-colors",
+                                        )}
+                                        onClick={pending ? undefined : () => { setSelectedUser(user); setIsSheetOpen(true); }}
+                                    >
+                                        <td className={tableCell + " pl-4 pr-4"}>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
+                                                    {getInitials(user)}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-semibold truncate">{getDisplayName(user)}</p>
+                                                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                                </div>
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="font-semibold truncate">{getDisplayName(user)}</p>
-                                                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className={tableCell + " px-4 hidden sm:table-cell"}>
-                                        <span className="text-sm capitalize text-muted-foreground">
-                                            {user.tenant_role || user.user_metadata?.user_type || "member"}
-                                        </span>
-                                    </td>
-                                    <td className={tableCell + " px-4 hidden sm:table-cell"}>
-                                        <Badge
-                                            variant="secondary"
-                                            className={cn(
-                                                "rounded-full px-2 py-0 text-[10px] uppercase tracking-wider font-bold",
-                                                user.last_sign_in_at
-                                                    ? "bg-emerald-500/10 text-emerald-600 border-0"
-                                                    : "text-muted-foreground"
-                                            )}
-                                        >
-                                            {user.last_sign_in_at ? "Active" : "Pending"}
-                                        </Badge>
-                                    </td>
-                                    <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
-                                        {formatLastActive(user.last_sign_in_at)}
-                                    </td>
-                                </tr>
-                            ))
+                                        </td>
+                                        <td className={tableCell + " px-4 hidden sm:table-cell"}>
+                                            <span className="text-sm capitalize text-muted-foreground">
+                                                {user.tenant_role || user.user_metadata?.user_type || "member"}
+                                            </span>
+                                        </td>
+                                        <td className={tableCell + " px-4 hidden sm:table-cell"}>
+                                            <Badge
+                                                variant="secondary"
+                                                className={cn(
+                                                    "rounded-full px-2 py-0 text-[10px] uppercase tracking-wider font-bold",
+                                                    statusClass,
+                                                )}
+                                            >
+                                                {statusLabel}
+                                            </Badge>
+                                        </td>
+                                        <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
+                                            {pending ? `Invited ${formatLastActive(user.created_at)}` : formatLastActive(user.last_sign_in_at)}
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

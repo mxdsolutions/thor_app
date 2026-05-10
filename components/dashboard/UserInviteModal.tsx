@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSWRConfig } from "swr";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { IconX as XMarkIcon } from "@tabler/icons-react";
@@ -15,6 +16,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
     const [loading, setLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const { data: subData, mutate: mutateSub } = useTenantSubscription();
+    const { mutate: mutateGlobal } = useSWRConfig();
 
     useEffect(() => {
         if (open) {
@@ -50,8 +52,10 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
             return;
         }
         toast.success(`Invitation sent to ${email}`);
-        // The new pending invite consumes a seat — refresh the usage line.
+        // The new pending invite consumes a seat — refresh the usage line —
+        // and shows up as an "Invited" row in the users list.
         mutateSub();
+        mutateGlobal("/api/users");
         onClose();
     };
 
