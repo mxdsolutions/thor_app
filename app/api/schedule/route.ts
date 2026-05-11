@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { validationError, serverError, missingParamError } from "@/app/api/_lib/errors";
 import { scheduleEntrySchema, scheduleEntryUpdateSchema } from "@/lib/validation";
 
@@ -50,6 +51,9 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.schedule", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = scheduleEntrySchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -91,7 +95,10 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     return NextResponse.json({ item: data }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.schedule", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = scheduleEntryUpdateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -110,7 +117,10 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ item: data });
 });
 
-export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
+export const DELETE = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.schedule", "delete");
+    if (denied) return denied;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     if (!id) return missingParamError("id");
