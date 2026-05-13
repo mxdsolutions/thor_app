@@ -1,11 +1,4 @@
-import type { Metadata } from "next";
 import { WaitlistForm } from "./WaitlistForm";
-
-export const metadata: Metadata = {
-    title: "Join the waiting list",
-    description:
-        "THOR — Tradie OS. Less time on admin. More time on the tools. Join the waiting list for early access.",
-};
 
 const TICKER_ITEMS = [
     "Jobs & projects",
@@ -40,8 +33,11 @@ export default function WaitingListPage() {
                 <p className="mt-10 sm:mt-14 font-statement text-xl sm:text-2xl md:text-3xl font-semibold tracking-[-0.018em] leading-[1.25] text-white/75 max-w-2xl text-balance">
                     The Tradie Operating System.
                     <br />
-                    Less time <span className="italic font-medium text-white/55">in</span> the business,{" "}
-                    more time <span className="italic font-medium text-white/95">on</span> it.
+                    Less time{" "}
+                    <span className="italic font-medium text-white/55">in</span>{" "}
+                    the business, more time{" "}
+                    <span className="italic font-medium text-white/95">on</span>{" "}
+                    it.
                 </p>
 
                 <div className="mt-10 sm:mt-12 w-full max-w-md">

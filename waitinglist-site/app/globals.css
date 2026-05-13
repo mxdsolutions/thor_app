@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+    --font-sans: var(--font-inter);
+    --font-statement: var(--font-bricolage);
+    --font-paladins: var(--font-paladins-cond);
+
+    --color-background: hsl(30 8% 98%);
+    --color-foreground: hsl(220 14% 14%);
+
+    --radius-sm: 4px;
+    --radius-md: 4px;
+    --radius-lg: 8px;
+    --radius-xl: 8px;
+    --radius-2xl: 8px;
+    --radius-3xl: 8px;
+}
+
+@layer base {
+    body {
+        @apply bg-black text-white antialiased;
+        font-family: var(--font-inter);
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-weight: 600;
+        letter-spacing: -0.011em;
+    }
+}
+
+/* THOR wordmark — off-white → grey base with a bright shine band that
+   sweeps left→right, dwells, then sweeps again.
+   Base is intentionally not pure #fff at the top so the white shine band
+   has contrast to read against on the upper half of the letters. */
+.thor-shimmer {
+    background-image:
+        linear-gradient(105deg,
+            transparent 25%,
+            rgba(255, 255, 255, 0.6) 42%,
+            rgba(255, 255, 255, 1) 50%,
+            rgba(255, 255, 255, 0.6) 58%,
+            transparent 75%),
+        linear-gradient(180deg, #ededed 0%, #6e6e6e 100%);
+    background-size: 250% 100%, 100% 100%;
+    background-position: -150% 0, 0 0;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    animation: thor-shimmer 3.8s ease-in-out infinite;
+}
+
+@keyframes thor-shimmer {
+    0% {
+        background-position: -150% 0, 0 0;
+    }
+
+    65%,
+    100% {
+        background-position: 250% 0, 0 0;
+    }
+}
+
+/* Horizontal ticker — content duplicated, translate -50% loops seamlessly. */
+.thor-ticker {
+    animation: thor-ticker 38s linear infinite;
+    width: max-content;
+}
+
+@keyframes thor-ticker {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
