@@ -18,6 +18,29 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Temporary pre-launch lockdown — public marketing + new-user signup all
+  // funnel into the waiting list. /login and password reset stay reachable so
+  // existing accounts can still get in. Remove this block at launch.
+  async redirects() {
+    const targets = [
+      "/",
+      "/features",
+      "/features/:path*",
+      "/pricing",
+      "/pricing/:path*",
+      "/about",
+      "/about/:path*",
+      "/contact",
+      "/contact/:path*",
+      "/signup",
+      "/signup/:path*",
+    ];
+    return targets.map((source) => ({
+      source,
+      destination: "/waitinglist",
+      permanent: false,
+    }));
+  },
 };
 
 export default nextConfig;
