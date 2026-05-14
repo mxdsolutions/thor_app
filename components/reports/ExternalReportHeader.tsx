@@ -55,7 +55,7 @@ export function ExternalReportHeader({ reportTitle, senderMessage, senderName, s
             </div>
 
             <div className="mx-auto max-w-3xl px-4 pb-4">
-                <h1 className="text-xl font-display font-semibold leading-tight">{reportTitle}</h1>
+                <h1 className="text-xl font-statement font-semibold leading-tight">{reportTitle}</h1>
                 {senderName && (
                     <p className="text-xs text-muted-foreground mt-1">
                         Sent by {senderName} · {displayName}

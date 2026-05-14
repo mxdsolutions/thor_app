@@ -9,8 +9,16 @@ import { FormSection } from "@/components/reports/FormSection";
 import { createClient } from "@/lib/supabase/client";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { IconFileText as DocumentTextIcon, IconDownload as ArrowDownTrayIcon, IconSend as SendIcon } from "@tabler/icons-react";
+import {
+    FileText as DocumentTextIcon,
+    Download as ArrowDownTrayIcon,
+    Send as SendIcon,
+    MoreVertical,
+    Archive,
+    ArchiveRestore,
+} from "lucide-react";
 import { toast } from "sonner";
 import { REPORT_STATUS_CONFIG, REPORT_TYPE_LABELS } from "@/lib/status-config";
 import type { ReportTemplate, TemplateSchema } from "@/lib/report-templates/types";
@@ -54,6 +62,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
     const [freshData, setFreshData] = useState<Record<string, unknown> | null>(null);
     const [loadingData, setLoadingData] = useState(false);
     const [activeSectionId, setActiveSectionId] = useState<string>("");
+    const [menuOpen, setMenuOpen] = useState(false);
 
     const tenant = useTenantOptional();
 
@@ -253,14 +262,27 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
         { id: "activity", label: "Activity" },
     ];
 
-    // Shared between header (desktop) and footer (mobile) so the buttons stay
-    // in sync — just different layouts.
-    const actionButtons = data.template_id ? (
+    // Primary action stays in the header on desktop; secondary form actions
+    // collapse into the kebab so the header doesn't feel cramped. Mobile keeps
+    // the full button stack in the footer where vertical space is cheap.
+    const primaryButton = data.template_id && data.status === "submitted" ? (
+        <Button
+            size="sm"
+            className="rounded-lg"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+        >
+            <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+            {downloading ? "Generating..." : "View PDF"}
+        </Button>
+    ) : null;
+
+    const mobileActionButtons = data.template_id ? (
         <>
             <Button asChild variant="outline" size="sm" className="rounded-lg">
                 <a href={`/report/${data.id}`} target="_blank" rel="noopener noreferrer">
                     <DocumentTextIcon className="w-4 h-4 mr-2" />
-                    Open Report Form
+                    Open Form
                 </a>
             </Button>
             <Button
@@ -270,7 +292,7 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
                 onClick={() => setSendModalOpen(true)}
             >
                 <SendIcon className="w-4 h-4 mr-2" />
-                Send Report Form
+                Send Form
             </Button>
             {data.status === "submitted" && (
                 <Button
@@ -285,6 +307,72 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             )}
         </>
     ) : null;
+
+    const isArchived = !!data.archived_at;
+    const kebabItemCls =
+        "w-full flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-left hover:bg-secondary text-foreground transition-colors";
+    const headerMenu = (
+        <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 h-9 w-9 px-0"
+                    aria-label="More actions"
+                >
+                    <MoreVertical className="w-4 h-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-52 p-1">
+                {data.template_id && (
+                    <>
+                        <a
+                            href={`/report/${data.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setMenuOpen(false)}
+                            className={kebabItemCls}
+                        >
+                            <DocumentTextIcon className="w-4 h-4" />
+                            Open Form
+                        </a>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setMenuOpen(false);
+                                setSendModalOpen(true);
+                            }}
+                            className={kebabItemCls}
+                        >
+                            <SendIcon className="w-4 h-4" />
+                            Send Form
+                        </button>
+                        <div className="my-1 h-px bg-border" />
+                    </>
+                )}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setMenuOpen(false);
+                        void archive.toggle(!isArchived);
+                    }}
+                    className={kebabItemCls}
+                >
+                    {isArchived ? (
+                        <>
+                            <ArchiveRestore className="w-4 h-4" />
+                            Restore report
+                        </>
+                    ) : (
+                        <>
+                            <Archive className="w-4 h-4" />
+                            Archive report
+                        </>
+                    )}
+                </button>
+            </PopoverContent>
+        </Popover>
+    );
 
     return (
         <>
@@ -310,16 +398,16 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             onTabChange={setActiveTab}
             banner={archive.banner}
             actions={
-                <div className="flex items-center gap-2">
-                    {actionButtons && (
-                        <div className="hidden md:flex items-center gap-2">{actionButtons}</div>
+                <div className="flex items-center gap-2.5">
+                    {primaryButton && (
+                        <div className="hidden md:flex items-center">{primaryButton}</div>
                     )}
-                    {archive.menu}
+                    {headerMenu}
                 </div>
             }
             footer={
-                actionButtons ? (
-                    <div className="flex flex-col gap-2 [&>*]:w-full">{actionButtons}</div>
+                mobileActionButtons ? (
+                    <div className="flex flex-col gap-2 [&>*]:w-full">{mobileActionButtons}</div>
                 ) : undefined
             }
             footerClassName="md:hidden"

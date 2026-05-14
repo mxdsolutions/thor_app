@@ -24,7 +24,7 @@ export type NavItem = {
     /**
      * Permission resource key from lib/permissions.ts. When set, the item is
      * only shown to users with `read` on that resource. Items without a key
-     * are always visible (e.g. Overview / Analytics).
+     * are always visible (e.g. Overview).
      */
     permissionKey?: string;
 };
@@ -39,6 +39,7 @@ export const ANALYTICS_ITEM: NavItem = {
     href: ROUTES.ANALYTICS,
     label: "Analytics",
     icon: ChartBarIcon,
+    permissionKey: "analytics.dashboard",
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -50,8 +51,8 @@ export const NAV_ITEMS: NavItem[] = [
     { href: ROUTES.CRM_CLIENTS, label: "Clients", icon: UserGroupIcon, moduleId: "crm.contacts", permissionKey: "crm.clients" },
     { href: ROUTES.OPS_TIMESHEETS, label: "Timesheets", icon: ClockIcon, moduleId: "operations.timesheets", permissionKey: "ops.timesheets" },
     { href: ROUTES.FINANCE_PRICING, label: "Pricing", icon: CurrencyDollarIcon, moduleId: "finance.pricing", permissionKey: "finance.pricing" },
-    { href: ROUTES.ANALYTICS, label: "Analytics", icon: ChartBarIcon },
-    { href: ROUTES.FILES, label: "Files", icon: FolderIcon },
+    { href: ROUTES.ANALYTICS, label: "Analytics", icon: ChartBarIcon, permissionKey: "analytics.dashboard" },
+    { href: ROUTES.FILES, label: "Files", icon: FolderIcon, permissionKey: "ops.files" },
 ];
 
 /** Build flat list of nav items filtered by enabled modules. */

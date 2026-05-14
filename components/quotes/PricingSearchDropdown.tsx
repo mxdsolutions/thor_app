@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 import { Input } from "@/components/ui/input";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { type PricingItem } from "@/lib/swr";
 

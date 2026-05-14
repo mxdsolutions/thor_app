@@ -1,15 +1,5 @@
-import {
-    IconHome as HomeModernIcon,
-    IconUser as UserIcon,
-    IconShieldCheck as ShieldCheckIcon,
-    IconAlertTriangle as ExclamationTriangleIcon,
-    IconCamera as CameraIcon,
-    IconLayoutGrid as Squares2X2Icon,
-    IconCurrencyDollar as CurrencyDollarIcon,
-    IconClipboardCheck as ClipboardDocumentCheckIcon,
-    IconLink as LinkIcon,
-} from "@tabler/icons-react";
-import type { Icon as TablerIcon } from "@tabler/icons-react";
+import { Home as HomeModernIcon, User as UserIcon, ShieldCheck as ShieldCheckIcon, AlertTriangle as ExclamationTriangleIcon, Camera as CameraIcon, LayoutGrid as Squares2X2Icon, DollarSign as CurrencyDollarIcon, ClipboardCheck as ClipboardDocumentCheckIcon, Link as LinkIcon } from "lucide-react";
+import type { LucideIcon as TablerIcon } from "lucide-react";
 import type { FieldDef } from "./types";
 
 export interface PresetFieldGroup {

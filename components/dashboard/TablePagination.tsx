@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface TablePaginationProps {
     page: number;
@@ -38,7 +38,7 @@ export function TablePagination({ page, pageSize, total, onPageChange }: TablePa
                     disabled={page === 0}
                     onClick={() => onPageChange(page - 1)}
                 >
-                    <IconChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <span className="text-xs text-muted-foreground">
                     {page + 1} / {totalPages}
@@ -50,7 +50,7 @@ export function TablePagination({ page, pageSize, total, onPageChange }: TablePa
                     disabled={page >= totalPages - 1}
                     onClick={() => onPageChange(page + 1)}
                 >
-                    <IconChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-4 h-4" />
                 </Button>
             </div>
         </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/routes";
-import { IconMenu2 as Bars3Icon, IconX as XMarkIcon, IconArrowLeft as ArrowLeftIcon } from "@tabler/icons-react";
+import { Menu as Bars3Icon, X as XMarkIcon, ArrowLeft as ArrowLeftIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { SectionDef } from "@/lib/report-templates/types";
 import type { SectionStatus } from "@/lib/reports/validation";

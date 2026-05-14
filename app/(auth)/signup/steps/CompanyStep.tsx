@@ -2,12 +2,7 @@
 
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import {
-    IconArrowRight as ArrowRightIcon,
-    IconArrowLeft as ArrowLeftIcon,
-    IconUpload as UploadIcon,
-    IconBuilding as BuildingIcon,
-} from "@tabler/icons-react";
+import { ArrowRight as ArrowRightIcon, ArrowLeft as ArrowLeftIcon, Upload as UploadIcon, Building as BuildingIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";

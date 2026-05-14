@@ -11,6 +11,7 @@ export const RESOURCE_GROUPS = [
     "CRM",
     "Operations",
     "Finance",
+    "Dashboard",
     "Settings",
     "Integrations",
 ] as const;
@@ -33,11 +34,16 @@ export const RESOURCES: ResourceDefinition[] = [
     { key: "ops.schedule", label: "Schedule", group: "Operations", actions: ["read", "write", "delete"] },
     { key: "ops.reports", label: "Reports", group: "Operations", actions: ["read", "write", "delete"] },
     { key: "ops.timesheets", label: "Timesheets", group: "Operations", actions: ["read", "write", "delete"] },
+    { key: "ops.files", label: "Files", group: "Operations", actions: ["read", "write", "delete"] },
 
     // Finance
     { key: "finance.quotes", label: "Quotes", group: "Finance", actions: ["read", "write", "delete"] },
     { key: "finance.invoices", label: "Invoices", group: "Finance", actions: ["read", "write", "delete"] },
     { key: "finance.pricing", label: "Materials", group: "Finance", actions: ["read", "write", "delete"] },
+
+    // Dashboard / financial visibility
+    { key: "dashboard.financials", label: "Financial Overview Cards", group: "Dashboard", actions: ["read"] },
+    { key: "analytics.dashboard", label: "Analytics", group: "Dashboard", actions: ["read"] },
 
     // Settings
     { key: "settings.users", label: "Users", group: "Settings", actions: ["read", "write", "delete"] },
@@ -71,6 +77,7 @@ const ROUTE_TO_RESOURCE: Array<{ prefix: string; resource: string }> = [
     { prefix: "/dashboard/reports", resource: "ops.reports" },
     { prefix: "/dashboard/scopes", resource: "ops.jobs" },
     { prefix: "/dashboard/timesheets", resource: "ops.timesheets" },
+    { prefix: "/dashboard/files", resource: "ops.files" },
     { prefix: "/dashboard/quotes", resource: "finance.quotes" },
     { prefix: "/dashboard/invoices", resource: "finance.invoices" },
     { prefix: "/dashboard/pricing", resource: "finance.pricing" },
@@ -78,6 +85,7 @@ const ROUTE_TO_RESOURCE: Array<{ prefix: string; resource: string }> = [
     { prefix: "/dashboard/companies", resource: "crm.clients" },
     { prefix: "/dashboard/contacts", resource: "crm.clients" },
     { prefix: "/dashboard/emails", resource: "crm.clients" },
+    { prefix: "/dashboard/analytics", resource: "analytics.dashboard" },
 ];
 
 export function resolveRouteResource(pathname: string): string | null {
@@ -94,9 +102,12 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
         "ops.schedule": { read: true, write: true, delete: true },
         "ops.reports": { read: true, write: true, delete: true },
         "ops.timesheets": { read: true, write: true, delete: true },
+        "ops.files": { read: true, write: true, delete: true },
         "finance.quotes": { read: true, write: true, delete: true },
         "finance.invoices": { read: true, write: true, delete: true },
         "finance.pricing": { read: true, write: true, delete: true },
+        "dashboard.financials": { read: true },
+        "analytics.dashboard": { read: true },
         "settings.users": { read: true, write: true, delete: true },
         "settings.roles": { read: true, write: true },
         "settings.company": { read: true, write: true },
@@ -111,9 +122,12 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
         "ops.schedule": { read: true, write: true, delete: true },
         "ops.reports": { read: true, write: true, delete: true },
         "ops.timesheets": { read: true, write: true, delete: true },
+        "ops.files": { read: true, write: true, delete: true },
         "finance.quotes": { read: true, write: true, delete: true },
         "finance.invoices": { read: true, write: true, delete: true },
         "finance.pricing": { read: true, write: true, delete: true },
+        "dashboard.financials": { read: true },
+        "analytics.dashboard": { read: true },
         "settings.users": { read: true, write: true, delete: true },
         "settings.company": { read: true, write: true },
         "settings.subscription": { read: true, write: true },
@@ -127,9 +141,12 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
         "ops.schedule": { read: true, write: true },
         "ops.reports": { read: true, write: true },
         "ops.timesheets": { read: true, write: true },
+        "ops.files": { read: true, write: true },
         "finance.quotes": { read: true, write: true },
         "finance.invoices": { read: true, write: true },
         "finance.pricing": { read: true },
+        "dashboard.financials": { read: true },
+        "analytics.dashboard": { read: true },
         "settings.users": { read: true },
         "settings.company": { read: true },
         "integrations.xero.sync": { write: true },
@@ -140,6 +157,7 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
         "ops.schedule": { read: true, write: true },
         "ops.reports": { read: true, write: true },
         "ops.timesheets": { read: true, write: true },
+        "ops.files": { read: true, write: true },
         "finance.quotes": { read: true, write: true },
         "finance.invoices": { read: true },
         "finance.pricing": { read: true },
@@ -151,6 +169,7 @@ export const DEFAULT_PERMISSIONS_BY_ROLE: Record<RoleSlug, RolePermissions> = {
         "ops.schedule": { read: true },
         "ops.reports": { read: true },
         "ops.timesheets": { read: true },
+        "ops.files": { read: true },
         "finance.quotes": { read: true },
         "finance.invoices": { read: true },
         "finance.pricing": { read: true },

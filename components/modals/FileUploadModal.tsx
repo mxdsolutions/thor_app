@@ -12,12 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-    IconUpload as UploadIcon,
-    IconX as XMarkIcon,
-    IconCheck as CheckIcon,
-    IconAlertCircle as AlertIcon,
-} from "@tabler/icons-react";
+import { Upload as UploadIcon, X as XMarkIcon, Check as CheckIcon, AlertCircle as AlertIcon } from "lucide-react";
 import { toast } from "sonner";
 import { FILE_MAX_SIZE_BYTES } from "@/lib/validation";
 import { formatBytes, fileIconForMime } from "@/lib/file-utils";

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { notFoundError, serverError, validationError } from "@/app/api/_lib/errors";
 import { purchaseOrderUpdateSchema } from "@/lib/validation";
 
@@ -27,7 +28,10 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ item: data });
 });
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.invoices", "write");
+    if (denied) return denied;
+
     const id = request.nextUrl.pathname.split("/").at(-1);
     if (!id) return notFoundError("Purchase order");
 

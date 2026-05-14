@@ -19,10 +19,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    IconCamera as CameraIcon,
-    IconX as XMarkIcon,
-} from "@tabler/icons-react";
+import { Camera as CameraIcon, X as XMarkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FILE_MAX_SIZE_BYTES, RECEIPT_CATEGORIES, type ReceiptCategory } from "@/lib/validation";

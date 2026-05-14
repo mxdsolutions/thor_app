@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, timeAgo } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon, ArrowUpRight as ArrowUpRightIcon } from "lucide-react";
 import { useReports, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateReportModal } from "@/components/modals/CreateReportModal";

@@ -11,7 +11,7 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { IconMinus, IconPlus } from "@tabler/icons-react";
+import { Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 
@@ -93,9 +93,9 @@ export function AddSeatsModal({
                                 disabled={delta <= 1 || saving}
                                 aria-label="Decrease seats to add"
                             >
-                                <IconMinus className="w-4 h-4" />
+                                <Minus className="w-4 h-4" />
                             </Button>
-                            <div className="text-2xl font-display font-semibold tabular-nums w-12 text-center">
+                            <div className="text-2xl font-statement font-semibold tabular-nums w-12 text-center">
                                 {delta}
                             </div>
                             <Button
@@ -106,7 +106,7 @@ export function AddSeatsModal({
                                 disabled={saving}
                                 aria-label="Increase seats to add"
                             >
-                                <IconPlus className="w-4 h-4" />
+                                <Plus className="w-4 h-4" />
                             </Button>
                         </div>
                     </div>

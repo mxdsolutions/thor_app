@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SectionDef } from "@/lib/report-templates/types";
 import type { SectionStatus } from "@/lib/reports/validation";

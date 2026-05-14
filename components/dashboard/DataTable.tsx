@@ -10,7 +10,7 @@ import {
 } from "@/lib/design-system";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
+import { ArrowUpRight as ArrowUpRightIcon } from "lucide-react";
 import { TableSkeleton } from "@/components/ui/skeleton";
 
 /* ── Column definition ── */

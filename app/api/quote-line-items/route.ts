@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError, missingParamError, notFoundError, validationError } from "@/app/api/_lib/errors";
 import { recalcQuoteTotal } from "@/app/api/_lib/line-items";
 import { z } from "zod";
@@ -46,7 +47,10 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ lineItems: data });
 });
 
-export const POST = withAuth(async (request, { supabase, tenantId }) => {
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.quotes", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = quoteLineItemSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -80,7 +84,10 @@ export const POST = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ lineItem: data, quoteTotal: newTotal }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.quotes", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = quoteLineItemUpdateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -121,7 +128,10 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ lineItem: data, quoteTotal: newTotal });
 });
 
-export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
+export const DELETE = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.quotes", "write");
+    if (denied) return denied;
+
     const id = request.nextUrl.searchParams.get("id");
     if (!id) return missingParamError("id");
 

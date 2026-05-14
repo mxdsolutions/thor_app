@@ -117,8 +117,8 @@ export type OverviewMetrics = {
     activeJobs: OverviewMetricBucket;
 };
 
-export function useOverviewMetrics() {
-    return useSWR<OverviewMetrics>("/api/overview/metrics", fetcher, {
+export function useOverviewMetrics(enabled: boolean = true) {
+    return useSWR<OverviewMetrics>(enabled ? "/api/overview/metrics" : null, fetcher, {
         ...defaultConfig,
         dedupingInterval: 30000,
     });

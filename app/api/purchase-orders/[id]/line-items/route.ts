@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { notFoundError, serverError, validationError } from "@/app/api/_lib/errors";
 import { purchaseOrderLineItemSchema } from "@/lib/validation";
 import { recalcPurchaseOrderTotal } from "@/app/api/_lib/line-items";
 
-export const POST = withAuth(async (request, { supabase, tenantId }) => {
+export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.invoices", "write");
+    if (denied) return denied;
+
     // URL shape: /api/purchase-orders/{id}/line-items — id is two segments back.
     const segments = request.nextUrl.pathname.split("/");
     const poId = segments.at(-2);

@@ -1,128 +1,146 @@
 # Code Audit — THOR (Tradie OS)
 
-**Date**: 2026-05-07
+**Date**: 2026-05-11
 **Project type**: Multi-tenant Next.js 15 / React 19 / Supabase web app
-**Audit depth**: Quick (manifests, middleware, API spine, two large components, validation, design tokens — ~5% of source)
+**Audit depth**: Delta refresh from 2026-05-07 audit (spine + role-gate refactor surface + verification of prior findings)
 
 ## Executive Summary
 
-THOR is in **better-than-average shape** for its size. The architectural spine is genuinely well-thought-out: a `withAuth`/`withPlatformAuth` wrapper, a `tenantListQuery` helper that bakes in the tenant filter, defense-in-depth (RLS + explicit `.eq("tenant_id", …)`), middleware that resolves tenant by custom domain → subdomain → JWT with sensible caching, and a thorough `CLAUDE.md` that documents the patterns. New entities clearly have a clean slot to drop into.
+The four-day delta is the strongest single iteration the codebase has had. **Almost every prior finding shipped a fix:** the reference-id race, atomic job/assignee writes, atomic quote/PO totals, the JobDetailView decomposition, the `withAuth` error-helper inconsistency, `serverError()` log-on-cause, the README port/`.env.example` drift — all resolved. Test coverage went from one file to eleven, with the load-bearing helpers (`handler`, `archive`, `list-query`, `line-items`, `errors`, `pagination`) now under unit test. Two new SQL migrations close real holes: 041 adds RLS role gates on `tenant_memberships`/`tenant_invites`/`tenant_licenses`, and 042 patches a cross-tenant write hole in `recalc_quote_total` / `recalc_purchase_order_total`.
 
-The two things holding it back are **near-zero automated tests** (one test file outside `node_modules` for a codebase of this scope) and a handful of **god components** that have outgrown the patterns the docs describe — `JobDetailView.tsx` (1036 lines) in particular orchestrates 7 side-sheets and 6 modals, and bypasses the API/SWR layer to mutate Supabase directly. There are also two real concurrency hazards on the write path (already partially documented as known issues): non-atomic line-item totals and non-atomic reference-id allocation in `POST /api/jobs`.
+The new-work surface introduces one notable gap: the API-layer role gate is **incomplete**. `requirePermission` is wired through ~20 routes (clients/jobs/quotes/invoices/files/etc.) but four tenant-write endpoints — `schedule`, `tasks`, `quote-sections`, and `notes` — still go through `withAuth` only. RLS isn't gating them either (041 only covers membership/invites/licenses), so a Viewer with a valid JWT can directly call those endpoints to create or modify schedule entries and tasks. The other notable new findings are an info-disclosure quirk in the role-gate denial messages, two non-atomic write paths in `quotes` POST (title race) and `invoices` POST (line items insert without error-check), and a 2-roundtrip cost on every gated write that's worth memoizing.
 
-**Severity counts**: 🔴 3 critical · 🟡 6 major · 🟢 5 minor
+**Severity counts**: 🔴 1 critical · 🟡 7 major · 🟢 7 minor (down from 🔴 3 / 🟡 6 / 🟢 5 on 2026-05-07; most prior criticals shipped fixes)
 
 ## Top Priorities
 
-1. 🔴 **Add a real test baseline.** Only [app/api/webhooks/stripe/route.test.ts](app/api/webhooks/stripe/route.test.ts) exists for the entire user-code surface. At minimum cover `withAuth`/`withPlatformAuth`, `tenantListQuery`, and the recalc helpers — these are load-bearing and a regression in any of them breaks tenant isolation or money math.
-2. 🔴 **Fix the reference-id allocator race in [app/api/jobs/route.ts:75-92](app/api/jobs/route.ts).** Read-then-update of `tenants.reference_next` is not atomic — two concurrent job creations will allocate the same number. Move to a Postgres function (`SELECT … FOR UPDATE` or `nextval` on a per-tenant sequence). Same class of bug as the documented line-items recalc issue in [app/api/_lib/line-items.ts](app/api/_lib/line-items.ts).
-3. 🟡 **Decompose [components/jobs/JobDetailView.tsx](components/jobs/JobDetailView.tsx).** 1036 lines, ~14 `useState`s, 7 SWR hooks, and a direct `supabase.from("jobs").update(...)` call from the component (line 172) — that bypasses validation and is the only thing in the codebase doing it from a UI component for a tenant-scoped table. Split per-tab content into sub-components and route writes through `PATCH /api/jobs`.
+1. 🔴 **Close the role-gate gap on the four ungated write routes.** [app/api/schedule/route.ts](app/api/schedule/route.ts), [tasks/route.ts](app/api/tasks/route.ts), [quote-sections/route.ts](app/api/quote-sections/route.ts), and [notes/route.ts](app/api/notes/route.ts) all run POST/PATCH/DELETE through `withAuth` only — no `requirePermission` call. The corresponding `RESOURCES` keys (`ops.schedule`, `finance.quotes`, …) exist in [lib/permissions.ts](lib/permissions.ts), so this is a wiring miss, not a design gap. Add the gate using the pattern at [contacts/route.ts:42-44](app/api/contacts/route.ts:42).
+2. 🟡 **Memoize `requirePermission` per request and short-circuit owners earlier.** [app/api/_lib/permissions.ts:46-86](app/api/_lib/permissions.ts:46) does two sequential SELECTs (`tenant_memberships`, then `tenant_roles`) on every gated write. A typical PATCH path now spends ~2 round-trips on permissions before any business logic. The owner short-circuit at [permissions.ts:33](app/api/_lib/permissions.ts:33) only happens *after* both queries — read the role from the first row and exit early. [app/api/users/route.ts:122-127](app/api/users/route.ts:122) is exhibit A: it does its *own* membership lookup right after `requirePermission` already did one.
+3. 🟡 **Wrap `POST /api/invoices` in an RPC.** [invoices/route.ts:80-93](app/api/invoices/route.ts:80) inserts the invoice with a computed `total`, then inserts line items in a separate call **with no error check** — `await supabase.from("invoice_line_items").insert(...)` ignores the result. Same class of bug the prior audit's #2 fixed for jobs+assignees. If line items fail, the invoice exists with the right totals and zero items.
+
+---
+
+## Δ Since 2026-05-07
+
+### ✅ Resolved
+- **Reference-id race fixed** — [jobs/route.ts:79-82](app/api/jobs/route.ts:79) now uses `allocate_tenant_reference` RPC. (was 🔴)
+- **Job + assignees insert is atomic** — [jobs/route.ts:91-97](app/api/jobs/route.ts:91) and [jobs/route.ts:151-157](app/api/jobs/route.ts:151) use `create_job_with_assignees` / `replace_job_assignees` RPCs. (was 🟡)
+- **Line-item totals are atomic** — [recalcQuoteTotal / recalcPurchaseOrderTotal](app/api/_lib/line-items.ts:9) now wrap the Postgres RPCs and are called from quote/PO routes. (was 🔴 in CLAUDE.md known-issues, was 🔴 in audit)
+- **`JobDetailView.tsx` decomposed** — 1036 lines → 419 lines (60% reduction). Split into [JobDetailHeader.tsx](components/jobs/JobDetailHeader.tsx), [JobDetailModals.tsx](components/jobs/JobDetailModals.tsx), [JobTasksPanel.tsx](components/jobs/JobTasksPanel.tsx), and [tabs/](components/jobs/tabs/) folder. The direct `supabase.from("jobs").update(...)` is gone — `handleSave` at [JobDetailView.tsx:139-149](components/jobs/JobDetailView.tsx:139) now calls `PATCH /api/jobs`. (was 🟡)
+- **`TenantSideSheet.tsx`** — 772 → 199 lines (74% reduction). [QuoteSideSheet.tsx](components/sheets/QuoteSideSheet.tsx) — 719 → 438 (39%, still the largest sheet but no longer a god component). [SignupFlow.tsx](app/(auth)/signup/SignupFlow.tsx) — 685 → 296 (57%). (was 🟡)
+- **`withAuth` uses error helpers** — [handler.ts:32](app/api/_lib/handler.ts:32) returns `unauthorizedError()`, [handler.ts:42](app/api/_lib/handler.ts:42) `forbiddenError(...)`, [handler.ts:44](app/api/_lib/handler.ts:44) `serverError(err, "withAuth")`. Same shape in `withPlatformAuth`. (was 🟡)
+- **`serverError()` logs the cause** — [errors.ts:21-29](app/api/_lib/errors.ts:21) now `console.error(context, cause)` before returning the opaque 500. Mystery prod 500s are over. (was 🟢)
+- **README port + `.env.example` drift fixed** — [README.md:11-12](README.md:11) says `localhost:8005` and references `.env.example`, which now exists at the project root. (was 🟢)
+- **Test baseline established** — 11 test files (was 1). Coverage now includes [handler.test.ts](app/api/_lib/handler.test.ts), [archive.test.ts](app/api/_lib/archive.test.ts), [line-items.test.ts](app/api/_lib/line-items.test.ts), [list-query.test.ts](app/api/_lib/list-query.test.ts), [errors.test.ts](app/api/_lib/errors.test.ts), [pagination.test.ts](app/api/_lib/pagination.test.ts), plus [xero.test.ts](lib/xero.test.ts), [share-tokens.test.ts](lib/reports/share-tokens.test.ts), [validate-submission.test.ts](lib/reports/validate-submission.test.ts), [tools.test.ts](lib/ai/tools.test.ts). The "highest-leverage targets first" list from the prior audit's Recommended Next Steps is largely covered. (was 🔴)
+
+### 🆕 New
+- **API-layer role gate is incomplete on 4 write routes** (see Top Priority #1). 🔴
+- **`requirePermission` 2-roundtrip cost** + missed owner early-exit (see Top Priority #2). 🟡
+- **Info-disclosure in role-gate denial messages** — [permissions.ts:117-132](app/api/_lib/permissions.ts:117) returns distinct messages for "no_membership" vs "denied". A probing caller can distinguish "I'm not a member" from "I am, but lack permission" — leaks tenant-membership existence. Collapse to one generic 403. 🟡
+- **Quote title race** — [quotes/route.ts:57-62](app/api/quotes/route.ts:57) does `count(*)` then sets title `Quote #${count+1}`. Two concurrent quote creations get the same number. Same shape as the (now-fixed) reference-id race; lower stakes since it's a display title, not a unique reference. 🟡
+- **Invoice line-items insert silently ignores error** (see Top Priority #3). 🟡
+- **`POST /api/files` inlines NextResponse.json error responses** — [files/route.ts:44-65](app/api/files/route.ts:44) has 5 inline `NextResponse.json({ error: ... })` calls where the `validationError` / helper pattern would apply. CLAUDE.md explicitly prohibits this and other routes uphold it. 🟢
+- **Migration 042 fixes a real cross-tenant write hole** — `recalc_quote_total` / `recalc_purchase_order_total` were SECURITY DEFINER with no tenant guard. Any authenticated user knowing a UUID could trigger a recalc on any tenant's quote/PO. Now gated on `tenant_id = get_user_tenant_id()`. (Resolved before this audit landed — calling it out for the activity log.) ✅
+- **Migration 041 adds RLS role gates** for `tenant_memberships`, `tenant_invites`, `tenant_licenses`. Server actions use the admin client (RLS-bypass), but a raw PostgREST call from a Viewer can no longer self-promote or revoke invites. ✅
+
+### ⚠️ Regressed
+- None observed.
 
 ---
 
 ## 1. Best Practices
 
-**Strengths**
-- TypeScript `strict: true` ([tsconfig.json:11](tsconfig.json)). Very few `any` casts in user code (~40 occurrences, mostly in 2–3 files).
-- `next/core-web-vitals` + `next/typescript` ESLint base ([eslint.config.mjs](eslint.config.mjs)).
-- Nearly zero `console.log` in user code (3 hits) and no committed `.env*` other than the (gitignored) `.env.local`.
-- Zod validation is consistently applied at API boundaries ([lib/validation.ts](lib/validation.ts), and seen in every POST/PATCH I sampled).
+**Strengths** (carried + reinforced)
+- TypeScript `strict: true`. `any` casts remain rare (~1 file outside test mocks per `grep ": any\b\|<any>\|as any"` in app/lib/components/features).
+- Zod validation consistent at every gated POST/PATCH I sampled (jobs, contacts, companies, quotes, invoices, files, tasks, schedule, notes, quote-sections, users).
+- Atomic helpers (`allocate_tenant_reference`, `create_job_with_assignees`, `replace_job_assignees`, `claim_seat`, `recalc_*`) are now first-class — the codebase has internalised "concurrency-sensitive write → RPC".
+- New: defense-in-depth at the database layer for the most sensitive tables (migration 041).
+- New: `serverError(cause, context)` makes prod 500s diagnosable.
 
-**Findings**
-- 🔴 **Race in reference-id allocation** — [app/api/jobs/route.ts:75-92](app/api/jobs/route.ts:75). Read-then-update of `tenants.reference_next` is not transactional. Two concurrent `POST /api/jobs` requests can allocate the same `reference_id`. Use a Postgres function or per-tenant sequence.
-- 🔴 **Non-atomic line-item totals** — [app/api/_lib/line-items.ts](app/api/_lib/line-items.ts). Already self-documented in CLAUDE.md "Known Issues" — concurrent writes can leave totals wrong. Same fix shape: an `RPC` that recomputes inside one transaction.
-- 🟡 **Job + assignees insert is not atomic** — [app/api/jobs/route.ts:97-115](app/api/jobs/route.ts:97). The job is inserted, then assignees inserted in a follow-up call. If the second call fails, you get a half-created job. PATCH has the same shape (lines 143-150). Wrap in an RPC or accept the second failure and roll back.
-- 🟡 **`jobs` GET doesn't use `tenantListQuery`** — [app/api/jobs/route.ts:14-43](app/api/jobs/route.ts:14). Manual `.eq("tenant_id", tenantId)` is correct here, but the whole point of the helper is "can't forget the filter" — the more routes that opt out, the weaker that guarantee gets. Either extend the helper (it already supports a `select` string) or document why this route is special.
-- 🟡 **`withAuth` doesn't use `errors.ts` helpers** — [app/api/_lib/handler.ts:30-54](app/api/_lib/handler.ts:30) inlines `NextResponse.json({ error: ... })` for 401/403/500. Minor, but CLAUDE.md says "**never** use inline `NextResponse.json({ error: ... })`" — the canonical wrapper is doing exactly that.
-- 🟢 **No `.env.example`** but [README.md:11](README.md:11) tells new devs to `cp .env.example .env.local`. Either add the file or fix the README.
-- 🟢 **Port mismatch in docs** — [README.md:11](README.md:11) says `localhost:3002`, [CLAUDE.md](CLAUDE.md) and [scripts/dev.mjs:18](scripts/dev.mjs:18) say `8005`. The script is the source of truth.
+**New / still open**
+- 🔴 **Role gate not applied on 4 write routes** ([schedule](app/api/schedule/route.ts), [tasks](app/api/tasks/route.ts), [quote-sections](app/api/quote-sections/route.ts), [notes](app/api/notes/route.ts)) — see Top Priority #1.
+- 🟡 **`requirePermission` perf + owner early-exit** — see Top Priority #2.
+- 🟡 **`POST /api/invoices` line-items insert is non-atomic and unchecked** — see Top Priority #3.
+- 🟡 **Information-disclosing 403 reasons** — see Δ section.
+- 🟡 **Quote title race** — see Δ section.
+_(`isRoleAtLeast` at [permissions.ts:22-25](app/api/_lib/permissions.ts:22) has one consumer at [timesheets/route.ts:44](app/api/timesheets/route.ts:44) — Manager+ gate for cross-user timesheet visibility. Useful when a route needs ordinal comparison rather than the resource/action grid.)_
+- 🟢 **`POST /api/files` doesn't use error helpers** — see Δ section.
+- 🟢 **`console.log` count grew from 3 → 82**, but **most are legitimate**: `console.error` for fire-and-forget Xero sync (e.g. [companies/route.ts:40](app/api/companies/route.ts:40), [contacts/route.ts:69](app/api/contacts/route.ts:69)) and a handful of deliberate audit-trail `console.log`s in platform-admin tenant CRUD ([app/api/platform-admin/tenants/route.ts:154](app/api/platform-admin/tenants/route.ts:154)). Worth grepping once before shipping a structured logger, but not a blocker.
 
 ## 2. Modularity
 
 **Strengths**
-- Clear `app/` (routes) ↔ `components/` (UI) ↔ `features/` (cross-cutting modules) ↔ `lib/` (domain helpers) split. Each section has an obvious purpose.
-- API route → SWR hook → page → modal → sheet pattern is consistent enough that a new entity slots in mechanically (the checklist in CLAUDE.md genuinely matches what the codebase does).
-- Server actions vs. API routes have a documented split and are actually followed.
+- The `_lib` helper set (`handler`, `errors`, `pagination`, `list-query`, `archive`, `permissions`, `line-items`) is the cleanest expression of "shared API spine" the codebase has had. New routes drop in mechanically. The route → SWR → modal → sheet recipe in CLAUDE.md still matches what the code does.
+- `JobDetailView` decomposition is exemplary — the new layout (header, modals, tabs/, tasks panel) is the recipe for the remaining large sheets.
+- `buildArchiveHandler` ([archive.ts:62](app/api/_lib/archive.ts:62)) is a genuine win: every entity's `[id]/archive/route.ts` is now ~3 lines (e.g. [jobs/[id]/archive/route.ts](app/api/jobs/[id]/archive/route.ts)).
 
 **Findings**
-- 🟡 **God components.** Top offenders by line count:
-  - [components/jobs/JobDetailView.tsx](components/jobs/JobDetailView.tsx) — 1036 lines (see Top Priorities).
-  - [components/sheets/TenantSideSheet.tsx](components/sheets/TenantSideSheet.tsx) — 772 lines
-  - [components/sheets/QuoteSideSheet.tsx](components/sheets/QuoteSideSheet.tsx) — 719 lines
-  - [app/(auth)/signup/SignupFlow.tsx](app/(auth)/signup/SignupFlow.tsx) — 685 lines
-  - [components/modals/CreateQuoteModal.tsx](components/modals/CreateQuoteModal.tsx) — 586 lines
-  Most of these are tabbed sheets that grew organically — splitting per-tab content into sibling files would cut each by 40-60% with very little risk.
-- 🟡 **UI components writing to Supabase directly.** 6 files in `components/` import `@/lib/supabase/client` and mutate. Some are reasonable (live-edit fields where round-tripping through a route would feel laggy), but `JobDetailView.handleSave` ([components/jobs/JobDetailView.tsx:171-181](components/jobs/JobDetailView.tsx:171)) writes any `jobs` column straight from the browser, skipping `jobUpdateSchema`. RLS still protects tenant isolation, but column-level validation is gone.
+- 🟡 **Direct supabase reads from components, persisting** — [UserSideSheet.tsx:45-100](components/dashboard/UserSideSheet.tsx:45) still pulls `projects`, `job_assignees`, `activity_logs` directly from the client. Same pattern in [features/shell/use-user-profile.ts:4](features/shell/use-user-profile.ts:4), [SignOutDialog.tsx:14](features/shell/SignOutDialog.tsx:14), [NotesPanel.tsx:6](components/sheets/NotesPanel.tsx:6), [ReportSideSheet.tsx:9](components/sheets/ReportSideSheet.tsx:9). RLS protects tenant isolation on reads, so this is lower-stakes than the (now-fixed) `JobDetailView.handleSave` write was — but it skips the SWR cache, can't be unit-tested via the API contract, and grows the surface that needs to know schema names. Worth migrating reads to `useSWR` hooks as those files get touched.
+- 🟢 **Largest remaining single files**: [SignupFlow.tsx](app/(auth)/signup/SignupFlow.tsx) (685 — unchanged), [components/modals/EditQuoteModal.tsx](components/modals/EditQuoteModal.tsx) (536), [app/dashboard/settings/company/subscription/page.tsx](app/dashboard/settings/company/subscription/page.tsx) (578), [app/dashboard/overview/page.tsx](app/dashboard/overview/page.tsx) (555 — three render functions inline; see Code Structure). [lib/validation.ts](lib/validation.ts) at 622 lines is fine — it's an aggregation point and the schemas are short. Apply the JobDetailView recipe as you touch these.
 
 ## 3. Code Quality & Cleanliness
 
 **Strengths**
-- Naming is consistent and self-explanatory throughout (`useJobs`, `withAuth`, `tenantListQuery`, `recalcQuoteTotal` — you can guess what each does without opening the file).
-- Function bodies are short. Most route handlers are <50 lines.
-- Comments tend to explain *why*, not *what* (e.g. the JWT-fallback comment in [middleware.ts:245-247](middleware.ts:245), the lazy-fetch note in [JobDetailView.tsx:129-132](components/jobs/JobDetailView.tsx:129)).
+- Test baseline is in place (11 files vs. 1). The scaffold pattern in [handler.test.ts](app/api/_lib/handler.test.ts) (hoisted mocks for `createClient` / `getTenantId`) is the template for testing future routes.
+- Function bodies stay short. The largest route handlers (`POST /api/quotes`, `POST /api/invoices`) are still ~150 lines and decompose linearly.
+- Comments still tend to explain *why*, not *what*. Examples worth keeping in mind: the lazy-fetch comment in [JobDetailView.tsx:96-99](components/jobs/JobDetailView.tsx:96), the auth-bypass comment for inquiry honeypot in [inquiry/route.ts:58-60](app/api/inquiry/route.ts:58), the seat-claim concurrency note in [inviteUser.ts:64-66](app/actions/inviteUser.ts:64).
 
 **Findings**
-- 🔴 **Almost no tests.** A single user-code test file (`stripe/route.test.ts`) for the whole project. Vitest is configured and ready — the gap is content, not tooling. This is the single biggest quality risk in the audit.
-- 🟢 **A few escape-hatch `any` casts** — [components/dashboard/UserSideSheet.tsx:71-74](components/dashboard/UserSideSheet.tsx:71), [components/jobs/JobDetailView.tsx:118-123](components/jobs/JobDetailView.tsx:118). Each has the eslint-disable comment, so the team is aware. Worth typing properly when those files get touched.
-- 🟢 **Magic-number defaults** — [app/api/_lib/line-items.ts:46-47](app/api/_lib/line-items.ts:46) defaults missing `material_margin`/`labour_margin` to `20`. Probably correct, but a named constant or a NOT-NULL DB default would document the contract.
+- 🟡 **Test coverage doesn't yet hit the spine in `permissions.ts`** — `requirePermission` / `requireOwner` / `checkPermission` have no unit tests despite being called from ~36 routes/actions. With this many call sites, a regression here breaks the entire role gate silently. Highest-leverage next test to add.
+- 🟢 **Two parallel reads in `POST /api/notes`** ([notes/route.ts:47-58](app/api/notes/route.ts:47)) — clean use of `Promise.all` for the note + author profile, good pattern. Worth lifting into a helper if other routes adopt the same shape.
 
 ## 4. User Experience
 
-Hard to evaluate without running the app, but the spine is solid:
-
 **Strengths**
-- Middleware has thoughtful UX details: signup-resume bypass for the Stripe round-trip ([middleware.ts:266-274](middleware.ts:266)), settings pages stay reachable when a tenant is billing-locked so they can fix payment ([middleware.ts:282-298](middleware.ts:282)).
-- Consistent JSON response shapes (`{ items, total }`, `{ item }`).
-- Toast feedback via `sonner` and SWR's `keepPreviousData` for paginated lists ([lib/swr.ts:47](lib/swr.ts:47)) — list filters won't flash empty.
+- Permission-aware UI: [overview/page.tsx:70-71](app/dashboard/overview/page.tsx:70) reads `usePermissionOptional("dashboard.financials", "read", false)` and skips both the metric cards *and* the API call when the caller can't see them. That's the right shape — the server endpoint enforces the same gate, so client-side hiding is purely a render optimisation.
+- Toast feedback, optimistic updates via SWR, `keepPreviousData` on paginated lists — all unchanged and good.
+- New: archive flow (active/archived/all scope) is consistent across every entity that has it, and the SWR helpers (`useFiles`, `useTimesheets`, etc.) expose a clean `archive` arg.
 
 **Findings**
-- 🟢 **Error responses are terse.** `serverError()` returns `{ error: "Internal server error" }` ([app/api/_lib/errors.ts:20-25](app/api/_lib/errors.ts:20)) — fine for the client, but worth logging the underlying Postgres error server-side when it happens (currently `if (error) return serverError()` swallows the detail).
+- 🟢 **Inquiry endpoint silently accepts honeypot-triggered submissions** ([inquiry/route.ts:58-61](app/api/inquiry/route.ts:58)) — that's intentional anti-bot UX (don't tip them off) but worth a one-line metric/log if you want to know how often it fires.
+- 🟢 **Role-gate denials lump distinct cases under one toast** in the UI — the server now distinguishes them (see Best Practices info-disclosure note), so when you collapse the server messages, also pick a consistent client toast like "You don't have permission to do that."
 
 ## 5. Code Structure
 
 **Strengths**
-- Folder layout matches the README/CLAUDE.md description exactly. Anyone who reads the docs can find any file in two clicks.
-- `lib/routes.ts` exists and is documented as the single source of truth for paths.
-- `app/api/_lib/` cleanly isolates handler/error/pagination/list-query helpers.
+- `_lib` helper layout still the strongest part of the codebase. Migrations are sequentially numbered with descriptive filenames ([041_role_gate_tenant_writes.sql](supabase/migrations/041_role_gate_tenant_writes.sql), [042_recalc_tenant_guards.sql](supabase/migrations/042_recalc_tenant_guards.sql), [043_add_dashboard_files_resources.sql](supabase/migrations/043_add_dashboard_files_resources.sql)) and each one has a header explaining *why*, not just *what* — these are unusually high-quality migration files.
+- `lib/routes.ts`, `lib/design-system.ts`, the per-feature `features/` modules — all carry over.
 
 **Findings**
-- 🟢 **Split between `components/` and `features/`.** Both contain reusable building blocks; the boundary ("`features/` = cross-cutting modules") is documented but not always obvious from the names. Not a problem now; would become one as `features/` grows beyond its current four entries.
+- 🟢 **`overview/page.tsx` (555 lines) inlines three large render functions** (`renderJobsTable`, `renderTasksTable`, `renderActiveJobsCompact`, `renderAppointments`). They close over component state and aren't reused, but they're the single biggest contributor to that file's size and would each be a clean sibling component. Apply when next touched.
+_(No new structural findings — `components/` vs `features/` boundary observation from prior audit unchanged and not urgent.)_
 
 ## 6. Agent Friendliness
 
-This is the project's standout strength.
-
-- 📕 [CLAUDE.md](CLAUDE.md) is *unusually good* — explains the auth wrapper, validation pattern, list-query helper, design tokens, plan/audit conventions, known issues, and the soft-delete rule. New-entity checklist is a 7-step recipe.
-- 📕 [DESIGN_SYSTEM.md](DESIGN_SYSTEM.md), [DATABASE.md](DATABASE.md), [docs/plans/](docs/plans), [docs/audits/](docs/audits) all exist and are populated.
-- File names are self-describing. Entry points are obvious.
+Still the project's strongest dimension. CLAUDE.md is up-to-date with the role gate, atomic-helper, and CLAUDE.md "Token storage" / "Email sending" sections — accurately describes the new shape. Migration headers are dense with intent.
 
 **Findings**
-- 🟢 [README.md](README.md) is thin and has the wrong port + a broken `.env.example` reference (see Best Practices). Easy fix.
+- 🟢 **CLAUDE.md "Known Issues" still says "_None at this time._"** ([CLAUDE.md](CLAUDE.md)) — the prior known issues (line-item recalc race) are resolved, so this is correct! Worth adding the four ungated routes here once they're either fixed or scheduled, so future agents don't reintroduce the pattern by copying `tasks/route.ts`.
+_(`docs/audits/` is also available if you want a versioned history of these reports rather than overwriting the project-root copy each refresh.)_
 
 ## 7. Design System Integrity
 
 **Strengths**
-- Tokens defined once in [lib/design-system.ts](lib/design-system.ts) and the `@theme` block in `globals.css`. Tabler Icons standardised.
-- Radius scale is deliberately tight (2/4/6 px) and the rule is documented. Only 2 arbitrary `rounded-[…]` values across the codebase — both legitimate edge cases (a 4px schedule entry, a 2rem mobile preview frame).
-- Status-dot colours, table styles, avatar surfaces all centralised.
+- Tokens centralised, radius scale tight, status-dot/table styles consistent — unchanged from prior audit.
+- New: pages added since the prior audit (overview refresh, files dashboard) use existing design tokens (`tableBase`, `getJobStatusDot`, `priorityDotClass`, `formatCurrency`) — no new raw-hex regressions in the files I sampled.
 
 **Findings**
-- 🟡 **Raw hex colours in [app/platform-admin/PlatformAdminShell.tsx](app/platform-admin/PlatformAdminShell.tsx).** `#7b819a` appears 5 times (lines 51, 64, 80, 127, 138, 151) for the same nav-text colour. Should be a token (`--platform-admin-muted-foreground` or similar). Same file uses `bg-white/[0.07]` six times — also a candidate for a token.
-- 🟢 **Two more raw hex hits** — [app/page.tsx:181](app/page.tsx:181) (`#F05A28` brand orange in a marketing blur), [app/dashboard/settings/company/branding/page.tsx:11](app/dashboard/settings/company/branding/page.tsx:11) (default fallback colour). Both arguably defensible; the platform-admin one is the real fix.
+- 🟡 **Platform-admin nav colour `#7b819a` finding from prior audit not yet addressed** — still 🟡 from before. Tokenise as a one-line fix.
 
 ---
 
 ## Recommended Next Steps
 
 **Quick wins** (single PR, hours of work)
-1. Fix [README.md](README.md) port + `.env.example` reference; add an actual `.env.example`.
-2. Replace inline `NextResponse.json({ error: ... })` in [withAuth](app/api/_lib/handler.ts) with the helpers from `errors.ts` (consistency with the rule the file enforces).
-3. Token-ise the platform-admin nav colour (`#7b819a` × 6).
-4. Type the `any` casts in [UserSideSheet.tsx](components/dashboard/UserSideSheet.tsx) and the three `selected*` states in [JobDetailView.tsx](components/jobs/JobDetailView.tsx).
-5. Log the underlying error in `serverError()` callers so prod 500s stop being mysterious.
+1. **Add `requirePermission` to the four ungated routes** — `schedule` (`ops.schedule`), `tasks` (probably `ops.jobs`, or add an `ops.tasks` resource), `quote-sections` (`finance.quotes`), `notes` (decide whether notes should be member-or-better or any-member). Pattern is one line at the top of each handler — see [contacts/route.ts:42-44](app/api/contacts/route.ts:42).
+2. **Memoize `requirePermission` per request and short-circuit owners** from the membership row. Add a tiny per-`AuthContext` cache; the implementation could live in [permissions.ts](app/api/_lib/permissions.ts) or as a `WeakMap` keyed on the supabase client.
+3. **Collapse the role-gate denial messages** to one generic 403 string in [permissions.ts:117-132](app/api/_lib/permissions.ts:117).
+4. **Convert the 5 inline error responses in [files/route.ts:44-65](app/api/files/route.ts:44)** to `validationError` / `missingParamError` calls.
+5. **Tokenise `#7b819a`** in [PlatformAdminShell.tsx](app/platform-admin/PlatformAdminShell.tsx).
 
 **Larger refactors** (worth scheduling)
-1. **Reference-id allocator → Postgres function/sequence.** Same pattern as the planned `recalc_job_amount` RPC.
-2. **Atomic job+assignees writes** via an RPC (or a Postgres trigger that mirrors `assignee_ids` from the job row).
-3. **Decompose `JobDetailView.tsx`** — split per-tab content; route the inline `supabase.from("jobs").update(...)` call through `PATCH /api/jobs`. Apply the same recipe to `TenantSideSheet`, `QuoteSideSheet`, `SignupFlow` as they get touched.
-4. **Test baseline.** Pick the highest-leverage targets first: `withAuth`/`withPlatformAuth` (tenant isolation), `tenantListQuery` (defense-in-depth), `recalcQuoteTotal`/`recalcPurchaseOrderTotal` (money), the middleware's tenant-resolution + billing-lock branching, and the stripe webhook (already covered — keep extending). Aim for "one test per critical invariant," not coverage %.
+1. **Wrap `POST /api/invoices` in an atomic RPC** — invoice + line items in one transaction. Mirror the `create_job_with_assignees` shape. Same applies to `POST /api/quotes` (sections + line items + recalc) which currently does sections insert → items insert → recalc as three separate steps.
+2. **Fix the `Quote #N` title race** — either an atomic `nextval`-on-tenant-sequence (same shape as `allocate_tenant_reference`) or accept duplicates and let the user override.
+3. **Add unit tests for `permissions.ts`** — `checkPermission`, `requirePermission`, `requireOwner`, `getCallerRole`. Highest leverage of the remaining test gaps given how many call sites depend on them.
+4. **Migrate component-level supabase reads to SWR hooks** as those files are touched: `UserSideSheet`, `NotesPanel`, `ReportSideSheet`, `use-user-profile`. Lower priority than the writes (which are gone), but eliminates the last off-spine data path.
+5. **Decompose `app/dashboard/overview/page.tsx`** — pull `renderJobsTable`/`renderTasksTable`/`renderActiveJobsCompact`/`renderAppointments` into sibling files. ~30 min, drops the file from 555 → ~150 lines.

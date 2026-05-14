@@ -131,7 +131,7 @@ export function CalendarGrid({
                                                 e.stopPropagation();
                                                 onJobClick?.(entry);
                                             }}
-                                            className="w-full text-left rounded-[4px] bg-blue-600 hover:bg-blue-700 p-2 transition-colors cursor-pointer group"
+                                            className="w-full text-left rounded-md bg-blue-600 hover:bg-blue-700 p-2 transition-colors cursor-pointer group"
                                         >
                                             {/* Status + time */}
                                             <div className="flex items-center gap-1 mb-1">

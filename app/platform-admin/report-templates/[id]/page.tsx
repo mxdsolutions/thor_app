@@ -4,7 +4,7 @@ import { use } from "react";
 import Link from "next/link";
 import { usePlatformReportTemplate } from "@/lib/swr";
 import { TemplateBuilder } from "@/components/platform-admin/TemplateBuilder";
-import { IconArrowLeft as ArrowLeftIcon, IconTools as WrenchScrewdriverIcon } from "@tabler/icons-react";
+import { ArrowLeft as ArrowLeftIcon, Wrench as WrenchScrewdriverIcon } from "lucide-react";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 
 export default function TemplateBuilderPage({ params }: { params: Promise<{ id: string }> }) {

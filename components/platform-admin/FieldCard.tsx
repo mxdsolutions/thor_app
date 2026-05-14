@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconPencil as PencilIcon, IconTrash as TrashIcon, IconChevronUp as ChevronUpIcon, IconChevronDown as ChevronDownIcon } from "@tabler/icons-react";
+import { Pencil as PencilIcon, Trash2 as TrashIcon, ChevronUp as ChevronUpIcon, ChevronDown as ChevronDownIcon } from "lucide-react";
 import type { FieldDef } from "@/lib/report-templates/types";
 import { FIELD_TYPE_LABELS } from "@/lib/report-templates/types";
 

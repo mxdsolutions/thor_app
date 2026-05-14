@@ -1,9 +1,5 @@
-import {
-    IconChartBar as ChartBarIcon,
-    IconBuildingSkyscraper as BuildingOffice2Icon,
-    IconFileText as DocumentTextIcon,
-} from "@tabler/icons-react";
-import type { Icon } from "@tabler/icons-react";
+import { BarChart3 as ChartBarIcon, Building2 as BuildingOffice2Icon, FileText as DocumentTextIcon } from "lucide-react";
+import type { LucideIcon as Icon } from "lucide-react";
 
 export type PlatformAdminNavItem = {
     href: string;

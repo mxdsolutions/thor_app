@@ -3,7 +3,7 @@
 import { DashboardPage, DashboardMetrics, type DashboardMetric } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { usePlatformStats } from "@/lib/swr";
-import { IconBuildingSkyscraper as BuildingOffice2Icon, IconUsersGroup as UserGroupIcon, IconSparkles as SparklesIcon, IconCircleX as XCircleIcon } from "@tabler/icons-react";
+import { Building2 as BuildingOffice2Icon, Users as UserGroupIcon, Sparkles as SparklesIcon, XCircle as XCircleIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PlatformDashboardPage() {

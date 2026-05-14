@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { IconPlus as PlusIcon, IconTrash as TrashIcon, IconChevronUp as ChevronUpIcon, IconChevronDown as ChevronDownIcon, IconLayoutGrid as Squares2X2Icon, IconRefreshDot as ArrowPathRoundedSquareIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Trash2 as TrashIcon, ChevronUp as ChevronUpIcon, ChevronDown as ChevronDownIcon, LayoutGrid as Squares2X2Icon, RefreshCw as ArrowPathRoundedSquareIcon } from "lucide-react";
 import type { TemplateSchema, SectionDef } from "@/lib/report-templates/types";
 import { SectionEditor } from "./SectionEditor";
 

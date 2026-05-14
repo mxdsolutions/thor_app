@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, type AppUser, getInitials, getDisplayName, formatLastActive } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconUserPlus as UserPlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, UserPlus as UserPlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useProfiles } from "@/lib/swr";
 import { UserInviteModal } from "@/components/dashboard/UserInviteModal";

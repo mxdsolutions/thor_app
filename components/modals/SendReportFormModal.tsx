@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { IconBan as BanIcon, IconMail as MailIcon, IconCopy as CopyIcon } from "@tabler/icons-react";
+import { Ban as BanIcon, Mail as MailIcon, Copy as CopyIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
@@ -95,15 +95,21 @@ export function SendReportFormModal({ open, onOpenChange, reportId }: SendReport
             }
 
             const emailSent = !!body?.item?.email_sent_at;
-            toast.success(
-                emailSent
-                    ? `Sent to ${recipientName || recipientEmail}`
-                    : `Link created — email failed to send, copy below`,
-            );
-
-            // If email failed, drop the link onto the clipboard so the user can paste it manually.
-            if (!emailSent && body?.share_url) {
-                try { await navigator.clipboard.writeText(body.share_url); } catch { /* no-op */ }
+            const emailError = typeof body?.email_error === "string" ? body.email_error : null;
+            if (emailSent) {
+                toast.success(`Sent to ${recipientName || recipientEmail}`);
+            } else {
+                // Surface the actual Resend / suppression / config error so the user
+                // can act on it instead of guessing why the email didn't arrive.
+                toast.error(
+                    emailError
+                        ? `Link created, but email failed: ${emailError}`
+                        : "Link created — email failed to send, copy below",
+                    { duration: 10000 },
+                );
+                if (body?.share_url) {
+                    try { await navigator.clipboard.writeText(body.share_url); } catch { /* no-op */ }
+                }
             }
 
             await mutateTokens();

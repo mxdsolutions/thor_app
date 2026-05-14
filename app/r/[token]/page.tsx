@@ -230,7 +230,7 @@ function SubmitIdentityDialog({ open, onOpenChange }: { open: boolean; onOpenCha
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
             <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-lg">
-                <h2 className="text-lg font-display font-semibold mb-1">Before you submit</h2>
+                <h2 className="text-lg font-statement font-semibold mb-1">Before you submit</h2>
                 <p className="text-sm text-muted-foreground mb-4">Tell us who&apos;s submitting this so we can attribute the report.</p>
                 <div className="space-y-3">
                     <div>
@@ -327,7 +327,7 @@ function SubmittedPanel({
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
-                    <h1 className="text-2xl font-display font-semibold">Submitted</h1>
+                    <h1 className="text-2xl font-statement font-semibold">Submitted</h1>
                     <p className="text-sm text-muted-foreground">
                         {tenant?.company_name || tenant?.name || "The team"} has been notified.
                         You can come back and edit this form anytime before <strong>{expiry}</strong>.
@@ -370,7 +370,7 @@ function StateExplainer({ payload }: { payload: StateOnlyPayload }) {
         <div className="min-h-screen flex flex-col">
             <ExternalReportHeader reportTitle={title} senderMessage={null} senderName={null} saveStatus="idle" locked />
             <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-                <h1 className="text-xl font-display font-semibold mb-2">{title}</h1>
+                <h1 className="text-xl font-statement font-semibold mb-2">{title}</h1>
                 <p className="text-sm text-muted-foreground max-w-md">{body}</p>
             </div>
             <footer className="border-t border-border bg-secondary/40 py-3 text-center text-[11px] text-muted-foreground">
@@ -387,7 +387,7 @@ function UnavailableScreen({ title, body }: { title: string; body: string }) {
             {tenant?.logo_url && (
                 <Image src={tenant.logo_url} alt={tenant.name} width={120} height={40} unoptimized className="h-10 w-auto mb-6 object-contain" />
             )}
-            <h1 className="text-xl font-display font-semibold mb-2">{title}</h1>
+            <h1 className="text-xl font-statement font-semibold mb-2">{title}</h1>
             <p className="text-sm text-muted-foreground max-w-md">{body}</p>
         </div>
     );

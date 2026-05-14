@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconArrowUpRight as ArrowUpRightIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Search as MagnifyingGlassIcon, ArrowUpRight as ArrowUpRightIcon } from "lucide-react";
 import { CreateTenantModal } from "@/components/modals/CreateTenantModal";
 import { TenantSideSheet } from "@/components/sheets/TenantSideSheet";
 import { usePlatformTenants } from "@/lib/swr";

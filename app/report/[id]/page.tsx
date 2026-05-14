@@ -7,7 +7,7 @@ import { useTenant } from "@/lib/tenant-context";
 import { ReportWizardShell } from "@/components/reports/wizard/ReportWizardShell";
 import { makeInternalUploader } from "@/components/reports/UploadContext";
 import { ROUTES } from "@/lib/routes";
-import { IconArrowLeft as ArrowLeftIcon } from "@tabler/icons-react";
+import { ArrowLeft as ArrowLeftIcon } from "lucide-react";
 import type { TemplateSchema, ReportTemplate } from "@/lib/report-templates/types";
 import { buildAutoPopulatedData, type JobContext } from "@/lib/report-templates/auto-populate";
 

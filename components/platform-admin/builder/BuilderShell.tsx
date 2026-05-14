@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import type { TemplateSchema, SectionDef, FieldDef } from "@/lib/report-templates/types";
 import type { PresetFieldGroup } from "@/lib/report-templates/presets";
 import { BuilderTopBar } from "./BuilderTopBar";

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
 import { applyArchiveFilter, parseArchiveScope } from "@/app/api/_lib/archive";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { reportSchema, reportUpdateSchema } from "@/lib/validation";
 
@@ -37,6 +38,9 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.reports", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = reportSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -52,7 +56,10 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     return NextResponse.json({ item: data }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.reports", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const validation = reportUpdateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);

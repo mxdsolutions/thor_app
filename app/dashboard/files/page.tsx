@@ -18,10 +18,7 @@ import {
 } from "@/components/ui/select";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
-import {
-    IconSearch as MagnifyingGlassIcon,
-    IconUpload as UploadIcon,
-} from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Upload as UploadIcon } from "lucide-react";
 import { FileUploadModal } from "@/components/modals/FileUploadModal";
 import { FileSideSheet, type FileItem } from "@/components/sheets/FileSideSheet";
 import { useFiles, type ArchiveScope } from "@/lib/swr";

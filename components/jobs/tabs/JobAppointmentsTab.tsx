@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import type { ScheduleEntry } from "@/components/schedule/types";
 
 function formatTimeRange(start: string | null, end: string | null) {

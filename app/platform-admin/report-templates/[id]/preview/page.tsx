@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePlatformReportTemplate } from "@/lib/swr";
 import { ReportFormViewer } from "@/components/reports/ReportFormViewer";
 import { Button } from "@/components/ui/button";
-import { IconArrowLeft as ArrowLeftIcon, IconArrowRight as ArrowRightIcon, IconRefresh as ArrowPathIcon, IconList as ListBulletIcon, IconListDetails as QueueListIcon } from "@tabler/icons-react";
+import { ArrowLeft as ArrowLeftIcon, ArrowRight as ArrowRightIcon, RotateCw as ArrowPathIcon, List as ListBulletIcon, ListChecks as QueueListIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 

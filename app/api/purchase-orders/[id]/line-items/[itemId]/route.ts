@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { notFoundError, serverError, validationError } from "@/app/api/_lib/errors";
 import { purchaseOrderLineItemUpdateSchema } from "@/lib/validation";
 import { recalcPurchaseOrderTotal } from "@/app/api/_lib/line-items";
@@ -12,7 +13,10 @@ function parseSegments(pathname: string) {
     return { poId, itemId };
 }
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.invoices", "write");
+    if (denied) return denied;
+
     const { poId, itemId } = parseSegments(request.nextUrl.pathname);
     if (!poId || !itemId) return notFoundError("Line item");
 
@@ -40,7 +44,10 @@ export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
     return NextResponse.json({ item: data });
 });
 
-export const DELETE = withAuth(async (request, { supabase, tenantId }) => {
+export const DELETE = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "finance.invoices", "write");
+    if (denied) return denied;
+
     const { poId, itemId } = parseSegments(request.nextUrl.pathname);
     if (!poId || !itemId) return notFoundError("Line item");
 

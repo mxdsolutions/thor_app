@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import { QuoteSideSheet, type Quote } from "@/components/sheets/QuoteSideSheet";
 
 interface Props {

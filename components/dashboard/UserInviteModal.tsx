@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useSWRConfig } from "swr";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { IconX as XMarkIcon } from "@tabler/icons-react";
+import { X as XMarkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { inviteUser } from "@/app/actions/inviteUser";
 import { useTenantSubscription } from "@/lib/swr";

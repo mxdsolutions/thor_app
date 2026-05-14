@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
+import { checkPermission } from "@/app/api/_lib/permissions";
 
 export type RevokeInviteResult =
     | { success: true; error: null }
@@ -44,6 +45,14 @@ export async function revokeInvite(email: string): Promise<RevokeInviteResult> {
         }
 
         const tenantId = await getTenantId();
+
+        const permission = await checkPermission(
+            supabase, user.id, tenantId, "settings.users", "write"
+        );
+        if (!permission.allowed) {
+            return { success: false, error: "You don't have permission to revoke invites" };
+        }
+
         const admin = await createAdminClient();
 
         const { data: profile } = await admin

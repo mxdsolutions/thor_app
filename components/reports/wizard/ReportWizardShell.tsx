@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { IconLoader2 as LoaderIcon } from "@tabler/icons-react";
+import { Loader2 as LoaderIcon } from "lucide-react";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 import { computeAllSectionValidations } from "@/lib/reports/validation";
 import { ROUTES } from "@/lib/routes";

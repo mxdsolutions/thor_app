@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
 import { Input } from "@/components/ui/input";
-import { IconPlus as PlusIcon, IconX } from "@tabler/icons-react";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Plus as PlusIcon, X as IconX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CreateContactModal = lazy(() =>
@@ -86,68 +87,82 @@ export function EntitySearchDropdown({
 
     const entityLabel = entityType === "contact" ? "contact" : entityType === "company" ? "company" : "job";
 
+    const popoverOpen = showDropdown && !selected;
+
     return (
         <>
-            <div className={cn("relative", className)}>
-                <Input
-                    placeholder={loading ? "Loading..." : placeholder}
-                    value={selected ? selected.label : search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                        if (value) onChange("");
-                        setShowDropdown(true);
-                    }}
-                    onFocus={() => setShowDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-                    className="rounded-xl"
-                    disabled={disabled || loading}
-                />
-                {showDropdown && !selected && (
-                    <div className="absolute z-50 top-full mt-1 w-full bg-background border border-border rounded-xl shadow-lg flex flex-col max-h-56">
-                        <div className="overflow-y-auto flex-1 min-h-0">
-                            {filtered.length === 0 && !search && (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">Type to search</div>
-                            )}
-                            {filtered.length === 0 && search && (
-                                <div className="px-3 py-2 text-sm text-muted-foreground">No results found</div>
-                            )}
-                            {filtered.map(opt => (
-                                <button
-                                    key={opt.id}
-                                    type="button"
-                                    className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl"
-                                    onClick={() => handleSelect(opt)}
-                                >
-                                    <span className="font-medium block">{opt.label}</span>
-                                    {opt.subtitle && <span className="text-muted-foreground text-xs block">{opt.subtitle}</span>}
-                                </button>
-                            ))}
-                        </div>
-                        {entityType && (
+            <Popover open={popoverOpen} onOpenChange={setShowDropdown}>
+                <PopoverAnchor asChild>
+                    <div className={cn("relative", className)}>
+                        <Input
+                            placeholder={loading ? "Loading..." : placeholder}
+                            value={selected ? selected.label : search}
+                            onChange={(e) => {
+                                setSearch(e.target.value);
+                                if (value) onChange("");
+                                setShowDropdown(true);
+                            }}
+                            onFocus={() => setShowDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                            className="rounded-xl"
+                            disabled={disabled || loading}
+                        />
+                        {selected && (
                             <button
                                 type="button"
-                                className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5 border-t border-border rounded-b-xl shrink-0"
-                                onClick={() => {
-                                    setShowDropdown(false);
-                                    setShowCreate(true);
-                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                                onClick={handleClear}
                             >
-                                <PlusIcon className="w-3.5 h-3.5" />
-                                Create new {entityLabel}{search ? `: "${search}"` : ""}
+                                <IconX className="w-3.5 h-3.5" />
                             </button>
                         )}
                     </div>
-                )}
-                {selected && (
-                    <button
-                        type="button"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
-                        onClick={handleClear}
-                    >
-                        <IconX className="w-3.5 h-3.5" />
-                    </button>
-                )}
-            </div>
+                </PopoverAnchor>
+                {/* Portal'd so dialog overflow / footer can't clip it. */}
+                <PopoverContent
+                    align="start"
+                    sideOffset={4}
+                    className="flex flex-col max-h-56 p-0"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                    onCloseAutoFocus={(e) => e.preventDefault()}
+                >
+                    <div className="overflow-y-auto flex-1 min-h-0">
+                        {filtered.length === 0 && !search && (
+                            <div className="px-3 py-2 text-sm text-muted-foreground">Type to search</div>
+                        )}
+                        {filtered.length === 0 && search && (
+                            <div className="px-3 py-2 text-sm text-muted-foreground">No results found</div>
+                        )}
+                        {filtered.map(opt => (
+                            <button
+                                key={opt.id}
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors first:rounded-t-xl"
+                                // Mousedown fires before the Input's blur, so the click
+                                // doesn't get cancelled by the dropdown closing first.
+                                onMouseDown={(e) => { e.preventDefault(); handleSelect(opt); }}
+                            >
+                                <span className="font-medium block">{opt.label}</span>
+                                {opt.subtitle && <span className="text-muted-foreground text-xs block">{opt.subtitle}</span>}
+                            </button>
+                        ))}
+                    </div>
+                    {entityType && (
+                        <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm text-primary font-medium hover:bg-muted transition-colors flex items-center gap-1.5 border-t border-border rounded-b-xl shrink-0"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                setShowDropdown(false);
+                                setShowCreate(true);
+                            }}
+                        >
+                            <PlusIcon className="w-3.5 h-3.5" />
+                            Create new {entityLabel}{search ? `: "${search}"` : ""}
+                        </button>
+                    )}
+                </PopoverContent>
+            </Popover>
 
             {showCreate && entityType === "contact" && (
                 <Suspense fallback={null}>

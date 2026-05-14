@@ -120,7 +120,7 @@ export function AssistantPanel() {
                     "w-[min(100vw,420px)]",
                     "transition-transform duration-300 ease-out",
                     open ? "translate-x-0" : "translate-x-full",
-                    "xl:static xl:inset-auto xl:z-auto xl:shadow-none xl:bg-secondary xl:border-l-0 xl:rounded-[12px]",
+                    "xl:static xl:inset-auto xl:z-auto xl:shadow-none xl:bg-secondary xl:border-l-0 xl:rounded-2xl",
                     "xl:translate-x-0 xl:transition-[width,margin] xl:duration-300",
                     open ? "xl:w-[420px] xl:m-3 xl:shrink-0" : "xl:w-0 xl:m-0",
                 )}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useLicenses } from "@/lib/swr";
-import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconArchive as ArchiveIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Pencil as PencilSquareIcon, Archive as ArchiveIcon } from "lucide-react";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell, sectionHeadingClass } from "@/lib/design-system";
 
 type License = {

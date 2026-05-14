@@ -19,7 +19,7 @@ export function QuoteHeader() {
                     />
                 ) : (
                     <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                        <span className="text-lg font-bold text-foreground font-display uppercase">
+                        <span className="text-lg font-bold text-foreground font-statement uppercase">
                             {(tenant.company_name || tenant.name || "?")[0].toUpperCase()}
                         </span>
                     </div>

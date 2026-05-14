@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { DetailFields } from "./DetailFields";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { useArchiveAction } from "./use-archive-action";
-import { IconCurrencyDollar as CurrencyDollarIcon } from "@tabler/icons-react";
+import { DollarSign as CurrencyDollarIcon } from "lucide-react";
 import { toast } from "sonner";
 import type { PricingItem } from "@/lib/swr";
 

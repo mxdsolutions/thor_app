@@ -22,16 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Kanban } from "@/components/Kanban";
 import { cn } from "@/lib/utils";
-import {
-    IconSearch as MagnifyingGlassIcon,
-    IconPlus as PlusIcon,
-    IconArrowUpRight as ArrowUpRightIcon,
-    IconLayoutGrid as Squares2X2Icon,
-    IconList as ListBulletIcon,
-    IconChevronUp,
-    IconChevronDown,
-    IconSelector,
-} from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon, ArrowUpRight as ArrowUpRightIcon, LayoutGrid as Squares2X2Icon, List as ListBulletIcon, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import { CreateJobModal } from "@/components/modals/CreateJobModal";
 import { useJobs, useStatusConfig, useProfiles, type ArchiveScope } from "@/lib/swr";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -196,10 +187,10 @@ function JobsPageContent() {
     ];
 
     const SortIcon = ({ columnKey }: { columnKey: SortKey }) => {
-        if (sortKey !== columnKey) return <IconSelector className="w-3 h-3 opacity-40" />;
+        if (sortKey !== columnKey) return <ChevronsUpDown className="w-3 h-3 opacity-40" />;
         return sortDir === "asc"
-            ? <IconChevronUp className="w-3 h-3" />
-            : <IconChevronDown className="w-3 h-3" />;
+            ? <ChevronUp className="w-3 h-3" />
+            : <ChevronDown className="w-3 h-3" />;
     };
 
     const openJob = (jobId: string) => router.push(`/dashboard/jobs/${jobId}`);

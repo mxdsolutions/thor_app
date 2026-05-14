@@ -1,3 +1,3 @@
 import { buildArchiveHandler } from "@/app/api/_lib/archive";
 
-export const PATCH = buildArchiveHandler("files", "File");
+export const PATCH = buildArchiveHandler("files", "File", "ops.files");

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError, validationError } from "@/app/api/_lib/errors";
 import { analyticsQuerySchema, type AnalyticsPeriod } from "@/lib/validation";
 
@@ -110,7 +111,10 @@ export type AnalyticsResponse = {
     requestedPeriod: AnalyticsPeriod;
 };
 
-export const GET = withAuth(async (request, { supabase, tenantId }) => {
+export const GET = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "analytics.dashboard", "read");
+    if (denied) return denied;
+
     const { searchParams } = new URL(request.url);
     const validation = analyticsQuerySchema.safeParse({
         period: searchParams.get("period") ?? undefined,

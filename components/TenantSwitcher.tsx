@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { IconSelector, IconCheck } from "@tabler/icons-react";
+import { ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useMyTenants, type MyTenant } from "@/lib/swr";
 import { switchTenant } from "@/app/actions/tenant";
@@ -65,7 +65,7 @@ export function TenantSwitcher({ active }: { active: ActiveTenant }) {
                         )}
                     </div>
                     <span className="flex-1 text-sm font-medium text-white/80 truncate">{activeDisplayName}</span>
-                    <IconSelector className="shrink-0 w-4 h-4 text-white/40" />
+                    <ChevronsUpDown className="shrink-0 w-4 h-4 text-white/40" />
                 </button>
             </PopoverTrigger>
             <PopoverContent
@@ -114,7 +114,7 @@ export function TenantSwitcher({ active }: { active: ActiveTenant }) {
                                     {isSwitching ? (
                                         <span className="text-[10px] text-white/40">…</span>
                                     ) : isActive ? (
-                                        <IconCheck className="shrink-0 w-4 h-4 text-white" />
+                                        <Check className="shrink-0 w-4 h-4 text-white" />
                                     ) : null}
                                 </button>
                             );

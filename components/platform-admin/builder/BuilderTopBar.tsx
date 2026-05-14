@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { IconArrowLeft as ArrowLeftIcon, IconEye as EyeIcon } from "@tabler/icons-react";
+import { ArrowLeft as ArrowLeftIcon, Eye as EyeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BuilderTopBarProps {

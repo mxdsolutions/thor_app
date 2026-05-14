@@ -3,7 +3,7 @@
 import { cn, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconPencil as PencilIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
+import { Pencil as PencilIcon, Trash2 as TrashIcon } from "lucide-react";
 import type { ScheduleEntry } from "./types";
 import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 

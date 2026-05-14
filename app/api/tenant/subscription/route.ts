@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError } from "@/app/api/_lib/errors";
 import { getPlans, type Plan } from "@/lib/plans";
 import { getSeatUsage } from "@/lib/stripe-seats";
 
-export const GET = withAuth(async (_request, { supabase, tenantId }) => {
+export const GET = withAuth(async (_request, { supabase, user, tenantId }) => {
+    // Subscription details (plan, seat usage, billing status) are
+    // owner/admin-only. The invite modal also calls this endpoint for the
+    // pre-invite seat-quota check, but only owners/admins can invite, so
+    // the same gate is sufficient.
+    const denied = await requirePermission(supabase, user.id, tenantId, "settings.subscription", "read");
+    if (denied) return denied;
     const { data: tenant, error: tenantErr } = await supabase
         .from("tenants")
         .select("billing_exempt")

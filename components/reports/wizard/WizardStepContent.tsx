@@ -2,7 +2,7 @@
 
 import { ReportFormViewer } from "@/components/reports/ReportFormViewer";
 import { Button } from "@/components/ui/button";
-import { IconArrowLeft as ArrowLeftIcon, IconArrowRight as ArrowRightIcon, IconSend as PaperAirplaneIcon } from "@tabler/icons-react";
+import { ArrowLeft as ArrowLeftIcon, ArrowRight as ArrowRightIcon, Send as PaperAirplaneIcon } from "lucide-react";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 
 interface WizardStepContentProps {

@@ -5,12 +5,7 @@ import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { Button } from "@/components/ui/button";
-import {
-    IconDownload as ArrowDownTrayIcon,
-    IconPencil as PencilIcon,
-    IconSend as SendIcon,
-    IconBuildingWarehouse as SupplierIcon,
-} from "@tabler/icons-react";
+import { Download as ArrowDownTrayIcon, Pencil as PencilIcon, Send as SendIcon, Warehouse as SupplierIcon } from "lucide-react";
 import { useTenantOptional } from "@/lib/tenant-context";
 import { toast } from "sonner";
 import { QUOTE_STATUS_CONFIG } from "@/lib/status-config";

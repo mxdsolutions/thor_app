@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn, timeAgo } from "@/lib/utils";
 import { DetailFields } from "./DetailFields";
-import { IconFileText as DocumentTextIcon, IconTools as WrenchScrewdriverIcon, IconEye as EyeIcon } from "@tabler/icons-react";
+import { FileText as DocumentTextIcon, Wrench as WrenchScrewdriverIcon, Eye as EyeIcon } from "lucide-react";
 import { TEMPLATE_CATEGORIES } from "@/lib/report-templates/types";
 import type { ReportTemplate } from "@/lib/report-templates/types";
 

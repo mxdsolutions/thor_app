@@ -1,11 +1,6 @@
 "use client";
 
-import {
-    IconTrash as TrashIcon,
-    IconLayoutList as SectionIcon,
-    IconChevronUp,
-    IconChevronDown,
-} from "@tabler/icons-react";
+import { Trash2 as TrashIcon, LayoutList as SectionIcon, ChevronUp, ChevronDown } from "lucide-react";
 import { InlineNumberInput } from "@/features/line-items/InlineNumberInput";
 import { formatCurrency } from "@/lib/utils";
 import type { NewLineItem } from "@/components/quotes/PricingSearchDropdown";
@@ -71,7 +66,7 @@ export function QuoteSectionsList({
                                     disabled={sectionIdx === 0}
                                     className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                                 >
-                                    <IconChevronUp className="w-3.5 h-3.5" />
+                                    <ChevronUp className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                     type="button"
@@ -79,7 +74,7 @@ export function QuoteSectionsList({
                                     disabled={sectionIdx === sections.length - 1}
                                     className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
                                 >
-                                    <IconChevronDown className="w-3.5 h-3.5" />
+                                    <ChevronDown className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                     type="button"

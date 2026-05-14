@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { IconPlus as PlusIcon, IconSearch as MagnifyingGlassIcon, IconTools as WrenchScrewdriverIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Search as MagnifyingGlassIcon, Wrench as WrenchScrewdriverIcon } from "lucide-react";
 import { CreateReportTemplateModal } from "@/components/modals/CreateReportTemplateModal";
 import { ReportTemplateSideSheet } from "@/components/sheets/ReportTemplateSideSheet";
 import { usePlatformReportTemplates } from "@/lib/swr";

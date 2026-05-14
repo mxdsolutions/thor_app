@@ -1,3 +1,3 @@
 import { buildArchiveHandler } from "@/app/api/_lib/archive";
 
-export const PATCH = buildArchiveHandler("contacts", "Contact");
+export const PATCH = buildArchiveHandler("contacts", "Contact", "crm.clients");

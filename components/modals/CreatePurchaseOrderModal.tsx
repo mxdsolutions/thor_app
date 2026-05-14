@@ -19,11 +19,7 @@ import {
 import { useCompanyOptions, useContactOptions } from "@/lib/swr";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-    IconTrash as TrashIcon,
-    IconPlus as PlusIcon,
-    IconBuildingWarehouse as SupplierIcon,
-} from "@tabler/icons-react";
+import { Trash2 as TrashIcon, Plus as PlusIcon, Warehouse as SupplierIcon } from "lucide-react";
 
 type Company = {
     id: string;

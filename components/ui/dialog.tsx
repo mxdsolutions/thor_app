@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { IconX as XMarkIcon } from "@tabler/icons-react";import { cn } from "@/lib/utils"
+import { X as XMarkIcon } from "lucide-react";import { cn } from "@/lib/utils"
 
 const Dialog = DialogPrimitive.Root
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "./handler";
+import { requirePermission } from "./permissions";
 import { archiveActionSchema } from "@/lib/validation";
 import { validationError, missingParamError, notFoundError, serverError } from "./errors";
 
@@ -50,6 +51,10 @@ export function applyArchiveFilter<Q extends ArchiveFilterableBuilder<Q>>(
  * Expects the dynamic id to be the second-to-last URL segment, e.g.
  * `/api/jobs/123/archive` → id = "123".
  *
+ * Pass the permission `resource` (e.g. `"crm.clients"`, `"finance.invoices"`)
+ * so the handler can gate by the caller's `delete` permission for that
+ * resource — without it, a Viewer with a valid JWT could archive any entity.
+ *
  * `options.pkColumn` defaults to "id" — override for tables with non-standard
  * primary keys (e.g. pricing uses "Matrix_ID"). `options.touchUpdatedAt`
  * defaults to true; turn off for tables that lack an `updated_at` column.
@@ -57,12 +62,16 @@ export function applyArchiveFilter<Q extends ArchiveFilterableBuilder<Q>>(
 export function buildArchiveHandler(
     table: string,
     entityName: string,
+    resource: string,
     options: { pkColumn?: string; touchUpdatedAt?: boolean } = {}
 ) {
     const pkColumn = options.pkColumn ?? "id";
     const touchUpdatedAt = options.touchUpdatedAt ?? true;
 
-    return withAuth(async (request, { supabase, tenantId }) => {
+    return withAuth(async (request, { supabase, user, tenantId }) => {
+        const denied = await requirePermission(supabase, user.id, tenantId, resource, "delete");
+        if (denied) return denied;
+
         const segments = request.nextUrl.pathname.split("/");
         // Last segment is "archive"; the id sits one before it.
         const id = segments.at(-2);

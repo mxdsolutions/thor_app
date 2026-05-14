@@ -4,11 +4,7 @@ import { useEffect, useState } from "react";
 import { mutate as globalMutate } from "swr";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-    IconPlayerPlayFilled as PlayIcon,
-    IconPlayerStopFilled as StopIcon,
-    IconClock as ClockIcon,
-} from "@tabler/icons-react";
+import { Play as PlayIcon, Square as StopIcon, Clock as ClockIcon } from "lucide-react";
 import { useActiveTimesheet, useJobOptions, refreshTimesheetCache } from "@/lib/swr";
 import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
 import { formatDuration } from "@/lib/utils";
@@ -112,7 +108,7 @@ export function ClockInOutCard() {
                                 <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75 animate-ping" />
                                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                             </span>
-                            <div className="font-display text-2xl md:text-3xl font-bold tabular-nums shrink-0">
+                            <div className="font-statement text-2xl md:text-3xl font-bold tabular-nums shrink-0">
                                 {formatDuration(elapsedMs)}
                             </div>
                             <div className="text-sm text-muted-foreground truncate min-w-0">

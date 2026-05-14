@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { IconArrowRight as ArrowRightIcon } from "@tabler/icons-react";
+import { ArrowRight as ArrowRightIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { primaryBtnClass, stepEyebrowClass } from "./styles";
@@ -43,7 +43,7 @@ export function WelcomeStep({ onStart }: { onStart: () => void }) {
 
             <p className="text-sm text-white/40">
                 Already have an account?{" "}
-                <Link href="/" className="text-white font-semibold hover:underline">
+                <Link href="/login" className="text-white font-semibold hover:underline">
                     Log in
                 </Link>
             </p>

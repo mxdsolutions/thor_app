@@ -10,7 +10,7 @@ import { DataTable, DataTableColumn } from "@/components/dashboard/DataTable";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon } from "lucide-react";
 import { CreateCompanyModal } from "@/components/modals/CreateCompanyModal";
 import { CompanySideSheet } from "@/components/sheets/CompanySideSheet";
 import { useCompanies, type ArchiveScope } from "@/lib/swr";

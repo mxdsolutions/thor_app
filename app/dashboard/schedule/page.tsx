@@ -15,7 +15,7 @@ import { DayDetailList } from "@/components/schedule/DayDetailList";
 import { ScheduleEntryModal } from "@/components/modals/ScheduleEntryModal";
 import { JobSideSheet } from "@/components/sheets/JobSideSheet";
 import { Button } from "@/components/ui/button";
-import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon, Plus as PlusIcon } from "lucide-react";
 import {
     formatMonthYear,
     formatDayHeader,

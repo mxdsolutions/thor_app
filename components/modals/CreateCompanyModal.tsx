@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTi
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useContactOptions } from "@/lib/swr";
 

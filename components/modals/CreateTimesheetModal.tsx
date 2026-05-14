@@ -173,7 +173,7 @@ export function CreateTimesheetModal({
 
                         <div className="rounded-xl border bg-secondary/30 px-4 py-3 flex items-center justify-between">
                             <span className="text-sm text-muted-foreground">Total</span>
-                            <span className="font-display text-lg font-semibold tabular-nums">
+                            <span className="font-statement text-lg font-semibold tabular-nums">
                                 {durationMs > 0 ? formatDuration(durationMs) : "—"}
                             </span>
                         </div>

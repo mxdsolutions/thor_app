@@ -497,7 +497,7 @@ function PlanCard({
                 </div>
                 <div className="mt-4">
                     <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-display font-semibold">
+                        <span className="text-3xl font-statement font-semibold">
                             {formatCurrency(cycleData.amount_cents / 100).replace(/\.00$/, "")}
                         </span>
                         <span className="text-sm text-muted-foreground">

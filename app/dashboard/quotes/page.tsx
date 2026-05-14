@@ -14,7 +14,7 @@ import { quoteStatusDotClass } from "@/lib/design-system";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn, formatCurrency, timeAgo } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon } from "lucide-react";
 import { useQuotes, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateQuoteModal } from "@/components/modals/CreateQuoteModal";

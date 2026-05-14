@@ -12,9 +12,10 @@ interface Props {
     isSubmitting: boolean;
     tenantId: string | null;
     onCheckout: (priceId: string) => void;
+    preselectedPlanId?: string | null;
 }
 
-export function PlanStep({ plans, billingCycle, setBillingCycle, isSubmitting, tenantId, onCheckout }: Props) {
+export function PlanStep({ plans, billingCycle, setBillingCycle, isSubmitting, tenantId, onCheckout, preselectedPlanId }: Props) {
     return (
         <motion.div
             key="plan"
@@ -56,7 +57,9 @@ export function PlanStep({ plans, billingCycle, setBillingCycle, isSubmitting, t
                     const monthlyEq = billingCycle === "annual"
                         ? Math.round(plan.annual.amount_cents / 12)
                         : null;
-                    const highlight = plan.id === "iron_oak";
+                    const highlight = preselectedPlanId
+                        ? plan.id === preselectedPlanId
+                        : plan.id === "iron_oak";
                     return (
                         <div
                             key={plan.id}
@@ -73,11 +76,11 @@ export function PlanStep({ plans, billingCycle, setBillingCycle, isSubmitting, t
                                 </div>
                             )}
 
-                            <h3 className="font-display text-2xl text-white">{plan.name}</h3>
+                            <h3 className="font-statement text-2xl text-white">{plan.name}</h3>
 
                             <div className="mt-6">
                                 <div className="flex items-baseline gap-1.5">
-                                    <span className="text-4xl font-display font-semibold text-white">
+                                    <span className="text-4xl font-statement font-semibold text-white">
                                         {formatCurrency(cycleData.amount_cents / 100).replace(/\.00$/, "")}
                                     </span>
                                     <span className="text-sm text-white/40">

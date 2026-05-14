@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WizardStepContent } from "@/components/reports/wizard/WizardStepContent";
 import type { SectionDef, TemplateSchema } from "@/lib/report-templates/types";
-import { IconEye as EyeIcon, IconDeviceDesktop as ComputerDesktopIcon, IconDeviceTablet as DeviceTabletIcon, IconDeviceMobile as DevicePhoneMobileIcon } from "@tabler/icons-react";
+import { Eye as EyeIcon, Monitor as ComputerDesktopIcon, Tablet as DeviceTabletIcon, Smartphone as DevicePhoneMobileIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PreviewDevice = "desktop" | "tablet" | "mobile";
@@ -69,7 +69,9 @@ export function BuilderPreviewCanvas({ section, selectedIndex, schema }: Builder
                                 device === "desktop" && "flex-1"
                             )}
                         >
-                            {/* Device frame */}
+                            {/* Device frame — `rounded-[2rem]` on mobile is a deliberate
+                                escape from the token scale: it depicts a physical phone bezel,
+                                not a UI surface. */}
                             <div className={cn(
                                 "flex flex-col rounded-2xl border-2 border-zinc-300 bg-zinc-300 shadow-[0_4px_24px_rgba(0,0,0,0.08),0_1px_6px_rgba(0,0,0,0.04)] overflow-hidden",
                                 device === "desktop" ? "flex-1" : "h-full",

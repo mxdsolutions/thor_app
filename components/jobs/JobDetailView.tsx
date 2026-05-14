@@ -22,10 +22,7 @@ import {
 } from "@/lib/swr";
 import type { EntityOption } from "@/components/ui/entity-search-dropdown";
 import { DEFAULT_JOB_STATUSES, toStatusConfig, PAID_STATUS_CONFIG } from "@/lib/status-config";
-import {
-    IconPlus as PlusIcon,
-    IconChevronDown,
-} from "@tabler/icons-react";
+import { Plus as PlusIcon, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { JobTasksPanel } from "@/components/jobs/JobTasksPanel";
@@ -370,7 +367,7 @@ export function JobDetailView({ job, mode, onUpdate, onClose }: JobDetailViewPro
                         <Button size="lg" className="w-full">
                             <PlusIcon className="w-4 h-4 mr-2" />
                             Create
-                            <IconChevronDown className="w-4 h-4 ml-2 -mr-1" />
+                            <ChevronDown className="w-4 h-4 ml-2 -mr-1" />
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent align="center" side="top" sideOffset={6} className="p-1">

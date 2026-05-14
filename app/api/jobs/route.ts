@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth } from "@/app/api/_lib/handler";
 import { tenantListQuery } from "@/app/api/_lib/list-query";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { validationError, serverError } from "@/app/api/_lib/errors";
 import { jobSchema, jobUpdateSchema } from "@/lib/validation";
 
@@ -60,6 +61,9 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.jobs", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const { assignee_ids, ...rest } = body;
     const validation = jobSchema.safeParse(rest);
@@ -116,7 +120,10 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
     return NextResponse.json({ item: job }, { status: 201 });
 });
 
-export const PATCH = withAuth(async (request, { supabase, tenantId }) => {
+export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.jobs", "write");
+    if (denied) return denied;
+
     const body = await request.json();
     const { assignee_ids, ...rest } = body;
     const validation = jobUpdateSchema.safeParse(rest);

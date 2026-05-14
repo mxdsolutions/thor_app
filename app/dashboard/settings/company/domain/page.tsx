@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { IconCircleCheck as CheckCircleIcon, IconClock as ClockIcon } from "@tabler/icons-react";
+import { CheckCircle2 as CheckCircleIcon, Clock as ClockIcon } from "lucide-react";
 import { sectionHeadingClass } from "@/lib/design-system";
 
 export default function DomainPage() {

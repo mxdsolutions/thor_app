@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from "@/components/ui/command";
-import { IconSelector as ChevronUpDownIcon, IconCheck as CheckIcon, IconX as XMarkIcon } from "@tabler/icons-react";
+import { ChevronsUpDown as ChevronUpDownIcon, Check as CheckIcon, X as XMarkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useJobs, useCompanies, useContacts } from "@/lib/swr";
 import type { EntityType } from "@/lib/report-templates/types";

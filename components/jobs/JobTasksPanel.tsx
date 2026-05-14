@@ -3,7 +3,7 @@
 import { useState } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import { cn } from "@/lib/utils";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useProfiles } from "@/lib/swr";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import type { ContactOption } from "./types";
 
 interface Props {

@@ -21,11 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { cn } from "@/lib/utils";
-import {
-    IconSearch as MagnifyingGlassIcon,
-    IconPlus as PlusIcon,
-    IconArrowUpRight as ArrowUpRightIcon,
-} from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon, ArrowUpRight as ArrowUpRightIcon } from "lucide-react";
 import { CreateContactModal } from "@/components/modals/CreateContactModal";
 import { ContactSideSheet } from "@/components/sheets/ContactSideSheet";
 import { CreateCompanyModal } from "@/components/modals/CreateCompanyModal";

@@ -14,11 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import {
-    IconBuildingWarehouse as SupplierIcon,
-    IconPlus as PlusIcon,
-    IconTrash as TrashIcon,
-} from "@tabler/icons-react";
+import { Warehouse as SupplierIcon, Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { toast } from "sonner";
 import { PURCHASE_ORDER_STATUSES, type PurchaseOrderStatus } from "@/lib/validation";
 

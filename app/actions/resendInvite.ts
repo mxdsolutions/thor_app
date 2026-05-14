@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
+import { checkPermission } from "@/app/api/_lib/permissions";
 
 export type ResendInviteResult =
     | { success: true; error: null }
@@ -36,6 +37,14 @@ export async function resendInvite(email: string): Promise<ResendInviteResult> {
         }
 
         const tenantId = await getTenantId();
+
+        const permission = await checkPermission(
+            supabase, user.id, tenantId, "settings.users", "write"
+        );
+        if (!permission.allowed) {
+            return { success: false, error: "You don't have permission to resend invites" };
+        }
+
         const admin = await createAdminClient();
 
         // Two valid cases:
@@ -60,7 +69,7 @@ export async function resendInvite(email: string): Promise<ResendInviteResult> {
         ]);
 
         let role: string | null = inviteRes.data?.role ?? null;
-        let invitedBy: string = inviteRes.data?.invited_by ?? user.id;
+        const invitedBy: string = inviteRes.data?.invited_by ?? user.id;
 
         if (!role && profileRes.data) {
             const { data: member } = await admin

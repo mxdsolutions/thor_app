@@ -8,11 +8,7 @@ import { useArchiveAction } from "./use-archive-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import {
-    IconDownload as DownloadIcon,
-    IconCheck as CheckIcon,
-    IconX as XMarkIcon,
-} from "@tabler/icons-react";
+import { Download as DownloadIcon, Check as CheckIcon, X as XMarkIcon } from "lucide-react";
 import { fileIconForMime, formatBytes } from "@/lib/file-utils";
 
 export type FileItem = {

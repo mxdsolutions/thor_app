@@ -6,7 +6,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { IconBell as BellIcon } from "@tabler/icons-react";
+import { Bell as BellIcon } from "lucide-react";
 import { cn, timeAgo } from "@/lib/utils";
 import type { Notification } from "./use-notifications";
 

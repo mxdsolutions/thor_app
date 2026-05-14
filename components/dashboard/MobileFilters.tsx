@@ -8,7 +8,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { IconFilter } from "@tabler/icons-react";
+import { Filter } from "lucide-react";
 
 interface MobileFiltersProps {
     children: React.ReactNode;
@@ -36,7 +36,7 @@ export function MobileFilters({ children }: MobileFiltersProps) {
                 className="md:hidden shrink-0 rounded-lg h-10 w-10"
                 onClick={() => setOpen(true)}
             >
-                <IconFilter className="w-4 h-4" />
+                <Filter className="w-4 h-4" />
             </Button>
 
             <Sheet open={open} onOpenChange={setOpen}>

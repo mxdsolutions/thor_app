@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { withAuth } from "@/app/api/_lib/handler";
 import { tenantListQuery } from "@/app/api/_lib/list-query";
+import { requirePermission } from "@/app/api/_lib/permissions";
 import { serverError } from "@/app/api/_lib/errors";
 import { FILE_MAX_SIZE_BYTES } from "@/lib/validation";
 
@@ -33,6 +34,9 @@ export const GET = withAuth(async (request, { supabase, tenantId }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const denied = await requirePermission(supabase, user.id, tenantId, "ops.files", "write");
+    if (denied) return denied;
+
     let form: FormData;
     try {
         form = await request.formData();

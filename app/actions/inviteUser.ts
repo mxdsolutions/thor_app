@@ -4,10 +4,11 @@ import { headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
+import { checkPermission } from "@/app/api/_lib/permissions";
 
 export type InviteUserResult =
     | { success: true; error: null; data: unknown }
-    | { success: false; error: string; code?: "no_seats_available" | "no_subscription" };
+    | { success: false; error: string; code?: "no_seats_available" | "no_subscription" | "forbidden" };
 
 type ClaimSeatResult = {
     claimed: boolean;
@@ -38,6 +39,27 @@ export async function inviteUser(
         }
 
         const tenantId = await getTenantId();
+
+        const permission = await checkPermission(
+            supabase, user.id, tenantId, "settings.users", "write"
+        );
+        if (!permission.allowed) {
+            return {
+                success: false,
+                code: "forbidden",
+                error: "You don't have permission to invite users to this workspace",
+            };
+        }
+
+        // Only owners can mint new owners. Mirrors the inline guard in
+        // app/api/users/route.ts so the role-change and invite paths agree.
+        if (role === "owner" && permission.role !== "owner") {
+            return {
+                success: false,
+                code: "forbidden",
+                error: "Only the workspace owner can invite another owner",
+            };
+        }
 
         // Atomic seat claim — wraps the count-and-decide in a transaction
         // advisory lock keyed on tenant_id so concurrent invites can't both

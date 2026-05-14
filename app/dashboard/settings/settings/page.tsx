@@ -6,8 +6,8 @@ import { usePageTitle } from "@/lib/page-title-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { IconUserCircle as UserCircleIcon, IconShieldCheck as ShieldCheckIcon } from "@tabler/icons-react";
-import { IconRefresh as ArrowPathIcon } from "@tabler/icons-react";
+import { UserCircle2 as UserCircleIcon, ShieldCheck as ShieldCheckIcon } from "lucide-react";
+import { RotateCw as ArrowPathIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SettingsPage() {

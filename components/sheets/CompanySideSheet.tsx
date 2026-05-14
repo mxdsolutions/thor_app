@@ -7,7 +7,7 @@ import { ActivityTimeline } from "./ActivityTimeline";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useArchiveAction } from "./use-archive-action";
-import { IconBuildingSkyscraper as BuildingOffice2Icon } from "@tabler/icons-react";
+import { Building2 as BuildingOffice2Icon } from "lucide-react";
 
 type Company = {
     id: string;

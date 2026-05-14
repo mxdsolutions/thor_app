@@ -50,6 +50,14 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
     // Step 3 — Invites
     const [invites, setInvites] = useState<InviteRow[]>([{ email: "" }]);
 
+    // Plan preselection from marketing pricing page: ?plan=iron_oak.
+    // Used by PlanStep to highlight the matching tier card. Validated against
+    // the plan list to ignore unknown values silently.
+    const preselectedPlanId =
+        plans.some((p) => p.id === searchParams.get("plan"))
+            ? (searchParams.get("plan") as string)
+            : null;
+
     // Resume after a cancelled Stripe Checkout: ?step=plan&checkout=cancelled
     // brings the user back onto the plan step so they can retry. Successful
     // checkouts redirect straight to /dashboard from the checkout route.
@@ -286,6 +294,7 @@ export default function SignupFlow({ plans }: { plans: ClientPlan[] }) {
                                 isSubmitting={isSubmitting}
                                 tenantId={tenantId}
                                 onCheckout={startCheckout}
+                                preselectedPlanId={preselectedPlanId}
                             />
                         )}
                     </AnimatePresence>

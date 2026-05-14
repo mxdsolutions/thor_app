@@ -9,7 +9,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconChevronLeft as ChevronLeftIcon, IconChevronRight as ChevronRightIcon } from "@tabler/icons-react";
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { PhotoItem } from "@/lib/report-templates/types";
 

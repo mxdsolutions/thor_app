@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter, DialogTi
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { IconLayoutList as SectionIcon } from "@tabler/icons-react";
+import { LayoutList as SectionIcon } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { useContactOptions } from "@/lib/swr";
 import { PricingSearchDropdown, type NewLineItem } from "@/components/quotes/PricingSearchDropdown";

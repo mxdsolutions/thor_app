@@ -9,19 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { tableBase, tableHead, tableHeadCell, tableRow, tableCell } from "@/lib/design-system";
-import {
-    IconPlus as PlusIcon,
-    IconSearch as MagnifyingGlassIcon,
-    IconMail as EnvelopeIcon,
-    IconLink as LinkIcon,
-    IconSignature,
-    IconInbox,
-    IconSend,
-    IconFile,
-    IconTrash,
-    IconArchive,
-    IconAlertTriangle,
-} from "@tabler/icons-react";
+import { Plus as PlusIcon, Search as MagnifyingGlassIcon, Mail as EnvelopeIcon, Link as LinkIcon, Signature, Inbox, Send, File, Trash2, Archive, AlertTriangle } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { ComposeEmailModal } from "@/components/modals/ComposeEmailModal";
 import { EmailSignatureModal } from "@/components/modals/EmailSignatureModal";
@@ -42,12 +30,12 @@ type EmailMessage = {
 type MatchedContact = { id: string; first_name: string; last_name: string };
 
 const FOLDERS = [
-    { id: "inbox", label: "Inbox", icon: IconInbox },
-    { id: "drafts", label: "Drafts", icon: IconFile },
-    { id: "sentitems", label: "Sent", icon: IconSend },
-    { id: "junkemail", label: "Junk", icon: IconAlertTriangle },
-    { id: "deleteditems", label: "Deleted", icon: IconTrash },
-    { id: "archive", label: "Archive", icon: IconArchive },
+    { id: "inbox", label: "Inbox", icon: Inbox },
+    { id: "drafts", label: "Drafts", icon: File },
+    { id: "sentitems", label: "Sent", icon: Send },
+    { id: "junkemail", label: "Junk", icon: AlertTriangle },
+    { id: "deleteditems", label: "Deleted", icon: Trash2 },
+    { id: "archive", label: "Archive", icon: Archive },
 ] as const;
 
 type FolderId = typeof FOLDERS[number]["id"];
@@ -260,7 +248,7 @@ export default function EmailsPage() {
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                             <Button variant="outline" size="sm" onClick={() => setShowSignature(true)}>
-                                <IconSignature className="w-4 h-4 mr-1.5" />
+                                <Signature className="w-4 h-4 mr-1.5" />
                                 Signature
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => fetchEmails(0, search)}>

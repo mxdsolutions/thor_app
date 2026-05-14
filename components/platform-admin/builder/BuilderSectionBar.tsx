@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { IconPlus as PlusIcon, IconTrash as TrashIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import type { SectionDef } from "@/lib/report-templates/types";
 
 interface BuilderSectionBarProps {

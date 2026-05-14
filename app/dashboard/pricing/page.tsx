@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon } from "lucide-react";
 import { TablePagination } from "@/components/dashboard/TablePagination";
 import { usePricing, type PricingItem, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";

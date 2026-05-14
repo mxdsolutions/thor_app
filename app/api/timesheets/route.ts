@@ -2,21 +2,20 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { withAuth } from "@/app/api/_lib/handler";
 import { tenantListQuery } from "@/app/api/_lib/list-query";
+import { isRoleAtLeast, requirePermission } from "@/app/api/_lib/permissions";
 import { serverError, validationError, notFoundError, forbiddenError } from "@/app/api/_lib/errors";
 import { timesheetSchema, timesheetUpdateSchema } from "@/lib/validation";
 
 const TIMESHEET_SELECT =
     "*, job:jobs (id, job_title, reference_id), user:profiles!timesheets_user_id_fkey (id, full_name, email, avatar_url)";
 
-/** Roles that may log time on behalf of another user. Members and viewers
- *  can only log their own hours. */
-const PRIVILEGED_ROLES = new Set(["owner", "admin", "manager"]);
-
 /**
  * Authorise a write that targets `targetUserId`:
  *   - the target must be a member of the caller's tenant (closes the
  *     cross-tenant hole — RLS only checks the row's tenant_id, not the FK)
- *   - if writing for someone else, the caller's role must be privileged
+ *   - if writing for someone else, the caller's role must be manager or above.
+ *     "Log for others" is a manage-on-behalf capability not expressed in the
+ *     resource permission map, so it gates on the role hierarchy directly.
  *
  * Returns null on success, or a 403/404 response the handler should return.
  */
@@ -42,7 +41,7 @@ async function authoriseTargetUser(
         .eq("tenant_id", tenantId)
         .eq("user_id", callerId)
         .maybeSingle();
-    if (!caller || !PRIVILEGED_ROLES.has(caller.role)) {
+    if (!isRoleAtLeast(caller?.role, "manager")) {
         return forbiddenError("You can only log time for yourself");
     }
     return null;
@@ -100,6 +99,9 @@ export const GET = withAuth(async (request, { supabase, tenantId, user }) => {
 });
 
 export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
+    const permDenied = await requirePermission(supabase, user.id, tenantId, "ops.timesheets", "write");
+    if (permDenied) return permDenied;
+
     const body = await request.json();
     const validation = timesheetSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
@@ -134,6 +136,9 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 });
 
 export const PATCH = withAuth(async (request, { supabase, user, tenantId }) => {
+    const permDenied = await requirePermission(supabase, user.id, tenantId, "ops.timesheets", "write");
+    if (permDenied) return permDenied;
+
     const body = await request.json();
     const validation = timesheetUpdateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);

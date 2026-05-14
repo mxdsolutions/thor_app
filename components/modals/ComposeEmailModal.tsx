@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
-import { IconPaperclip, IconX, IconPlus } from "@tabler/icons-react";
+import { Paperclip, X as IconX, Plus } from "lucide-react";
 import useSWR from "swr";
 
 export type EmailAttachment = {
@@ -209,7 +209,7 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defau
                                 key={idx}
                                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary text-sm"
                             >
-                                <IconPaperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                                <Paperclip className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                                 <span className="truncate max-w-[180px]">{att.name}</span>
                                 <button
                                     type="button"
@@ -221,7 +221,7 @@ export function ComposeEmailModal({ open, onOpenChange, onSent, defaultTo, defau
                             </div>
                         ))}
                         <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer">
-                            <IconPlus className="w-3.5 h-3.5" />
+                            <Plus className="w-3.5 h-3.5" />
                             Attach file
                             <input
                                 type="file"

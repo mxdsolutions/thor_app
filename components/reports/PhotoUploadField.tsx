@@ -2,7 +2,8 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
-import { IconPhoto as PhotoIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon, IconRefresh as ArrowPathIcon, IconX as XMarkIcon, IconEdit as PencilSquareIcon } from "@tabler/icons-react";
+import { Image as PhotoIcon, Trash2 as TrashIcon, Upload as ArrowUpTrayIcon, RotateCw as ArrowPathIcon, X as XMarkIcon, Pencil as PencilSquareIcon } from "lucide-react";
+import { Camera } from "lucide-react";
 import { deleteReportPhoto } from "@/lib/report-photos";
 import { usePhotoUploader } from "./UploadContext";
 import { PhotoLightbox } from "./PhotoLightbox";
@@ -56,9 +57,18 @@ export function PhotoUploadField({
     const [dragOver, setDragOver] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
+    const [showCameraButton, setShowCameraButton] = useState(false);
     const pendingPhotosRef = useRef<PhotoItem[]>(photos);
     const activeUploadsRef = useRef(0);
     const mountedRef = useRef(true);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const supportsCapture = "capture" in document.createElement("input");
+        const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+        setShowCameraButton(supportsCapture && isCoarsePointer);
+    }, []);
 
     // Keep pendingPhotosRef in sync with props
     useEffect(() => {
@@ -438,46 +448,71 @@ export function PhotoUploadField({
 
             {/* Upload Area */}
             {!readOnly && (
-                <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={cn(
-                        "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
-                        dragOver
-                            ? "border-foreground/40 bg-secondary/50"
-                            : "border-border hover:border-foreground/30"
+                <div className="space-y-2">
+                    {showCameraButton && (
+                        <button
+                            type="button"
+                            onClick={() => cameraInputRef.current?.click()}
+                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-border bg-card hover:bg-secondary/50 transition-colors p-3 text-sm font-medium text-foreground"
+                        >
+                            <Camera className="w-4 h-4" />
+                            Take Photo
+                        </button>
                     )}
-                    onClick={() => fileInputRef.current?.click()}
-                >
                     <input
-                        ref={fileInputRef}
+                        ref={cameraInputRef}
                         type="file"
                         accept="image/*"
-                        multiple
+                        capture="environment"
                         className="hidden"
                         onChange={(e) => {
                             if (e.target.files) handleFiles(e.target.files);
                             e.target.value = "";
                         }}
                     />
-                    <div className="flex justify-center mb-2">
-                        <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
-                            {hasPhotos ? (
-                                <ArrowUpTrayIcon className="w-5 h-5 text-muted-foreground" />
-                            ) : (
-                                <PhotoIcon className="w-5 h-5 text-muted-foreground" />
-                            )}
+                    <div
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        className={cn(
+                            "border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
+                            dragOver
+                                ? "border-foreground/40 bg-secondary/50"
+                                : "border-border hover:border-foreground/30"
+                        )}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                                if (e.target.files) handleFiles(e.target.files);
+                                e.target.value = "";
+                            }}
+                        />
+                        <div className="flex justify-center mb-2">
+                            <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+                                {hasPhotos ? (
+                                    <ArrowUpTrayIcon className="w-5 h-5 text-muted-foreground" />
+                                ) : (
+                                    <PhotoIcon className="w-5 h-5 text-muted-foreground" />
+                                )}
+                            </div>
                         </div>
+                        <p className="text-sm text-muted-foreground">
+                            {hasPhotos
+                                ? "Add more photos"
+                                : showCameraButton
+                                    ? "Or choose from your photo library"
+                                    : "Drop photos here or click to upload"}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                            JPG, PNG, WebP up to 10MB
+                        </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        {hasPhotos
-                            ? "Add more photos"
-                            : "Drop photos here or click to upload"}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                        JPG, PNG, WebP up to 10MB
-                    </p>
                 </div>
             )}
 

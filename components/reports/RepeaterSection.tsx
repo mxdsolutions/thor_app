@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { IconPlus as PlusIcon, IconTrash as TrashIcon, IconUpload as ArrowUpTrayIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Trash2 as TrashIcon, Upload as ArrowUpTrayIcon } from "lucide-react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
 import type { SectionDef } from "@/lib/report-templates/types";

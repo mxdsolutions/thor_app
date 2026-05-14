@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { mutate } from "swr";
 import { Button } from "@/components/ui/button";
-import {
-    IconPlus as PlusIcon,
-    IconReceipt as ReceiptIcon,
-    IconBuildingWarehouse as SupplierIcon,
-    IconClock as ClockIcon,
-} from "@tabler/icons-react";
+import { Plus as PlusIcon, Receipt as ReceiptIcon, Warehouse as SupplierIcon, Clock as ClockIcon } from "lucide-react";
 import { ReceiptSideSheet, type ReceiptItem } from "@/components/sheets/ReceiptSideSheet";
 import { PurchaseOrderSideSheet, type PurchaseOrderItem } from "@/components/sheets/PurchaseOrderSideSheet";
 import { TimesheetSideSheet, type TimesheetSideSheetItem } from "@/components/sheets/TimesheetSideSheet";

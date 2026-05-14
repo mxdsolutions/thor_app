@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-    IconCalendar,
-    IconClock,
-    IconChevronLeft,
-    IconChevronRight,
-} from "@tabler/icons-react";
+import { Calendar, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
@@ -125,7 +120,7 @@ export function DatePicker({
                     disabled={disabled}
                     className={cn(triggerClass, !selected && "text-muted-foreground", className)}
                 >
-                    <IconCalendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span className="flex-1 text-left truncate">
                         {formatDateDisplay(value, placeholder)}
                     </span>
@@ -139,7 +134,7 @@ export function DatePicker({
                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                         aria-label="Previous month"
                     >
-                        <IconChevronLeft className="w-4 h-4" />
+                        <ChevronLeft className="w-4 h-4" />
                     </button>
                     <span className="text-sm font-semibold">{monthLabel}</span>
                     <button
@@ -148,7 +143,7 @@ export function DatePicker({
                         className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                         aria-label="Next month"
                     >
-                        <IconChevronRight className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 </div>
                 <div className="grid grid-cols-7 gap-0.5 mb-1">
@@ -273,7 +268,7 @@ export function TimePicker({
                     disabled={disabled}
                     className={cn(triggerClass, !value && "text-muted-foreground", className)}
                 >
-                    <IconClock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span className="flex-1 text-left truncate">
                         {formatTimeDisplay(value, placeholder)}
                     </span>

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { IconTrendingUp as ArrowTrendingUpIcon, IconTrendingDown as ArrowTrendingDownIcon } from "@tabler/icons-react";
+import { TrendingUp as ArrowTrendingUpIcon, TrendingDown as ArrowTrendingDownIcon } from "lucide-react";
 import { statLabelClass, statValueClass, cardGap } from "@/lib/design-system";
 
 export interface DashboardMetric {

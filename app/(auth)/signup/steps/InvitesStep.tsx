@@ -1,11 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-    IconArrowRight as ArrowRightIcon,
-    IconPlus as PlusIcon,
-    IconTrash as TrashIcon,
-} from "@tabler/icons-react";
+import { ArrowRight as ArrowRightIcon, Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { inputClass, primaryBtnClass, ghostBtnClass } from "./styles";

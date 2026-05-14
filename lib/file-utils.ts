@@ -1,14 +1,5 @@
-import {
-    IconFile as FileIcon,
-    IconFileText as FileTextIcon,
-    IconPhoto as PhotoIcon,
-    IconFileTypePdf as PdfIcon,
-    IconFileSpreadsheet as SpreadsheetIcon,
-    IconFileZip as ZipIcon,
-    IconVideo as VideoIcon,
-    IconMusic as AudioIcon,
-} from "@tabler/icons-react";
-import type { Icon } from "@tabler/icons-react";
+import { File as FileIcon, FileText as FileTextIcon, Image as PhotoIcon, FileText as PdfIcon, FileSpreadsheet as SpreadsheetIcon, FileArchive as ZipIcon, Video as VideoIcon, Music as AudioIcon } from "lucide-react";
+import type { LucideIcon as Icon } from "lucide-react";
 
 /** Format a byte count for display: 0 B, 12 KB, 3.4 MB, 1.2 GB. */
 export function formatBytes(bytes: number): string {

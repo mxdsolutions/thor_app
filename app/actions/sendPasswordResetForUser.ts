@@ -4,6 +4,7 @@ import { cookies, headers } from "next/headers";
 import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { getTenantId } from "@/lib/tenant";
 import { forgotPasswordSchema } from "@/lib/validation";
+import { checkPermission } from "@/app/api/_lib/permissions";
 
 export type SendPasswordResetForUserResult =
     | { success: true; error: null }
@@ -42,6 +43,17 @@ export async function sendPasswordResetForUser(
         }
 
         const tenantId = await getTenantId();
+
+        const permission = await checkPermission(
+            supabase, user.id, tenantId, "settings.users", "write"
+        );
+        if (!permission.allowed) {
+            return {
+                success: false,
+                error: "You don't have permission to send password resets",
+            };
+        }
+
         const admin = await createAdminClient();
 
         const { data: profile } = await admin

@@ -7,15 +7,7 @@ import Underline from "@tiptap/extension-underline";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import { cn } from "@/lib/utils";
-import {
-    IconBold,
-    IconItalic,
-    IconUnderline,
-    IconList,
-    IconListNumbers,
-    IconLink,
-    IconPhoto,
-} from "@tabler/icons-react";
+import { Bold as BoldIcon, Italic as ItalicIcon, Underline as UnderlineIcon, List as ListIcon, ListOrdered as ListOrderedIcon, Link as LinkIcon, Image as ImageIcon } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface RichTextEditorProps {
@@ -140,21 +132,21 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
                     onClick={() => editor.chain().focus().toggleBold().run()}
                     title="Bold"
                 >
-                    <IconBold className="w-4 h-4" />
+                    <BoldIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <ToolbarButton
                     active={editor.isActive("italic")}
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                     title="Italic"
                 >
-                    <IconItalic className="w-4 h-4" />
+                    <ItalicIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <ToolbarButton
                     active={editor.isActive("underline")}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
                     title="Underline"
                 >
-                    <IconUnderline className="w-4 h-4" />
+                    <UnderlineIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <div className="w-px h-4 bg-border/50 mx-1" />
                 <ToolbarButton
@@ -162,14 +154,14 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
                     onClick={() => editor.chain().focus().toggleBulletList().run()}
                     title="Bullet list"
                 >
-                    <IconList className="w-4 h-4" />
+                    <ListIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <ToolbarButton
                     active={editor.isActive("orderedList")}
                     onClick={() => editor.chain().focus().toggleOrderedList().run()}
                     title="Numbered list"
                 >
-                    <IconListNumbers className="w-4 h-4" />
+                    <ListOrderedIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <div className="w-px h-4 bg-border/50 mx-1" />
                 <ToolbarButton
@@ -177,13 +169,13 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
                     onClick={handleLink}
                     title="Insert link"
                 >
-                    <IconLink className="w-4 h-4" />
+                    <LinkIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <ToolbarButton
                     onClick={() => fileInputRef.current?.click()}
                     title="Insert image"
                 >
-                    <IconPhoto className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4" />
                 </ToolbarButton>
                 <input
                     ref={fileInputRef}

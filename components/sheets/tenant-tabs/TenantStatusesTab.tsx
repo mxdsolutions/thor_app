@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { IconChevronDown as ChevronDownIcon, IconX as XMarkIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { ChevronDown as ChevronDownIcon, X as XMarkIcon, Plus as PlusIcon } from "lucide-react";
 import type { StatusItem } from "@/lib/status-config";
 import { PRESET_COLORS } from "./types";
 

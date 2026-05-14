@@ -13,7 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { IconReceipt as ReceiptIcon } from "@tabler/icons-react";
+import { Receipt as ReceiptIcon } from "lucide-react";
 import { toast } from "sonner";
 import { RECEIPT_CATEGORIES, type ReceiptCategory } from "@/lib/validation";
 import { formatBytes } from "@/lib/file-utils";

@@ -3,11 +3,7 @@
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import {
-    IconArchive,
-    IconArchiveOff,
-    IconDotsVertical,
-} from "@tabler/icons-react";
+import { Archive, ArchiveRestore, MoreVertical } from "lucide-react";
 import { toast } from "sonner";
 
 interface UseArchiveActionOptions {
@@ -62,7 +58,7 @@ export function useArchiveAction({
                     className="shrink-0 h-9 w-9 px-0"
                     aria-label="More actions"
                 >
-                    <IconDotsVertical className="w-4 h-4" />
+                    <MoreVertical className="w-4 h-4" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 p-1">
@@ -76,12 +72,12 @@ export function useArchiveAction({
                 >
                     {archived ? (
                         <>
-                            <IconArchiveOff className="w-4 h-4" />
+                            <ArchiveRestore className="w-4 h-4" />
                             Restore {entityName}
                         </>
                     ) : (
                         <>
-                            <IconArchive className="w-4 h-4" />
+                            <Archive className="w-4 h-4" />
                             Archive {entityName}
                         </>
                     )}
@@ -93,7 +89,7 @@ export function useArchiveAction({
     const banner = archived ? (
         <div className="px-6 py-2.5 bg-muted border-b border-border flex items-center justify-between gap-3 shrink-0">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <IconArchive className="w-4 h-4" />
+                <Archive className="w-4 h-4" />
                 <span>This {entityName} is archived.</span>
             </div>
             <Button

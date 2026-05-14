@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Command as CommandPrimitive } from "cmdk"
-import { IconSearch as MagnifyingGlassIcon } from "@tabler/icons-react";import { cn } from "@/lib/utils"
+import { Search as MagnifyingGlassIcon } from "lucide-react";import { cn } from "@/lib/utils"
 
 const Command = React.forwardRef<
     React.ComponentRef<typeof CommandPrimitive>,

@@ -15,13 +15,14 @@ import {
     getJobStatusDot,
 } from "@/lib/design-system";
 import { cn, formatCurrency } from "@/lib/utils";
-import { IconSearch as MagnifyingGlassIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { useMyTasks, useJobs, useScheduleEntries, useOverviewMetrics } from "@/lib/swr";
 import { MetricsSkeleton, TableSkeleton } from "@/components/ui/skeleton";
 import { useUserProfile } from "@/features/shell/use-user-profile";
+import { usePermissionOptional } from "@/lib/tenant-context";
 import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 
 type Appointment = {
@@ -63,7 +64,11 @@ const priorityLabels: Record<number, string> = { 1: "Urgent", 2: "High", 3: "Nor
 
 export default function OverviewPage() {
     usePageTitle("Overview");
-    const { data: metrics, isLoading: metricsLoading } = useOverviewMetrics();
+    // Manager+ see the $ pipeline/AR/backlog cards; Members & Viewers don't.
+    // The /api/overview/metrics endpoint enforces the same gate server-side,
+    // so skipping the hook here also avoids a guaranteed-403 request.
+    const canSeeFinancials = usePermissionOptional("dashboard.financials", "read", false);
+    const { data: metrics, isLoading: metricsLoading } = useOverviewMetrics(canSeeFinancials);
     const { data: tasksData, error: tasksError } = useMyTasks();
     const { data: jobsData, isLoading: jobsLoading } = useJobs();
     const { displayName } = useUserProfile();
@@ -491,26 +496,28 @@ export default function OverviewPage() {
                 </p>
             </div>
 
-            {/* Stat Cards */}
-            {metricsLoading ? (
-                <MetricsSkeleton count={3} />
-            ) : (
-                <div>
-                    {/* Mobile: horizontal scroll, all 3 cards */}
-                    <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
-                        {statCards.map((card, i) => (
-                            <div key={i} className="shrink-0 w-[75%] sm:w-[280px]">
-                                <StatCard label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
-                            </div>
-                        ))}
+            {/* Stat Cards — Manager+ only. Members/Viewers don't see $ totals. */}
+            {canSeeFinancials && (
+                metricsLoading ? (
+                    <MetricsSkeleton count={3} />
+                ) : (
+                    <div>
+                        {/* Mobile: horizontal scroll, all 3 cards */}
+                        <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 pb-1 md:hidden">
+                            {statCards.map((card, i) => (
+                                <div key={i} className="shrink-0 w-[75%] sm:w-[280px]">
+                                    <StatCard label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
+                                </div>
+                            ))}
+                        </div>
+                        {/* md+: 3-col grid */}
+                        <div className="hidden md:grid md:grid-cols-3 gap-3 px-4 md:px-6 lg:px-10">
+                            {statCards.map((card, i) => (
+                                <StatCard key={i} label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
+                            ))}
+                        </div>
                     </div>
-                    {/* md+: 3-col grid */}
-                    <div className="hidden md:grid md:grid-cols-3 gap-3 px-4 md:px-6 lg:px-10">
-                        {statCards.map((card, i) => (
-                            <StatCard key={i} label={card.label} value={card.value} sublabel={card.sublabel} href={card.href} />
-                        ))}
-                    </div>
-                </div>
+                )
             )}
 
             {/* Mobile Tab Switcher */}

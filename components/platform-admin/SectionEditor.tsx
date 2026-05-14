@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon } from "lucide-react";
 import type { SectionDef, FieldDef } from "@/lib/report-templates/types";
 import { FieldCard } from "./FieldCard";
 import { FieldEditor } from "./FieldEditor";

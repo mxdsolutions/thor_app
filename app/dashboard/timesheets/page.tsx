@@ -17,7 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { IconSearch as MagnifyingGlassIcon, IconPlus as PlusIcon } from "@tabler/icons-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon } from "lucide-react";
 import { CreateTimesheetModal } from "@/components/modals/CreateTimesheetModal";
 import { ClockInOutCard } from "@/components/timesheets/ClockInOutCard";
 import { TimesheetSideSheet, type TimesheetSideSheetItem } from "@/components/sheets/TimesheetSideSheet";

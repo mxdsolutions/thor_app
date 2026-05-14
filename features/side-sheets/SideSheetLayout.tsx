@@ -63,7 +63,7 @@ export function SideSheetLayout({
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent className={cn("w-full sm:max-w-[900px] flex flex-col p-0 border-l border-border bg-background", contentClassName)}>
                 {/* Header */}
-                <div className="p-6 pb-4 border-b border-border">
+                <div className="p-6 pb-[22px] border-b border-border">
                     <SheetHeader className="flex flex-row items-start gap-4 space-y-0 text-left">
                         <div className={cn("w-[60px] h-[60px] rounded-xl flex items-center justify-center shrink-0", iconBg)}>
                             {icon}

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { SideSheetLayout } from "@/features/side-sheets/SideSheetLayout";
 import { useArchiveAction } from "./use-archive-action";
 import { EntitySearchDropdown, type EntityOption } from "@/components/ui/entity-search-dropdown";
-import { IconClock as ClockIcon } from "@tabler/icons-react";
+import { Clock as ClockIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useJobOptions, refreshTimesheetCache } from "@/lib/swr";
 import { cn, combineDateTime, formatDuration } from "@/lib/utils";

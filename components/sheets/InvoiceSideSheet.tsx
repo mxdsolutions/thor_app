@@ -7,7 +7,7 @@ import { DetailFields, LinkedEntityCard } from "./DetailFields";
 import { NotesPanel } from "./NotesPanel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { Button } from "@/components/ui/button";
-import { IconSend as PaperAirplaneIcon, IconCash as BanknotesIcon } from "@tabler/icons-react";
+import { Send as PaperAirplaneIcon, Banknote as BanknotesIcon } from "lucide-react";
 import { toast } from "sonner";
 import { INVOICE_STATUS_CONFIG } from "@/lib/status-config";
 import { useArchiveAction } from "./use-archive-action";

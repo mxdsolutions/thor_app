@@ -13,10 +13,14 @@ All tokens are exported from `@/lib/design-system.ts`. Import and use them to ke
 
 ### Font Stack
 
-| Role | Font | Application |
-|------|------|-------------|
-| **Primary** | IBM Plex Sans | Body text, inputs, buttons, labels — wired to `--font-sans` via `--font-plex-sans` on `<body>`. Chosen for its industrial/engineered character to pair with Antonio. |
-| **Display** | Antonio | All `h1`–`h6` headings (applied via `@layer base`), plus hero/accent text — available via `--font-antonio` / `font-display`. Real weights 100–700, industrial condensed feel. Apply `uppercase` for the all-caps display look. |
+Three fonts, each with a clear role. Loaded in [`app/layout.tsx`](app/layout.tsx) and exposed as Tailwind v4 theme variables in [`app/globals.css`](app/globals.css).
+
+| Role | Font | Variable / utility | Application |
+|------|------|-----|-------------|
+| **Primary** | Inter | `--font-sans` (default) | Body text, inputs, buttons, labels, table cells, and headings by default. Wired as the default `font-family` on `<body>`. The base layer applies `font-weight: 600` and `letter-spacing: -0.011em` to `h1`–`h6` so semantic headings render with consistent weight in Inter. |
+| **Statement** | Bricolage Grotesque | `--font-statement` / `font-statement` | Opt-in display face for statement headings — dashboard welcome titles, hero headlines, marketing/brand-leaning surfaces. Real weights 400/600/700/800. Apply directly on a heading element to override the default Inter (e.g. `<h2 className="font-statement text-3xl font-extrabold tracking-tight">`). |
+| **Wordmark** | Paladins Condensed | `--font-paladins` / `font-paladins` | Reserved exclusively for the THOR™ wordmark. Do not use for any other text. |
+| **Mono** | IBM Plex Mono | `--font-mono` / `font-mono` | Reference IDs, code, and other tabular technical text. |
 
 ### Type Scale Reference
 
@@ -40,16 +44,14 @@ All tokens are exported from `@/lib/design-system.ts`. Import and use them to ke
 
 ### Headings
 
-Industrial display direction: `pageHeadingClass` and `sectionHeadingClass` both render in Antonio (via the base `h1`–`h6` rule) as bold uppercase. Apply them to semantic heading elements so they pick up the display font automatically.
+Default headings render in Inter via the base layer (semibold, tight tracking). For statement-feel surfaces — dashboard welcome titles, hero headlines, marketing — opt into Bricolage with `font-statement` directly on the heading element. The reference is the dashboard overview page: `<h2 className="font-statement text-3xl font-extrabold tracking-tight">Welcome back</h2>`.
 
 | Role | Token | Actual classes |
 |------|-------|----------------|
-| Page title (header bar) | `pageHeadingClass` | `text-3xl font-bold uppercase tracking-wide` |
-| Section heading (cards, tabs) | `sectionHeadingClass` | `text-xl font-bold uppercase tracking-wide text-foreground` |
-| Side sheet title | `sheetTitleClass` | `text-[22px] font-bold truncate leading-tight` |
-| Modal / dialog title | `dialogTitleClass` | `text-xl font-semibold leading-none tracking-tight` |
-| Hero heading | `heroHeadingClass` | `text-5xl md:text-6xl font-bold tracking-tight` |
-| Hero sub-heading | `heroSubheadingClass` | `text-4xl md:text-5xl font-bold tracking-tight` |
+| Page title (header bar) | `pageHeadingClass` | `text-2xl font-semibold tracking-tight` |
+| Statement / welcome heading | (inline) | `font-statement text-3xl font-extrabold tracking-tight` |
+| Section heading (cards) | `sectionHeadingClass` | `text-base font-semibold text-foreground` |
+| Stat value | `statValueClass` | `text-3xl font-bold tracking-tight tabular-nums` |
 
 ### Body Text
 
@@ -77,7 +79,7 @@ Industrial display direction: `pageHeadingClass` and `sectionHeadingClass` both 
 | Tab button | `tabClass` | `text-[17px]` | `font-medium` | Side sheet tabs |
 | Badge / pill | `badgeClass` | `text-[11px]` | `font-semibold` | `uppercase tracking-wider` |
 | Button text | (via `button.tsx`) | `text-sm` | `font-medium` | Inherited from CVA variants |
-| Stat value | `statValueClass` | `text-4xl` | `font-bold` | `tracking-wide` (render on `<h*>` for Antonio) |
+| Stat value | `statValueClass` | `text-3xl` | `font-bold` | `tracking-tight tabular-nums` |
 
 ### Weight Scale
 
@@ -149,11 +151,25 @@ Use the modular dashboard components from `@/components/dashboard/DashboardPage`
 
 ---
 
+## Radius Scale
+
+Radius is intentionally collapsed to two values, regardless of which `rounded-*` token you use. This keeps the visual rhythm calm and industrial — no escalating jumps between surface sizes.
+
+| Token | Renders | Use |
+|-------|---------|-----|
+| `rounded-sm` / `rounded-md` | 4px | Fine details — calendar event chips, small dots, inline pills |
+| `rounded-lg` / `rounded-xl` / `rounded-2xl` / `rounded-3xl` | 8px | Surfaces and interactive controls — buttons, inputs, cards, modals |
+| `rounded-full` | full | Avatars, status dots, pill badges |
+
+Don't introduce arbitrary values like `rounded-[12px]` or `rounded-[6px]`. The one documented exception is `rounded-[2rem]` on the device-frame mockup in [`BuilderPreviewCanvas.tsx`](components/platform-admin/builder/BuilderPreviewCanvas.tsx) — it depicts a physical phone bezel, not a UI surface.
+
+---
+
 ## Component Patterns
 
 ### Cards
 
-- Base: `rounded-2xl border bg-card shadow-sm`
+- Base: `rounded-2xl border bg-card shadow-sm` (renders at 8px per the token override)
 - Content Internal: `p-6`
 
 ### Badges
@@ -163,7 +179,7 @@ Use the modular dashboard components from `@/components/dashboard/DashboardPage`
 
 ### Buttons
 
-- All buttons use `rounded-lg` (4px) to match the industrial radius scale and sit flush with cards and inputs. `rounded-full` is reserved for avatars and pill badges only.
+- All buttons use `rounded-lg` (renders 8px per the radius scale above) and sit flush with cards and inputs. `rounded-full` is reserved for avatars and pill badges only.
 - Standard sizes: `h-10` (default), `h-12` (large), `h-9` (small), `h-10 w-10` (icon).
 - Icon-only buttons **must** carry an `aria-label` or `title` for screen-reader support.
 
@@ -218,15 +234,20 @@ Status colors remain literal Tailwind colors (`bg-red-500`, `bg-emerald-500`) ra
 
 ## Icons
 
-Use **Tabler Icons** (`@tabler/icons-react`) for dashboard UI and **Lucide** for landing pages. Tabler's sharper, more technical stroke style fits the construction-industry aesthetic better than soft-cornered alternatives.
+Use **Lucide** (`lucide-react`) for all icons across dashboard, marketing, and auth surfaces. One icon library, one stroke style.
 
-Import by their `Icon*` names (e.g. `IconPlus`, `IconTrash`, `IconUsersGroup`). Tabler components accept `size`, `stroke`, `color`, and `className` props.
+Import by Lucide's PascalCase names. Common imports: `Plus`, `Trash2`, `Search`, `Users`, `ArrowRight`, `ChevronDown`, `Check`, `X`, `MoreVertical`, `Calendar`, `Mail`, `Bell`, `Settings`. Lucide components accept `size`, `strokeWidth`, `color`, and `className` props.
 
-| size | Variable | Value |
-|------|----------|-------|
-| Small | `iconSm` | `18px` |
-| Medium | `iconMd` | `20px` |
-| Large | `iconLg` | `24px` |
+When importing a Lucide icon whose name collides with another import in the file (e.g. `Image` from `@tiptap/extension-image`, `Link` from `@tiptap/extension-link`), alias the icon: `import { Image as ImageIcon, Link as LinkIcon } from "lucide-react"`.
+
+For type annotations of "any icon component", import `LucideIcon`:
+
+```ts
+import type { LucideIcon } from "lucide-react";
+type NavItem = { label: string; icon: LucideIcon };
+```
+
+Sizing: use Tailwind utilities (`w-3 h-3`, `w-4 h-4`, `w-5 h-5`) on the `className` prop rather than the `size` prop, for consistency with the rest of the codebase.
 
 ---
 
@@ -261,8 +282,8 @@ components/
     select.tsx              ← rounded-xl select trigger + content
     segmented-control.tsx   ← Shared tab switcher
 app/
-  globals.css         ← @theme tokens, base layer (Antonio on h1–h6), radius overrides
-  layout.tsx          ← Root layout with IBM Plex Sans (body) + Antonio (display)
+  globals.css         ← @theme tokens, base layer (Inter weight on h1–h6), radius overrides
+  layout.tsx          ← Root layout: loads Inter (body), Bricolage (statement), Plex Mono, Paladins (THOR wordmark)
   dashboard/
     DashboardShell.tsx ← Sidebar + sticky header with PageTitle
     overview/page.tsx  ← Stat cards + jobs / tasks split tables

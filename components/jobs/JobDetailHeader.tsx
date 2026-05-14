@@ -2,15 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { avatarSurfaceClass } from "@/lib/design-system";
-import {
-    IconPlus as PlusIcon,
-    IconArrowLeft as ArrowLeftIcon,
-    IconX as XMarkIcon,
-    IconChevronDown,
-    IconDotsVertical,
-    IconArchive,
-    IconArchiveOff,
-} from "@tabler/icons-react";
+import { Plus as PlusIcon, ArrowLeft as ArrowLeftIcon, X as XMarkIcon, ChevronDown, MoreVertical, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import type { JobDetailJob } from "./JobDetailView";
@@ -117,7 +109,7 @@ export function JobDetailHeader({
                     <Popover open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
                         <PopoverTrigger asChild>
                             <Button size="sm" variant="outline" className="shrink-0 h-9 w-9 px-0" aria-label="More actions">
-                                <IconDotsVertical className="w-4 h-4" />
+                                <MoreVertical className="w-4 h-4" />
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent align="end" className="w-48 p-1">
@@ -131,12 +123,12 @@ export function JobDetailHeader({
                             >
                                 {data.archived_at ? (
                                     <>
-                                        <IconArchiveOff className="w-4 h-4" />
+                                        <ArchiveRestore className="w-4 h-4" />
                                         Restore job
                                     </>
                                 ) : (
                                     <>
-                                        <IconArchive className="w-4 h-4" />
+                                        <Archive className="w-4 h-4" />
                                         Archive job
                                     </>
                                 )}
@@ -148,7 +140,7 @@ export function JobDetailHeader({
                             <Button size="sm" className="shrink-0 hidden md:inline-flex">
                                 <PlusIcon className="w-3.5 h-3.5 mr-1" />
                                 Create
-                                <IconChevronDown className="w-3.5 h-3.5 ml-1 -mr-1" />
+                                <ChevronDown className="w-3.5 h-3.5 ml-1 -mr-1" />
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent align="end" className="w-56 p-1">
@@ -183,7 +175,7 @@ export function JobDetailHeader({
             {data.archived_at && (
                 <div className="px-6 py-2.5 bg-muted border-b border-border flex items-center justify-between gap-3 shrink-0">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <IconArchive className="w-4 h-4" />
+                        <Archive className="w-4 h-4" />
                         <span>This job is archived.</span>
                     </div>
                     <Button size="sm" variant="ghost" className="h-7 px-3" onClick={() => onArchive(false)}>

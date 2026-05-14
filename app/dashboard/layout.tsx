@@ -63,14 +63,14 @@ export default async function DashboardLayout({
         return (
             <div className="min-h-dvh flex items-center justify-center p-6">
                 <div className="max-w-md text-center space-y-4">
-                    <h1 className="text-xl font-display">Workspace unavailable</h1>
+                    <h1 className="text-xl font-statement">Workspace unavailable</h1>
                     <p className="text-sm text-muted-foreground">
                         We couldn&apos;t load your workspace. This usually means your account
                         isn&apos;t linked to an active tenant. Try signing out and back in, or
                         contact support if the problem persists.
                     </p>
                     <Link
-                        href="/"
+                        href="/login"
                         className="inline-block text-sm font-medium underline underline-offset-4"
                     >
                         Return to sign in

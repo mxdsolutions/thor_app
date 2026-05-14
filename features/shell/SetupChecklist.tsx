@@ -4,11 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useSWRConfig } from "swr";
 import { toast } from "sonner";
-import {
-    IconCheck,
-    IconArrowRight,
-    IconRotateClockwise2,
-} from "@tabler/icons-react";
+import { Check, ArrowRight, RotateCw } from "lucide-react";
 import {
     Popover,
     PopoverTrigger,
@@ -74,7 +70,7 @@ export function SetupChecklist() {
             >
                 <div className="px-5 py-4 border-b border-border">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-base font-semibold font-display">
+                        <h3 className="text-base font-semibold font-statement">
                             Get set up
                         </h3>
                         <span className="text-xs text-muted-foreground tabular-nums">
@@ -155,7 +151,7 @@ function ChecklistRow({
                                 className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                             >
                                 {isSkipped ? "Do it now" : "Set up"}
-                                <IconArrowRight className="w-3 h-3" />
+                                <ArrowRight className="w-3 h-3" />
                             </Link>
                             {isSkipped ? (
                                 <button
@@ -163,7 +159,7 @@ function ChecklistRow({
                                     disabled={disabled}
                                     className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                                 >
-                                    <IconRotateClockwise2 className="w-3 h-3" />
+                                    <RotateCw className="w-3 h-3" />
                                     Restore
                                 </button>
                             ) : (
@@ -187,7 +183,7 @@ function StatusDot({ status }: { status: "complete" | "skipped" | "pending" }) {
     if (status === "complete") {
         return (
             <span className="mt-0.5 w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
-                <IconCheck className="w-3.5 h-3.5" strokeWidth={3} />
+                <Check className="w-3.5 h-3.5" strokeWidth={3} />
             </span>
         );
     }

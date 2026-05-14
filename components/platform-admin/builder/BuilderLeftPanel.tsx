@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { IconPlus as PlusIcon, IconEdit as PencilSquareIcon, IconTrash as TrashIcon, IconChevronUp as ChevronUpIcon, IconChevronDown as ChevronDownIcon } from "@tabler/icons-react";
+import { Plus as PlusIcon, Pencil as PencilSquareIcon, Trash2 as TrashIcon, ChevronUp as ChevronUpIcon, ChevronDown as ChevronDownIcon } from "lucide-react";
 import type { SectionDef, FieldDef } from "@/lib/report-templates/types";
 import { FIELD_TYPE_LABELS } from "@/lib/report-templates/types";
 import { FieldEditor } from "../FieldEditor";

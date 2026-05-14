@@ -241,7 +241,7 @@ export async function middleware(request: NextRequest) {
 
         if (!isAuthenticated && (isDashboard || isOnboarding || isPlatformAdmin || isReport)) {
             const url = request.nextUrl.clone()
-            url.pathname = '/'
+            url.pathname = '/login'
             return NextResponse.redirect(url)
         }
 
@@ -259,11 +259,13 @@ export async function middleware(request: NextRequest) {
         }
 
         const isAuthRoute =
-            request.nextUrl.pathname === '/' ||
+            request.nextUrl.pathname === '/login' ||
             request.nextUrl.pathname.startsWith('/signup') ||
             request.nextUrl.pathname.startsWith('/forgot-password')
             // Note: /reset-password is intentionally excluded — after PKCE code exchange the
             // user is temporarily authenticated as a recovery session and must reach the page.
+            // Note: '/' is the public marketing site — authenticated users may visit it freely
+            // (the marketing nav surfaces a "Go to dashboard" CTA when signed in).
 
         // The signup wizard signs the user in mid-flow, then bounces to Stripe
         // and back. Let already-authenticated users stay on /signup when a
