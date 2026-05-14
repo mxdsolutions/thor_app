@@ -60,7 +60,7 @@ export async function resendInvite(email: string): Promise<ResendInviteResult> {
         ]);
 
         let role: string | null = inviteRes.data?.role ?? null;
-        let invitedBy: string = inviteRes.data?.invited_by ?? user.id;
+        const invitedBy: string = inviteRes.data?.invited_by ?? user.id;
 
         if (!role && profileRes.data) {
             const { data: member } = await admin

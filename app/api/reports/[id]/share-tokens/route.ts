@@ -109,8 +109,10 @@ export const POST = withAuth(async (request: NextRequest, { supabase, user, tena
 
     if (insertError || !inserted) return serverError(insertError, "share-tokens.create");
 
-    // Best-effort email — failures don't block link creation.
+    // Best-effort email — failures don't block link creation, but surface the
+    // reason to the caller so the UI can show it instead of guessing.
     let emailSent = false;
+    let emailError: string | null = null;
     if (recipient_email) {
         try {
             const { data: profile } = await supabase
@@ -135,6 +137,7 @@ export const POST = withAuth(async (request: NextRequest, { supabase, user, tena
             });
             emailSent = true;
         } catch (err) {
+            emailError = err instanceof Error ? err.message : "Unknown email error";
             console.error("[share-tokens.create] email failed", err);
         }
     }
@@ -176,6 +179,7 @@ export const POST = withAuth(async (request: NextRequest, { supabase, user, tena
         {
             item: { ...inserted, email_sent_at: emailSent ? new Date().toISOString() : null },
             share_url: shareUrl,
+            email_error: emailError,
         },
         { status: 201 },
     );
