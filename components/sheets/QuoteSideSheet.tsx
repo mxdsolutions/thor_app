@@ -15,6 +15,7 @@ import useSWR from "swr";
 
 import { QuoteDetailsTab } from "./quote-tabs/QuoteDetailsTab";
 import { QuoteRelatedTab } from "./quote-tabs/QuoteRelatedTab";
+import { QuoteRowMenu } from "@/components/quotes/QuoteRowMenu";
 
 const EditQuoteModal = lazy(() =>
     import("@/components/modals/EditQuoteModal").then(mod => ({ default: mod.EditQuoteModal }))
@@ -24,6 +25,9 @@ const ComposeEmailModal = lazy(() =>
 );
 const CreatePurchaseOrderModal = lazy(() =>
     import("@/components/modals/CreatePurchaseOrderModal").then(mod => ({ default: mod.CreatePurchaseOrderModal }))
+);
+const CreateInvoiceModal = lazy(() =>
+    import("@/components/modals/CreateInvoiceModal").then(mod => ({ default: mod.CreateInvoiceModal }))
 );
 const PurchaseOrderSideSheet = lazy(() =>
     import("@/components/sheets/PurchaseOrderSideSheet").then(mod => ({ default: mod.PurchaseOrderSideSheet }))
@@ -71,6 +75,8 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
     const [sending, setSending] = useState(false);
     const [composeOpen, setComposeOpen] = useState(false);
     const [poModalOpen, setPoModalOpen] = useState(false);
+    const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+    const [duplicating, setDuplicating] = useState(false);
     const [selectedPo, setSelectedPo] = useState<SelectedPo | null>(null);
     const [emailDefaults, setEmailDefaults] = useState<{
         to: string;
@@ -181,6 +187,22 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
         },
     });
 
+    const handleDuplicate = useCallback(async () => {
+        if (!data || duplicating) return;
+        setDuplicating(true);
+        try {
+            const res = await fetch(`/api/quotes/${data.id}/duplicate`, { method: "POST" });
+            if (!res.ok) {
+                toast.error("Failed to duplicate quote");
+                return;
+            }
+            toast.success("Quote duplicated");
+            onUpdate?.();
+        } finally {
+            setDuplicating(false);
+        }
+    }, [data, duplicating, onUpdate]);
+
     // Quote → PO progress: show "X of Y line items have POs" so the user can
     // see at a glance whether more POs need to be generated for this quote.
     const { data: posData, mutate: mutatePos } = useQuotePurchaseOrders(open && data?.id ? data.id : null);
@@ -267,7 +289,20 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
                         <ArrowDownTrayIcon className="w-3.5 h-3.5" />
                         {downloading ? "Generating..." : "View PDF"}
                     </Button>
-                    {archive.menu}
+                    <QuoteRowMenu
+                        variant="sheet"
+                        archived={!!data.archived_at}
+                        canCreateInvoice={!data.archived_at}
+                        canCreatePo={canGeneratePo}
+                        canViewPdf={!downloading}
+                        canEdit={isDraft && !data.archived_at}
+                        onCreateInvoice={() => setInvoiceModalOpen(true)}
+                        onCreatePo={() => setPoModalOpen(true)}
+                        onViewPdf={handleDownloadPDF}
+                        onEdit={() => setEditOpen(true)}
+                        onDuplicate={handleDuplicate}
+                        onToggleArchive={() => void archive.toggle(!data.archived_at)}
+                    />
                 </>
             }
             footer={
@@ -414,6 +449,23 @@ export function QuoteSideSheet({ quote, open, onOpenChange, onUpdate }: QuoteSid
                     sourceQuoteId={data.id}
                     onCreated={() => {
                         mutatePos();
+                        onUpdate?.();
+                    }}
+                />
+            </Suspense>
+        )}
+
+        {invoiceModalOpen && (
+            <Suspense fallback={null}>
+                <CreateInvoiceModal
+                    open={invoiceModalOpen}
+                    onOpenChange={setInvoiceModalOpen}
+                    defaultValues={{
+                        company_id: data.company_id ?? undefined,
+                        job_id: data.job_id ?? undefined,
+                    }}
+                    onCreated={() => {
+                        setInvoiceModalOpen(false);
                         onUpdate?.();
                     }}
                 />

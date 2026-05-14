@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
 import { usePageTitle } from "@/lib/page-title-context";
 import { useMobileHeaderAction } from "@/lib/mobile-header-action-context";
-import { usePermissionOptional } from "@/lib/tenant-context";
+import { usePermissionOptional, useTenantOptional } from "@/lib/tenant-context";
 import { MobileFilters } from "@/components/dashboard/MobileFilters";
 import { ScrollableTableLayout } from "@/components/dashboard/ScrollableTableLayout";
 import { TablePagination } from "@/components/dashboard/TablePagination";
@@ -22,6 +22,19 @@ import { QuoteSideSheet } from "@/components/sheets/QuoteSideSheet";
 import { EntityPreviewCard } from "@/components/entity-preview/EntityPreviewCard";
 import { PageMetrics, type PageMetric } from "@/components/dashboard/PageMetrics";
 import { useCreateDeepLink } from "@/lib/hooks/use-create-deep-link";
+import { QuoteRowMenu } from "@/components/quotes/QuoteRowMenu";
+import { generateQuotePdfBlob } from "@/lib/quote-pdf";
+import { toast } from "sonner";
+
+const EditQuoteModal = lazy(() =>
+    import("@/components/modals/EditQuoteModal").then((m) => ({ default: m.EditQuoteModal })),
+);
+const CreateInvoiceModal = lazy(() =>
+    import("@/components/modals/CreateInvoiceModal").then((m) => ({ default: m.CreateInvoiceModal })),
+);
+const CreatePurchaseOrderModal = lazy(() =>
+    import("@/components/modals/CreatePurchaseOrderModal").then((m) => ({ default: m.CreatePurchaseOrderModal })),
+);
 
 const QUOTE_STATUSES = [
     { id: "draft", label: "Draft" },
@@ -40,6 +53,9 @@ type Quote = {
     valid_until: string | null;
     notes: string | null;
     created_at: string;
+    archived_at?: string | null;
+    company_id?: string | null;
+    job_id?: string | null;
     company?: { id: string; name: string } | null;
     contact?: { id: string; first_name: string; last_name: string } | null;
 };
@@ -77,6 +93,7 @@ export default function QuotesPage() {
     const [createOpen, setCreateOpen] = useState(false);
     useCreateDeepLink(() => setCreateOpen(true));
     const canWriteQuotes = usePermissionOptional("finance.quotes", "write", true);
+    const tenant = useTenantOptional();
     useMobileHeaderAction(useCallback(() => {
         if (canWriteQuotes) setCreateOpen(true);
     }, [canWriteQuotes]));
@@ -86,10 +103,68 @@ export default function QuotesPage() {
     const [archiveScope, setArchiveScope] = useState<ArchiveScope>("active");
     const [page, setPage] = useState(0);
     const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
+    const [menuQuote, setMenuQuote] = useState<Quote | null>(null);
+    const [menuAction, setMenuAction] = useState<"edit" | "invoice" | "po" | null>(null);
+    const [pdfPendingId, setPdfPendingId] = useState<string | null>(null);
 
     const PAGE_SIZE = 20;
     const { data, isLoading, error, mutate } = useQuotes(debouncedSearch || undefined, page * PAGE_SIZE, PAGE_SIZE, archiveScope);
     const total: number = data?.total || 0;
+
+    const handleViewPdf = useCallback(async (quote: Quote) => {
+        if (!tenant) {
+            toast.error("Tenant context not loaded yet");
+            return;
+        }
+        setPdfPendingId(quote.id);
+        try {
+            const blob = await generateQuotePdfBlob(quote.id, tenant);
+            const url = URL.createObjectURL(blob);
+            window.open(url, "_blank");
+        } catch (err) {
+            console.error("PDF generation failed:", err);
+            toast.error("Failed to generate PDF");
+        } finally {
+            setPdfPendingId(null);
+        }
+    }, [tenant]);
+
+    const handleDuplicate = useCallback(async (quote: Quote) => {
+        const res = await fetch(`/api/quotes/${quote.id}/duplicate`, { method: "POST" });
+        if (!res.ok) {
+            toast.error("Failed to duplicate quote");
+            return;
+        }
+        const json = await res.json();
+        toast.success("Quote duplicated");
+        mutate();
+        if (json.item) setSelectedQuote(json.item as Quote);
+    }, [mutate]);
+
+    const handleToggleArchive = useCallback(async (quote: Quote) => {
+        const next = !quote.archived_at;
+        const res = await fetch(`/api/quotes/${quote.id}/archive`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ archived: next }),
+        });
+        if (!res.ok) {
+            toast.error(`Failed to ${next ? "archive" : "restore"} quote`);
+            return;
+        }
+        toast.success(next ? "Quote archived" : "Quote restored");
+        mutate();
+    }, [mutate]);
+
+    const openMenuAction = useCallback((quote: Quote, action: "edit" | "invoice" | "po") => {
+        setMenuQuote(quote);
+        setMenuAction(action);
+    }, []);
+
+    const closeMenuAction = useCallback(() => {
+        setMenuAction(null);
+        setMenuQuote(null);
+    }, []);
 
     const quotes = useMemo(() => {
         const all: Quote[] = data?.items || [];
@@ -156,6 +231,21 @@ export default function QuotesPage() {
                     error={error}
                     emptyMessage={!data?.items?.length ? "No quotes yet. Create your first quote." : "No quotes match your filters."}
                     onRowClick={setSelectedQuote}
+                    renderRowAction={(quote) => (
+                        <QuoteRowMenu
+                            archived={!!quote.archived_at}
+                            canCreateInvoice={canWriteQuotes && !quote.archived_at}
+                            canCreatePo={canWriteQuotes && !!quote.job_id && !quote.archived_at}
+                            canViewPdf={pdfPendingId !== quote.id}
+                            canEdit={canWriteQuotes && quote.status === "draft" && !quote.archived_at}
+                            onCreateInvoice={() => openMenuAction(quote, "invoice")}
+                            onCreatePo={() => openMenuAction(quote, "po")}
+                            onViewPdf={() => handleViewPdf(quote)}
+                            onEdit={() => openMenuAction(quote, "edit")}
+                            onDuplicate={() => handleDuplicate(quote)}
+                            onToggleArchive={() => handleToggleArchive(quote)}
+                        />
+                    )}
                 />
             </ScrollableTableLayout>
 
@@ -171,6 +261,43 @@ export default function QuotesPage() {
                 onOpenChange={(open) => { if (!open) setSelectedQuote(null); }}
                 onUpdate={() => mutate()}
             />
+
+            {menuAction === "edit" && menuQuote && (
+                <Suspense fallback={null}>
+                    <EditQuoteModal
+                        open
+                        onOpenChange={(open) => { if (!open) closeMenuAction(); }}
+                        quoteId={menuQuote.id}
+                        onUpdated={() => mutate()}
+                    />
+                </Suspense>
+            )}
+
+            {menuAction === "invoice" && menuQuote && (
+                <Suspense fallback={null}>
+                    <CreateInvoiceModal
+                        open
+                        onOpenChange={(open) => { if (!open) closeMenuAction(); }}
+                        defaultValues={{
+                            company_id: menuQuote.company_id ?? undefined,
+                            job_id: menuQuote.job_id ?? undefined,
+                        }}
+                        onCreated={() => { mutate(); closeMenuAction(); }}
+                    />
+                </Suspense>
+            )}
+
+            {menuAction === "po" && menuQuote && menuQuote.job_id && (
+                <Suspense fallback={null}>
+                    <CreatePurchaseOrderModal
+                        open
+                        onOpenChange={(open) => { if (!open) closeMenuAction(); }}
+                        jobId={menuQuote.job_id}
+                        sourceQuoteId={menuQuote.id}
+                        onCreated={() => { mutate(); closeMenuAction(); }}
+                    />
+                </Suspense>
+            )}
         </>
     );
 }

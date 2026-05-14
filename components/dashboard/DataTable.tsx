@@ -49,6 +49,8 @@ interface DataTableProps<T extends { id: string }> {
     onRowClick?: (item: T) => void;
     /** Show the hover-reveal arrow button on each row (default: true when onRowClick is set) */
     showRowAction?: boolean;
+    /** Override the default arrow button with a custom per-row action (e.g. a kebab menu). When set, the action cell stays visible (no hover-reveal). */
+    renderRowAction?: (item: T) => ReactNode;
 }
 
 export function DataTable<T extends { id: string }>({
@@ -61,8 +63,9 @@ export function DataTable<T extends { id: string }>({
     skeletonRows = 8,
     onRowClick,
     showRowAction,
+    renderRowAction,
 }: DataTableProps<T>) {
-    const hasAction = showRowAction ?? !!onRowClick;
+    const hasAction = renderRowAction ? true : (showRowAction ?? !!onRowClick);
     const colCount = columns.length + (hasAction ? 1 : 0);
 
     return (
@@ -129,10 +132,20 @@ export function DataTable<T extends { id: string }>({
                                 </td>
                             ))}
                             {hasAction && (
-                                <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                    <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
-                                        <ArrowUpRightIcon className="w-4 h-4" />
-                                    </Button>
+                                <td
+                                    className={cn(
+                                        tableCell,
+                                        "pl-4 pr-4 md:pr-6 lg:pr-10 text-right",
+                                        !renderRowAction && "md:opacity-0 md:group-hover:opacity-100 transition-opacity",
+                                    )}
+                                >
+                                    {renderRowAction ? (
+                                        renderRowAction(item)
+                                    ) : (
+                                        <Button variant="ghost" size="icon" className="rounded-lg h-8 w-8 text-muted-foreground">
+                                            <ArrowUpRightIcon className="w-4 h-4" />
+                                        </Button>
+                                    )}
                                 </td>
                             )}
                         </tr>
