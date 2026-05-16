@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useTenant } from "@/lib/tenant-context";
 import { createClient } from "@/lib/supabase/client";
@@ -34,13 +35,29 @@ function toHex(color: string): string {
     return `#${hex(r)}${hex(g)}${hex(b)}`;
 }
 
+/**
+ * Branding — house-style assets used across the app and on PDF reports.
+ *  - Logo (image): rendered in the sidebar, on letterheads, on cover pages
+ *  - Primary colour: buttons / links / focus rings throughout the app
+ *  - Default report cover (PDF): prepended to every report that doesn't
+ *    override it via its template's own report_cover_url. Used to live at
+ *    Settings → Reports → Default Cover; consolidated here because it's
+ *    the same kind of brand asset.
+ *
+ * All three are tenant-level and persist via PATCH /api/tenant. Storage
+ * lives under `tenant-assets/{tenant.id}/...`.
+ */
 export default function BrandingPage() {
     const tenant = useTenant();
+    const router = useRouter();
     const [primaryColor, setPrimaryColor] = useState(() => toHex(tenant.primary_color || "hsl(16 87% 55%)"));
-    const [saving, setSaving] = useState(false);
-    const [uploading, setUploading] = useState(false);
     const [logoUrl, setLogoUrl] = useState(tenant.logo_url || "");
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [reportCoverUrl, setReportCoverUrl] = useState(tenant.report_cover_url || "");
+    const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [uploadingCover, setUploadingCover] = useState(false);
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const coverInputRef = useRef<HTMLInputElement>(null);
 
     const handleSave = async () => {
         setSaving(true);
@@ -51,13 +68,17 @@ export default function BrandingPage() {
                 body: JSON.stringify({
                     primary_color: primaryColor,
                     logo_url: logoUrl || null,
+                    report_cover_url: reportCoverUrl || null,
                 }),
             });
             if (!res.ok) throw new Error();
-            // Apply brand color immediately
+            // Apply brand colour immediately
             document.documentElement.style.setProperty("--color-primary", primaryColor);
             document.documentElement.style.setProperty("--color-ring", primaryColor);
             toast.success("Branding updated");
+            // Re-render the server layout so the TenantProvider gets the new
+            // report_cover_url — otherwise the PDF generator still sees stale data.
+            router.refresh();
         } catch {
             toast.error("Failed to save branding");
         } finally {
@@ -74,7 +95,7 @@ export default function BrandingPage() {
             return;
         }
 
-        setUploading(true);
+        setUploadingLogo(true);
         try {
             const supabase = createClient();
             const ext = file.name.split(".").pop();
@@ -95,7 +116,47 @@ export default function BrandingPage() {
         } catch {
             toast.error("Failed to upload logo");
         } finally {
-            setUploading(false);
+            setUploadingLogo(false);
+        }
+    };
+
+    const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 10 * 1024 * 1024) {
+            toast.error("Report cover must be under 10MB");
+            return;
+        }
+        if (file.type !== "application/pdf") {
+            toast.error("Only PDF files are supported for report covers");
+            return;
+        }
+
+        setUploadingCover(true);
+        try {
+            const supabase = createClient();
+            const path = `${tenant.id}/report-cover.pdf`;
+
+            const { error } = await supabase.storage
+                .from("tenant-assets")
+                .upload(path, file, { upsert: true, contentType: "application/pdf" });
+
+            if (error) throw error;
+
+            const { data: urlData } = supabase.storage
+                .from("tenant-assets")
+                .getPublicUrl(path);
+
+            // Bust CDN cache so a re-uploaded cover shows immediately.
+            setReportCoverUrl(`${urlData.publicUrl}?v=${Date.now()}`);
+            toast.success("Report cover uploaded");
+        } catch (err) {
+            console.error("Report cover upload failed", err);
+            const msg = err instanceof Error ? err.message : "Unknown error";
+            toast.error(`Failed to upload report cover: ${msg}`);
+        } finally {
+            setUploadingCover(false);
         }
     };
 
@@ -117,11 +178,11 @@ export default function BrandingPage() {
                     )}
                     <div className="space-y-2">
                         <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
+                            onClick={() => logoInputRef.current?.click()}
+                            disabled={uploadingLogo}
                             className="px-4 py-2 text-sm font-medium border border-border rounded-xl hover:bg-muted/50 transition-colors"
                         >
-                            {uploading ? "Uploading..." : "Upload Logo"}
+                            {uploadingLogo ? "Uploading..." : "Upload Logo"}
                         </button>
                         {logoUrl && (
                             <button
@@ -133,7 +194,7 @@ export default function BrandingPage() {
                         )}
                     </div>
                     <input
-                        ref={fileInputRef}
+                        ref={logoInputRef}
                         type="file"
                         accept="image/png,image/jpeg,image/svg+xml,image/webp"
                         onChange={handleLogoUpload}
@@ -158,10 +219,7 @@ export default function BrandingPage() {
                     <input
                         type="text"
                         value={primaryColor}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            setPrimaryColor(v);
-                        }}
+                        onChange={(e) => setPrimaryColor(e.target.value)}
                         className="w-32 px-3 py-2 border border-border rounded-xl text-sm bg-background font-mono"
                         placeholder="#e05a2b"
                         maxLength={7}
@@ -170,6 +228,66 @@ export default function BrandingPage() {
                 <p className="text-xs text-muted-foreground mt-1.5">
                     Used for buttons, links, and focus states throughout the app
                 </p>
+            </div>
+
+            {/* Default Report Cover */}
+            <div>
+                <label className="block text-sm font-medium mb-2">Default Report Cover</label>
+                <div className="flex items-start gap-4">
+                    {reportCoverUrl ? (
+                        <a
+                            href={reportCoverUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Click to preview full-size"
+                            className="w-32 h-44 rounded-xl border border-border bg-muted/30 overflow-hidden block group"
+                        >
+                            {/* Inline PDF thumbnail — clicking the link opens the full preview.
+                                pointer-events-none lets the parent <a> catch clicks. */}
+                            <iframe
+                                src={`${reportCoverUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+                                className="w-full h-full pointer-events-none"
+                                title="Report cover preview"
+                            />
+                        </a>
+                    ) : (
+                        <div className="w-32 h-44 rounded-xl border-2 border-dashed border-border flex items-center justify-center bg-muted/20 text-center p-3">
+                            <span className="text-xs text-muted-foreground leading-snug">
+                                No cover — a default one is generated
+                            </span>
+                        </div>
+                    )}
+                    <div className="space-y-2 flex-1">
+                        <button
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={uploadingCover}
+                            className="px-4 py-2 text-sm font-medium border border-border rounded-xl hover:bg-muted/50 transition-colors"
+                        >
+                            {uploadingCover ? "Uploading..." : "Upload Report Cover"}
+                        </button>
+                        {reportCoverUrl && (
+                            <button
+                                onClick={() => setReportCoverUrl("")}
+                                className="block text-xs text-destructive hover:underline"
+                            >
+                                Remove cover
+                            </button>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            PDF only — all pages are prepended to every report. Portrait A4
+                            sizing is ideal. Max 10MB. Individual templates can override this
+                            from the template builder. Leave empty to auto-generate a cover
+                            with your logo and the report details.
+                        </p>
+                    </div>
+                    <input
+                        ref={coverInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleCoverUpload}
+                        className="hidden"
+                    />
+                </div>
             </div>
 
             {/* Save */}

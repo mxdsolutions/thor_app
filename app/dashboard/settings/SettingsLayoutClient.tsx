@@ -28,7 +28,6 @@ const topTabs = [
         label: "Reports",
         subTabs: [
             { href: "/dashboard/settings/reports/templates", label: "Templates" },
-            { href: "/dashboard/settings/reports/cover", label: "Default Cover" },
         ],
     },
     {

@@ -61,7 +61,8 @@ export const SETUP_ITEMS: readonly SetupItem[] = [
         key: "report_cover",
         label: "Set your reporting cover",
         description: "The cover image used on generated PDF reports.",
-        href: ROUTES.SETTINGS_REPORT_COVER,
+        // Consolidated into Branding alongside the logo and primary colour.
+        href: ROUTES.SETTINGS_COMPANY_BRANDING,
     },
 ] as const;
 

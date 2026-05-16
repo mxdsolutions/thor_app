@@ -34,7 +34,6 @@ export const ROUTES = {
     SETTINGS_COMPANY_LICENSES: "/dashboard/settings/company/licenses",
     SETTINGS_COMPANY_BRANDING: "/dashboard/settings/company/branding",
     SETTINGS_REPORT_TEMPLATES: "/dashboard/settings/reports/templates",
-    SETTINGS_REPORT_COVER: "/dashboard/settings/reports/cover",
     SETTINGS_INTEGRATIONS: "/dashboard/settings/integrations",
     SETTINGS_ACCOUNT: "/dashboard/settings/account",
     SETTINGS_ACCOUNT_PLAN: "/dashboard/settings/account/plan",
