@@ -236,6 +236,10 @@ export function useReportTemplates() {
     return useSWR("/api/report-templates", fetcher, defaultConfig);
 }
 
+export function useReportTemplate(id: string | null) {
+    return useSWR(id ? `/api/report-templates/${id}` : null, fetcher, defaultConfig);
+}
+
 export function usePlatformReportTemplates(search?: string, category?: string) {
     const params = new URLSearchParams();
     if (search) params.set("search", search);

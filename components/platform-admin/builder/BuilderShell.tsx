@@ -21,6 +21,20 @@ export interface BuilderTemplateMeta {
     report_cover_url: string | null;
 }
 
+/** Subset of tenant fields the PDF preview needs. Matches `TenantPreviewBranding`
+ *  in lib/report-templates/preview-pdf.ts — kept structurally compatible. */
+export interface BuilderTenantBranding {
+    company_name?: string | null;
+    name?: string | null;
+    logo_url?: string | null;
+    report_cover_url?: string | null;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    abn?: string | null;
+    primary_color?: string | null;
+}
+
 interface BuilderShellProps {
     templateId: string;
     initialSchema: TemplateSchema;
@@ -31,6 +45,20 @@ interface BuilderShellProps {
      * expected to fire its own "Template saved" toast inside this callback.
      */
     onSave: (schema: TemplateSchema, meta: BuilderTemplateMeta) => Promise<void>;
+    /** "Templates" back-link href — differs per host (platform-admin list vs
+     *  dashboard list). */
+    backHref: string;
+    /** Optional back-link label. Defaults to "Templates". */
+    backLabel?: string;
+    /**
+     * Fetch the tenant branding used by the "Preview as PDF" button. The
+     * platform-admin host can edit any tenant's template so it passes a
+     * version that takes the template's `meta.tenant_id`; the in-dashboard
+     * host always uses the caller's own tenant via `/api/tenants/current`.
+     * Returns `null` if no branding is available — the preview falls back
+     * to a generic sample tenant.
+     */
+    fetchTenantBranding?: () => Promise<BuilderTenantBranding | null>;
 }
 
 /**
@@ -75,7 +103,15 @@ function dedupeSchemaIds(schema: TemplateSchema): { schema: TemplateSchema; rena
  * "couldn't save" toast (on failure) and the "N ids renamed" toast (on a
  * dedup-changing success).
  */
-export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }: BuilderShellProps) {
+export function BuilderShell({
+    templateId,
+    initialSchema,
+    initialMeta,
+    onSave,
+    backHref,
+    backLabel,
+    fetchTenantBranding,
+}: BuilderShellProps) {
     const seededInitialSchema =
         initialSchema.sections.length === 0
             ? { ...initialSchema, sections: [buildStarterSection()] }
@@ -284,12 +320,9 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
         setPreviewingPdf(true);
         try {
             // Fetch tenant branding so the preview shows the real cover / logo
-            // / company info. If no tenant is assigned, fall back to a minimal
-            // sample tenant inside `renderTemplatePreviewPdf`.
-            let tenant: Awaited<ReturnType<typeof fetchTenantBranding>> = null;
-            if (meta.tenant_id) {
-                tenant = await fetchTenantBranding(meta.tenant_id);
-            }
+            // / company info. If no override was supplied OR it returns null,
+            // fall back to a minimal sample tenant inside `renderTemplatePreviewPdf`.
+            const tenant = fetchTenantBranding ? await fetchTenantBranding() : null;
             await renderTemplatePreviewPdf({
                 templateName: meta.name,
                 schema,
@@ -389,6 +422,8 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
                 onCanvasModeChange={setCanvasMode}
                 onPreviewPdf={handlePreviewPdf}
                 previewingPdf={previewingPdf}
+                backHref={backHref}
+                backLabel={backLabel}
             />
 
             {/* Middle row: sidebar (edit mode only) + canvas. The light
@@ -432,30 +467,3 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
     );
 }
 
-/**
- * Pull the assigned tenant's branding (logo, cover, contact info, etc.) so the
- * "Preview as PDF" button can render a realistic preview. Falls back to null
- * on any failure — the preview pipeline handles the missing-tenant case with
- * a generic sample tenant.
- */
-async function fetchTenantBranding(tenantId: string): Promise<{
-    company_name?: string | null;
-    name?: string | null;
-    logo_url?: string | null;
-    report_cover_url?: string | null;
-    address?: string | null;
-    phone?: string | null;
-    email?: string | null;
-    abn?: string | null;
-    primary_color?: string | null;
-} | null> {
-    try {
-        const res = await fetch(`/api/platform-admin/tenants/${tenantId}`);
-        if (!res.ok) return null;
-        const json = await res.json();
-        // The single-tenant endpoint returns `{ item: ... }` shape.
-        return json.item ?? json ?? null;
-    } catch {
-        return null;
-    }
-}

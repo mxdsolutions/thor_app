@@ -13,6 +13,7 @@ export const ROUTES = {
     OPS_JOBS: "/dashboard/jobs",
     OPS_SCOPES: "/dashboard/scopes",
     OPS_REPORTS: "/dashboard/reports",
+    OPS_REPORT_TEMPLATES: "/dashboard/reports/templates",
     OPS_SCHEDULE: "/dashboard/schedule",
     OPS_TIMESHEETS: "/dashboard/timesheets",
 

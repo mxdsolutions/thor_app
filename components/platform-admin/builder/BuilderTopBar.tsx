@@ -19,6 +19,11 @@ interface BuilderTopBarProps {
     onCanvasModeChange: (mode: CanvasMode) => void;
     onPreviewPdf: () => void;
     previewingPdf: boolean;
+    /** Where the "Templates" back link points. Set per host (platform-admin
+     *  list vs dashboard list) so the builder is reusable. */
+    backHref: string;
+    /** Label for the back link. Defaults to "Templates". */
+    backLabel?: string;
 }
 
 const MODE_OPTIONS = [
@@ -36,6 +41,8 @@ export function BuilderTopBar({
     onCanvasModeChange,
     onPreviewPdf,
     previewingPdf,
+    backHref,
+    backLabel = "Templates",
 }: BuilderTopBarProps) {
     // Top bar sits on the dark frame (`bg-foreground`) painted by the parent
     // BuilderShell. No background of its own and no bottom border — the seam
@@ -46,11 +53,11 @@ export function BuilderTopBar({
             {/* Left */}
             <div className="flex items-center gap-3 shrink-0">
                 <Link
-                    href="/platform-admin/report-templates"
+                    href={backHref}
                     className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white transition-colors"
                 >
                     <ArrowLeftIcon className="w-3.5 h-3.5" />
-                    Templates
+                    {backLabel}
                 </Link>
             </div>
 

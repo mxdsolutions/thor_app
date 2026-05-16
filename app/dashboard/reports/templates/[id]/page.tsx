@@ -1,7 +1,8 @@
 "use client";
 
 import { use, useCallback, useEffect } from "react";
-import { usePlatformReportTemplate } from "@/lib/swr";
+import { toast } from "sonner";
+import { useReportTemplate } from "@/lib/swr";
 import {
     BuilderShell,
     type BuilderTemplateMeta,
@@ -9,18 +10,31 @@ import {
 } from "@/components/platform-admin/builder/BuilderShell";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 import { LATEST_SCHEMA_VERSION } from "@/lib/report-templates/defaults";
-import { toast } from "sonner";
+import { ROUTES } from "@/lib/routes";
 
-export default function TemplateBuilderPage({ params }: { params: Promise<{ id: string }> }) {
+/**
+ * In-dashboard report-template builder. Mirrors the platform-admin wrapper
+ * at app/platform-admin/builder/[id]/page.tsx but talks exclusively to the
+ * tenant-scoped routes:
+ *   - GET / PATCH `/api/report-templates/:id` (tenant_id from auth context)
+ *   - GET `/api/tenants/current` for PDF preview branding
+ *
+ * The builder component itself is host-agnostic; the differences live here
+ * in the wrapper (back-link, fetch endpoints).
+ */
+export default function DashboardTemplateBuilderPage({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
     const { id } = use(params);
-    const { data, isLoading, mutate } = usePlatformReportTemplate(id);
+    const { data, isLoading, mutate } = useReportTemplate(id);
 
     const template = data?.item;
 
     // Document title is patched via useEffect rather than Next.js metadata
     // because this is a "use client" page reading dynamic data from SWR —
-    // metadata APIs only run at server-render time. If this ever moves to a
-    // server-component wrapper, lift the title into generateMetadata.
+    // metadata APIs only run at server-render time.
     useEffect(() => {
         if (template?.name) {
             document.title = `${template.name} | THOR: Tradie OS`;
@@ -28,7 +42,7 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
     }, [template?.name]);
 
     const handleSave = async (schema: TemplateSchema, meta: BuilderTemplateMeta) => {
-        const res = await fetch(`/api/platform-admin/report-templates/${id}`, {
+        const res = await fetch(`/api/report-templates/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -36,7 +50,9 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
                 name: meta.name,
                 category: meta.category || null,
                 description: meta.description || null,
-                tenant_id: meta.tenant_id,
+                // tenant_id intentionally omitted — the tenant-scoped PATCH
+                // route ignores it and strips it from the body; sending it
+                // would be a no-op at best.
                 report_cover_url: meta.report_cover_url,
             }),
         });
@@ -45,22 +61,20 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
         mutate();
     };
 
-    // Platform admins can edit any tenant's template, so the preview pulls
-    // branding for whichever tenant the template is assigned to (if any).
-    // Wrapped in useCallback so BuilderShell sees a stable identity.
+    // Dashboard variant: PDF preview always uses the caller's own tenant
+    // (auth context resolves it), so no tenant_id arg needed.
     const fetchTenantBranding = useCallback(
         async (): Promise<BuilderTenantBranding | null> => {
-            if (!template?.tenant_id) return null;
             try {
-                const res = await fetch(`/api/platform-admin/tenants/${template.tenant_id}`);
+                const res = await fetch("/api/tenants/current");
                 if (!res.ok) return null;
                 const json = await res.json();
-                return json.item ?? json ?? null;
+                return json.item ?? null;
             } catch {
                 return null;
             }
         },
-        [template?.tenant_id],
+        [],
     );
 
     if (isLoading) {
@@ -79,11 +93,9 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
         );
     }
 
-    // Schema version handling. Legacy templates may have null/undefined schema
-    // (created before the schema column existed); treat as a fresh starter.
-    // For an explicit version mismatch, refuse to render rather than silently
-    // substituting an empty schema — saving over a forward-version template
-    // would otherwise destroy data the current build can't represent.
+    // Schema version handling — see app/platform-admin/builder/[id]/page.tsx
+    // for the rationale. Same shape: null/undefined → fresh starter;
+    // version === LATEST → use; anything else → refuse to render.
     let schema: TemplateSchema;
     if (!template.schema) {
         schema = { version: LATEST_SCHEMA_VERSION, sections: [] };
@@ -93,12 +105,14 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
         return (
             <div className="h-screen flex items-center justify-center p-6">
                 <div className="max-w-md text-center space-y-2">
-                    <p className="text-sm font-semibold">This template can&apos;t be opened in the current builder.</p>
+                    <p className="text-sm font-semibold">
+                        This template can&apos;t be opened in the current builder.
+                    </p>
                     <p className="text-xs text-muted-foreground">
                         It was saved with schema version{" "}
-                        <span className="font-mono">{String(template.schema.version)}</span>, which this
-                        build doesn&apos;t understand. Update the app or contact support before editing —
-                        opening it here would overwrite the saved data.
+                        <span className="font-mono">{String(template.schema.version)}</span>, which
+                        this build doesn&apos;t understand. Update the app or contact support before
+                        editing — opening it here would overwrite the saved data.
                     </p>
                 </div>
             </div>
@@ -117,7 +131,8 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
                 report_cover_url: template.report_cover_url ?? null,
             }}
             onSave={handleSave}
-            backHref="/platform-admin/report-templates"
+            backHref={ROUTES.OPS_REPORT_TEMPLATES}
+            backLabel="Report templates"
             fetchTenantBranding={fetchTenantBranding}
         />
     );
