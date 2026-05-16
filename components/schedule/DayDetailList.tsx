@@ -95,7 +95,7 @@ export function DayDetailList({
                                         </p>
                                         <div className="flex items-center gap-3 mt-1">
                                             {job?.company && (
-                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id} className="underline">
                                                     <span className="text-xs text-muted-foreground truncate">
                                                         {job.company.name}
                                                     </span>

@@ -11,7 +11,9 @@ import { openEntitySheet } from "@/lib/entity-sheet-bus";
 import { EntityPreviewBody } from "./entity-preview-renderers";
 
 const OPEN_DELAY_MS = 120;
-const CLOSE_DELAY_MS = 200;
+// Generous close-delay (matches Radix HoverCard's own default) so a slow
+// cursor traversing the trigger→content gap doesn't trip a premature close.
+const CLOSE_DELAY_MS = 300;
 
 interface EntityPreviewCardProps {
     entityType: EntityPreviewType;
@@ -26,7 +28,7 @@ interface EntityPreviewCardProps {
 }
 
 const triggerBaseClass =
-    "inline-flex items-center cursor-pointer underline-offset-2 hover:underline rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "inline-flex items-center cursor-pointer underline-offset-2 rounded-sm focus:outline-none focus-visible:underline";
 
 /** Inline preview card for a related entity. Hover on desktop, tap on mobile.
  *
@@ -224,7 +226,7 @@ function ArmedPopover({
                 <PopoverPrimitive.Content
                     side={side}
                     align="start"
-                    sideOffset={6}
+                    sideOffset={2}
                     collisionPadding={12}
                     onMouseEnter={scheduleOpen}
                     onMouseLeave={scheduleClose}

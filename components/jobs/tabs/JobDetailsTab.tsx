@@ -190,7 +190,7 @@ export function JobDetailsTab({
                                     <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold">
                                         {(a.full_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase()}
                                     </div>
-                                    <span className="text-sm font-medium">{a.full_name || a.email}</span>
+                                    <span className="text-sm font-medium underline underline-offset-2">{a.full_name || a.email}</span>
                                 </div>
                             </EntityPreviewCard>
                             <button

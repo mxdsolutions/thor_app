@@ -76,7 +76,7 @@ const columns: DataTableColumn<TimesheetRow>[] = [
                     <div className="hidden sm:flex w-9 h-9 rounded-full bg-secondary items-center justify-center font-bold text-xs text-foreground ring-1 ring-border/50 shrink-0">
                         {initials(row.user)}
                     </div>
-                    <span className="font-semibold truncate">{name}</span>
+                    <span className="font-semibold truncate underline underline-offset-2">{name}</span>
                 </div>
             );
             return row.user?.id ? (
@@ -88,7 +88,7 @@ const columns: DataTableColumn<TimesheetRow>[] = [
         key: "job",
         label: "Job",
         render: (row) => row.job ? (
-            <EntityPreviewCard entityType="job" entityId={row.job.id}>
+            <EntityPreviewCard entityType="job" entityId={row.job.id} className="underline">
                 <span className="truncate">
                     {row.job.job_title}
                     {row.job.reference_id ? <span className="text-muted-foreground"> · {row.job.reference_id}</span> : null}

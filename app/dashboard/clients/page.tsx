@@ -208,7 +208,7 @@ function ClientsPageContent() {
                             </td>
                             <td className={tableCell + " px-4"}>
                                 {contact.company ? (
-                                    <EntityPreviewCard entityType="company" entityId={contact.company.id}>
+                                    <EntityPreviewCard entityType="company" entityId={contact.company.id} className="underline">
                                         <span className="truncate">{contact.company.name}</span>
                                     </EntityPreviewCard>
                                 ) : <span className="truncate">—</span>}

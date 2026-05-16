@@ -54,7 +54,7 @@ const columns: DataTableColumn<Invoice>[] = [
         muted: true,
         className: "hidden sm:table-cell",
         render: (inv) => inv.company ? (
-            <EntityPreviewCard entityType="company" entityId={inv.company.id}>
+            <EntityPreviewCard entityType="company" entityId={inv.company.id} className="underline">
                 <span>{inv.company.name}</span>
             </EntityPreviewCard>
         ) : "—",

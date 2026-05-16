@@ -314,7 +314,7 @@ function JobsPageContent() {
                                     {job.company && (
                                         <>
                                             <span className="text-muted-foreground mx-1.5">·</span>
-                                            <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                            <EntityPreviewCard entityType="company" entityId={job.company.id} className="underline">
                                                 <span className="text-muted-foreground truncate">
                                                     {job.company.name}
                                                 </span>
@@ -410,11 +410,11 @@ function JobsPageContent() {
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[150px]"}>
                                             {job.contact ? (
-                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id}>
+                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id} className="underline">
                                                     <span>{job.contact.first_name} {job.contact.last_name}</span>
                                                 </EntityPreviewCard>
                                             ) : job.company ? (
-                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id} className="underline">
                                                     <span>{job.company.name}</span>
                                                 </EntityPreviewCard>
                                             ) : "—"}
@@ -426,7 +426,7 @@ function JobsPageContent() {
                                                     <span className="inline-flex flex-wrap gap-x-1">
                                                         {job.assignees.map((a, i) => (
                                                             <span key={a.id}>
-                                                                <EntityPreviewCard entityType="user" entityId={a.id}>
+                                                                <EntityPreviewCard entityType="user" entityId={a.id} className="underline">
                                                                     <span>{a.full_name || a.email || "—"}</span>
                                                                 </EntityPreviewCard>
                                                                 {i < job.assignees.length - 1 && <span>, </span>}

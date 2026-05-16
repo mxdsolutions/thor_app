@@ -240,7 +240,7 @@ export default function OverviewPage() {
                                     <tr key={job.id} className={tableRow + " group"}>
                                         <td className={tableCell + " pl-4 pr-4"}>
                                             <div className="flex flex-col min-w-0">
-                                                <EntityPreviewCard entityType="job" entityId={job.id}>
+                                                <EntityPreviewCard entityType="job" entityId={job.id} className="underline">
                                                     <span className="font-semibold truncate max-w-[200px]">{job.job_title}</span>
                                                 </EntityPreviewCard>
                                                 <span className="text-[10px] text-muted-foreground truncate sm:hidden">
@@ -253,11 +253,11 @@ export default function OverviewPage() {
                                         </td>
                                         <td className={tableCellMuted + " px-4 hidden sm:table-cell truncate max-w-[140px]"}>
                                             {job.contact ? (
-                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id}>
+                                                <EntityPreviewCard entityType="contact" entityId={job.contact.id} className="underline">
                                                     <span>{job.contact.first_name} {job.contact.last_name}</span>
                                                 </EntityPreviewCard>
                                             ) : job.company ? (
-                                                <EntityPreviewCard entityType="company" entityId={job.company.id}>
+                                                <EntityPreviewCard entityType="company" entityId={job.company.id} className="underline">
                                                     <span>{job.company.name}</span>
                                                 </EntityPreviewCard>
                                             ) : "—"}
@@ -269,7 +269,7 @@ export default function OverviewPage() {
                                                     <span className="inline-flex flex-wrap gap-x-1">
                                                         {job.assignees.map((a, i) => (
                                                             <span key={a.id}>
-                                                                <EntityPreviewCard entityType="user" entityId={a.id}>
+                                                                <EntityPreviewCard entityType="user" entityId={a.id} className="underline">
                                                                     <span>{a.full_name || a.email || "—"}</span>
                                                                 </EntityPreviewCard>
                                                                 {i < job.assignees.length - 1 && <span>, </span>}
@@ -382,7 +382,7 @@ export default function OverviewPage() {
                         return (
                             <div key={job.id} className="px-4 py-3 hover:bg-muted/30 transition-colors">
                                 <div className="flex items-center justify-between gap-2 mb-0.5">
-                                    <EntityPreviewCard entityType="job" entityId={job.id}>
+                                    <EntityPreviewCard entityType="job" entityId={job.id} className="underline">
                                         <span className="font-medium text-sm truncate">{job.job_title}</span>
                                     </EntityPreviewCard>
                                     <span className="text-xs font-semibold tabular-nums shrink-0">${job.amount.toLocaleString()}</span>
@@ -393,7 +393,7 @@ export default function OverviewPage() {
                                     {customerEntity && (
                                         <>
                                             <span>·</span>
-                                            <EntityPreviewCard entityType={customerEntity.type} entityId={customerEntity.id}>
+                                            <EntityPreviewCard entityType={customerEntity.type} entityId={customerEntity.id} className="underline">
                                                 <span className="truncate">{customerEntity.label}</span>
                                             </EntityPreviewCard>
                                         </>
@@ -455,7 +455,7 @@ export default function OverviewPage() {
                                 </div>
                                 <div className="font-medium text-sm truncate">
                                     {a.job ? (
-                                        <EntityPreviewCard entityType="job" entityId={a.job.id}>
+                                        <EntityPreviewCard entityType="job" entityId={a.job.id} className="underline">
                                             <span>{a.job.job_title}</span>
                                         </EntityPreviewCard>
                                     ) : "Untitled"}
@@ -463,11 +463,11 @@ export default function OverviewPage() {
                                 {customer && (
                                     <div className="text-xs text-muted-foreground truncate">
                                         {a.job?.contact ? (
-                                            <EntityPreviewCard entityType="contact" entityId={a.job.contact.id}>
+                                            <EntityPreviewCard entityType="contact" entityId={a.job.contact.id} className="underline">
                                                 <span>{customer}</span>
                                             </EntityPreviewCard>
                                         ) : a.job?.company ? (
-                                            <EntityPreviewCard entityType="company" entityId={a.job.company.id}>
+                                            <EntityPreviewCard entityType="company" entityId={a.job.company.id} className="underline">
                                                 <span>{customer}</span>
                                             </EntityPreviewCard>
                                         ) : <span>{customer}</span>}

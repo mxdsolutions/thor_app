@@ -68,7 +68,7 @@ const columns: DataTableColumn<Quote>[] = [
         muted: true,
         className: "hidden sm:table-cell",
         render: (q) => q.contact ? (
-            <EntityPreviewCard entityType="contact" entityId={q.contact.id}>
+            <EntityPreviewCard entityType="contact" entityId={q.contact.id} className="underline">
                 <span>{q.contact.first_name} {q.contact.last_name}</span>
             </EntityPreviewCard>
         ) : "—",

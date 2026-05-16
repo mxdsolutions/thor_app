@@ -210,18 +210,18 @@ export default function ReportsPage() {
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                     {report.job ? (
-                                        <EntityPreviewCard entityType="job" entityId={report.job.id}>
+                                        <EntityPreviewCard entityType="job" entityId={report.job.id} className="underline">
                                             <span>{report.job.job_title}</span>
                                         </EntityPreviewCard>
                                     ) : report.company ? (
-                                        <EntityPreviewCard entityType="company" entityId={report.company.id}>
+                                        <EntityPreviewCard entityType="company" entityId={report.company.id} className="underline">
                                             <span>{report.company.name}</span>
                                         </EntityPreviewCard>
                                     ) : report.project?.title || "—"}
                                 </td>
                                 <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
                                     {report.creator ? (
-                                        <EntityPreviewCard entityType="user" entityId={report.creator.id}>
+                                        <EntityPreviewCard entityType="user" entityId={report.creator.id} className="underline">
                                             <span>{report.creator.full_name}</span>
                                         </EntityPreviewCard>
                                     ) : "—"}

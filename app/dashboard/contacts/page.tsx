@@ -53,7 +53,7 @@ const columns: DataTableColumn<Contact>[] = [
         key: "company",
         label: "Company",
         render: (c) => c.company ? (
-            <EntityPreviewCard entityType="company" entityId={c.company.id}>
+            <EntityPreviewCard entityType="company" entityId={c.company.id} className="underline">
                 <span className="truncate">{c.company.name}</span>
             </EntityPreviewCard>
         ) : <span className="truncate">—</span>,
