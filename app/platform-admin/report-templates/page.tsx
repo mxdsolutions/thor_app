@@ -16,8 +16,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Plus as PlusIcon, Search as MagnifyingGlassIcon, Wrench as WrenchScrewdriverIcon } from "lucide-react";
+import { Plus as PlusIcon, Search as MagnifyingGlassIcon } from "lucide-react";
 import { CreateReportTemplateModal } from "@/components/modals/CreateReportTemplateModal";
+import { AssignReportTemplateTenantModal } from "@/components/modals/AssignReportTemplateTenantModal";
+import { ReportTemplateRowMenu } from "@/components/platform-admin/ReportTemplateRowMenu";
 import { ReportTemplateSideSheet } from "@/components/sheets/ReportTemplateSideSheet";
 import { usePlatformReportTemplates } from "@/lib/swr";
 import { TableSkeleton } from "@/components/ui/skeleton";
@@ -41,6 +43,8 @@ export default function ReportTemplatesPage() {
     const [createOpen, setCreateOpen] = useState(false);
     const [sheetTemplateId, setSheetTemplateId] = useState<string | null>(null);
     const [sheetOpen, setSheetOpen] = useState(false);
+    const [assignTemplate, setAssignTemplate] = useState<ReportTemplate | null>(null);
+    const [assignOpen, setAssignOpen] = useState(false);
     const { data, isLoading, mutate } = usePlatformReportTemplates(search, categoryFilter === "All" ? "" : categoryFilter);
 
     const templates: ReportTemplate[] = data?.items || [];
@@ -92,18 +96,20 @@ export default function ReportTemplatesPage() {
                         <tr>
                             <th className={tableHeadCell + " pl-4 md:pl-6 lg:pl-10 pr-4"}>Template</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Category</th>
+                            <th className={tableHeadCell + " px-4 hidden md:table-cell"}>Tenant</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Fields</th>
                             <th className={tableHeadCell + " px-4"}>Status</th>
                             <th className={tableHeadCell + " px-4 hidden sm:table-cell"}>Created</th>
+                            <th className={tableHeadCell + " px-4 hidden lg:table-cell"}>Created by</th>
                             <th className={tableHeadCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right"}></th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
-                            <TableSkeleton rows={6} columns={6} />
+                            <TableSkeleton rows={6} columns={8} />
                         ) : templates.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="text-center py-12 text-sm text-muted-foreground">No templates found.</td>
+                                <td colSpan={8} className="text-center py-12 text-sm text-muted-foreground">No templates found.</td>
                             </tr>
                         ) : (
                             templates.map((template) => (
@@ -123,6 +129,13 @@ export default function ReportTemplatesPage() {
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell capitalize"}>
                                         {template.category?.replace(/_/g, " ") || "\u2014"}
                                     </td>
+                                    <td className={tableCellMuted + " px-4 hidden md:table-cell"}>
+                                        {template.tenant ? (
+                                            <span className="text-foreground">{template.tenant.company_name || template.tenant.name}</span>
+                                        ) : (
+                                            <span className="text-muted-foreground/60">Unassigned</span>
+                                        )}
+                                    </td>
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                         {countFields(template.schema)}
                                     </td>
@@ -140,19 +153,17 @@ export default function ReportTemplatesPage() {
                                     <td className={tableCellMuted + " px-4 hidden sm:table-cell"}>
                                         {new Date(template.created_at).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}
                                     </td>
+                                    <td className={tableCellMuted + " px-4 hidden lg:table-cell"}>
+                                        {template.created_by_user
+                                            ? (template.created_by_user.full_name || template.created_by_user.email || "—")
+                                            : <span className="text-muted-foreground/60">—</span>}
+                                    </td>
                                     <td className={tableCell + " pl-4 pr-4 md:pr-6 lg:pr-10 text-right md:opacity-0 md:group-hover:opacity-100 transition-opacity"}>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="rounded-lg h-8 w-8 text-muted-foreground"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                window.open(`/platform-admin/builder/${template.id}`, "_blank");
-                                            }}
-                                            title="Open Builder"
-                                        >
-                                            <WrenchScrewdriverIcon className="w-4 h-4" />
-                                        </Button>
+                                        <ReportTemplateRowMenu
+                                            template={template}
+                                            onEdit={() => window.open(`/platform-admin/builder/${template.id}`, "_blank")}
+                                            onAssign={() => { setAssignTemplate(template); setAssignOpen(true); }}
+                                        />
                                     </td>
                                 </tr>
                             ))
@@ -175,6 +186,13 @@ export default function ReportTemplatesPage() {
                 open={sheetOpen}
                 onOpenChange={setSheetOpen}
                 onUpdate={() => mutate()}
+            />
+
+            <AssignReportTemplateTenantModal
+                open={assignOpen}
+                onOpenChange={setAssignOpen}
+                template={assignTemplate}
+                onAssigned={() => mutate()}
             />
         </>
     );

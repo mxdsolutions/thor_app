@@ -13,7 +13,7 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
 
     let query = adminClient
         .from("report_templates")
-        .select("*", { count: "estimated" })
+        .select("*, tenant:tenants(id, name, company_name)", { count: "estimated" })
         .order("created_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -27,7 +27,33 @@ export const GET = withPlatformAuth(async (request, { adminClient }) => {
     const { data, error, count } = await query;
     if (error) return serverError(error);
 
-    return NextResponse.json({ items: data, total: count || 0 });
+    // `created_by` references auth.users(id), not profiles, so we can't embed
+    // profiles via PostgREST FK syntax. Batch-fetch matching profile rows
+    // (profile.id matches auth.users.id by Supabase convention) and zip them
+    // in — same pattern as /api/platform-admin/tenants for owner profiles.
+    const creatorIds = Array.from(
+        new Set(
+            (data || [])
+                .map((t: { created_by: string | null }) => t.created_by)
+                .filter((id: string | null): id is string => Boolean(id)),
+        ),
+    );
+
+    const { data: creators } = creatorIds.length > 0
+        ? await adminClient.from("profiles").select("id, full_name, email").in("id", creatorIds)
+        : { data: [] as { id: string; full_name: string | null; email: string | null }[] };
+
+    const creatorMap: Record<string, { id: string; full_name: string | null; email: string | null }> = {};
+    for (const p of creators || []) {
+        creatorMap[p.id] = p;
+    }
+
+    const items = (data || []).map((t: Record<string, unknown>) => ({
+        ...t,
+        created_by_user: t.created_by ? creatorMap[t.created_by as string] || null : null,
+    }));
+
+    return NextResponse.json({ items, total: count || 0 });
 });
 
 export const POST = withPlatformAuth(async (request, { adminClient, user }) => {

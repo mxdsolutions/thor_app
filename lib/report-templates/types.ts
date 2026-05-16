@@ -72,6 +72,16 @@ export interface ReportTemplate {
     tenant_id: string | null;
     /** Optional PDF cover override. When set, overrides tenant.report_cover_url at PDF render time. */
     report_cover_url: string | null;
+    /**
+     * Embedded tenant relation. Only present on platform-admin list responses
+     * that join `tenants` — single-template GETs leave this undefined.
+     */
+    tenant?: { id: string; name: string; company_name: string | null } | null;
+    /**
+     * Embedded creator profile. Only present on platform-admin list responses
+     * (resolved server-side from `created_by` → `profiles`). Undefined elsewhere.
+     */
+    created_by_user?: { id: string; full_name: string | null; email: string | null } | null;
 }
 
 export type PhotoItem = {
