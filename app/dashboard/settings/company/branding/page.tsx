@@ -72,9 +72,9 @@ export default function BrandingPage() {
                 }),
             });
             if (!res.ok) throw new Error();
-            // Apply brand colour immediately
+            // Apply brand colour immediately. Note: --color-ring is intentionally
+            // not updated — focus rings are a system constant (see globals.css).
             document.documentElement.style.setProperty("--color-primary", primaryColor);
-            document.documentElement.style.setProperty("--color-ring", primaryColor);
             toast.success("Branding updated");
             // Re-render the server layout so the TenantProvider gets the new
             // report_cover_url — otherwise the PDF generator still sees stale data.

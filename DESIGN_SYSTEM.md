@@ -123,6 +123,12 @@ Calendar:    text-xs  → sm:text-sm
 | `text-foreground` | Primary text |
 | `text-muted-foreground` | Secondary text, labels |
 | `border-border` | Card/table borders |
+| `ring-ring` | Keyboard-focus rings (system constant, slate near-black) |
+| `ring-primary` | Selection-state rings only (active calendar day, active quote section) |
+
+### Focus rings vs. selection rings
+
+`--color-ring` is intentionally **decoupled** from `--color-primary` and is **not** overridden by tenant branding. It's a system-level accessibility surface — a slate near-black (`hsl(220 14% 14%)`) that guarantees contrast on any tenant brand. When you need keyboard-focus feedback on a control, use `focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`. Reserve `ring-primary` for *selection* indicators where the brand colour is the point (e.g. the active day in the calendar, the active quote section).
 
 ### Status & Priority Colors
 

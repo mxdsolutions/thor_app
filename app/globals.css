@@ -34,7 +34,10 @@
 
   --color-border: hsl(220 10% 88%);
   --color-input: hsl(220 10% 88%);
-  --color-ring: hsl(16 87% 55%);
+  /* Focus ring — system constant, intentionally decoupled from --color-primary.
+     Slate near-black harmonises with the warm-paper palette and meets contrast
+     on any tenant brand. Selection-indicator rings use ring-primary directly. */
+  --color-ring: hsl(220 14% 14%);
 
   /* Radius is intentionally collapsed to two values:
      4px for fine details (sm/md), 8px for surfaces and interactive controls (lg/xl/2xl/3xl).

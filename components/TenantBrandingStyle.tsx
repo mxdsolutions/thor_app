@@ -11,11 +11,12 @@ export function TenantBrandingStyle() {
         return null;
     }
 
+    // --color-ring is intentionally NOT overridden — focus rings are a system
+    // constant (slate near-black) so they meet contrast on any tenant brand.
     return (
         <style dangerouslySetInnerHTML={{ __html: `
             :root {
                 --color-primary: ${tenant.primary_color};
-                --color-ring: ${tenant.primary_color};
             }
         `}} />
     );
