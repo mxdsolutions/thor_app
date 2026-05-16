@@ -31,7 +31,7 @@ export const GET = withAuth(async (request, { tenantId }) => {
     let query = adminClient
         .from("report_templates")
         .select(
-            "id, name, slug, description, category, schema, version, report_cover_url, tenant_id, is_active, created_at, updated_at, created_by, creator:created_by(id, full_name, email)",
+            "id, name, slug, description, category, schema, version, report_cover_url, tenant_id, is_active, created_at, updated_at, created_by",
         )
         .or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
         .order("name", { ascending: true });
@@ -43,7 +43,33 @@ export const GET = withAuth(async (request, { tenantId }) => {
     const { data, error } = await query;
     if (error) return serverError(error);
 
-    return NextResponse.json({ items: data || [] });
+    // `created_by` FKs to auth.users, not profiles, so we can't embed
+    // `profiles` via PostgREST. Batch-fetch profile rows (profile.id matches
+    // auth.users.id) and attach them as `creator` — the shape the settings
+    // page consumes via `t.creator?.full_name`.
+    const creatorIds = Array.from(
+        new Set(
+            (data || [])
+                .map((t) => t.created_by)
+                .filter((id): id is string => Boolean(id)),
+        ),
+    );
+
+    const { data: creators } = creatorIds.length > 0
+        ? await adminClient.from("profiles").select("id, full_name, email").in("id", creatorIds)
+        : { data: [] as { id: string; full_name: string | null; email: string | null }[] };
+
+    const creatorMap: Record<string, { id: string; full_name: string | null; email: string | null }> = {};
+    for (const p of creators || []) {
+        creatorMap[p.id] = p;
+    }
+
+    const items = (data || []).map((t) => ({
+        ...t,
+        creator: t.created_by ? creatorMap[t.created_by] || null : null,
+    }));
+
+    return NextResponse.json({ items });
 });
 
 /**
