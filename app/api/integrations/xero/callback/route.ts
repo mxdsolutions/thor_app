@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get("error");
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:8005";
-    const redirectUrl = `${appUrl}/dashboard/settings/company/integrations`;
+    const redirectUrl = `${appUrl}/dashboard/settings/integrations`;
 
     if (error) {
         const description =

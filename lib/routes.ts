@@ -13,7 +13,6 @@ export const ROUTES = {
     OPS_JOBS: "/dashboard/jobs",
     OPS_SCOPES: "/dashboard/scopes",
     OPS_REPORTS: "/dashboard/reports",
-    OPS_REPORT_TEMPLATES: "/dashboard/reports/templates",
     OPS_SCHEDULE: "/dashboard/schedule",
     OPS_TIMESHEETS: "/dashboard/timesheets",
 
@@ -25,13 +24,25 @@ export const ROUTES = {
     FINANCE_INVOICES: "/dashboard/invoices",
     FINANCE_PRICING: "/dashboard/pricing",
 
-    // Settings
+    // Settings — top tabs and their first sub-tabs (used as the "default
+    // landing" target when navigating to the top tab). Sub-tab order must
+    // stay in sync with SettingsLayoutClient.tsx.
     SETTINGS_USERS: "/dashboard/settings/users",
     SETTINGS_USERS_ROLES: "/dashboard/settings/users/roles",
     SETTINGS_COMPANY: "/dashboard/settings/company",
-    SETTINGS_COMPANY_SUBSCRIPTION: "/dashboard/settings/company/subscription",
-    SETTINGS_COMPANY_INTEGRATIONS: "/dashboard/settings/company/integrations",
-    SETTINGS_PROFILE: "/dashboard/settings/settings",
+    SETTINGS_COMPANY_INFO: "/dashboard/settings/company/details",
+    SETTINGS_COMPANY_LICENSES: "/dashboard/settings/company/licenses",
+    SETTINGS_COMPANY_BRANDING: "/dashboard/settings/company/branding",
+    SETTINGS_REPORT_TEMPLATES: "/dashboard/settings/reports/templates",
+    SETTINGS_REPORT_COVER: "/dashboard/settings/reports/cover",
+    SETTINGS_INTEGRATIONS: "/dashboard/settings/integrations",
+    SETTINGS_ACCOUNT: "/dashboard/settings/account",
+    SETTINGS_ACCOUNT_PLAN: "/dashboard/settings/account/plan",
+    SETTINGS_ACCOUNT_CUSTOM_DOMAIN: "/dashboard/settings/account/custom-domain",
+
+    // Builder — lives at the root path (outside /dashboard) so the editor
+    // can take over the full viewport with no shell chrome.
+    BUILDER: "/builder",
 
     // Platform Admin
     PLATFORM_ADMIN: "/platform-admin",

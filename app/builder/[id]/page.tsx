@@ -131,8 +131,8 @@ export default function DashboardTemplateBuilderPage({
                 report_cover_url: template.report_cover_url ?? null,
             }}
             onSave={handleSave}
-            backHref={ROUTES.OPS_REPORT_TEMPLATES}
-            backLabel="Report templates"
+            backHref={ROUTES.SETTINGS_REPORT_TEMPLATES}
+            backLabel="Templates"
             fetchTenantBranding={fetchTenantBranding}
         />
     );

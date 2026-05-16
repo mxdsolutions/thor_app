@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/routes";
 import { DashboardControls } from "@/components/dashboard/DashboardPage";
@@ -26,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { cn, timeAgo } from "@/lib/utils";
-import { Search as MagnifyingGlassIcon, Plus as PlusIcon, ArrowUpRight as ArrowUpRightIcon } from "lucide-react";
+import { Search as MagnifyingGlassIcon, Plus as PlusIcon, ArrowUpRight as ArrowUpRightIcon, Settings as SettingsIcon } from "lucide-react";
 import { useReports, type ArchiveScope } from "@/lib/swr";
 import { ArchiveScopedStatusSelect } from "@/components/dashboard/ArchiveScopedStatusSelect";
 import { CreateReportModal } from "@/components/modals/CreateReportModal";
@@ -151,12 +152,25 @@ export default function ReportsPage() {
                             />
                         </MobileFilters>
                     </div>
-                    {canWriteReports && (
-                        <Button className="px-6 shrink-0 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
-                            <PlusIcon className="w-4 h-4 mr-2" />
-                            New Report
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2 shrink-0">
+                        {/* Subordinate link to the template-management surface. Lives in
+                            Settings → Reports → Templates; this is a discoverability
+                            shortcut for users thinking "I need a different template"
+                            while looking at their reports. */}
+                        <Link
+                            href={ROUTES.SETTINGS_REPORT_TEMPLATES}
+                            className="hidden md:inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <SettingsIcon className="w-3.5 h-3.5" />
+                            Manage templates
+                        </Link>
+                        {canWriteReports && (
+                            <Button className="px-6 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
+                                <PlusIcon className="w-4 h-4 mr-2" />
+                                New Report
+                            </Button>
+                        )}
+                    </div>
                 </DashboardControls>
                 </div>
             }

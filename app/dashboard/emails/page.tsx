@@ -181,7 +181,7 @@ export default function EmailsPage() {
                         <Button
                             className=""
                             onClick={() => {
-                                window.location.href = "/dashboard/settings/company/integrations";
+                                window.location.href = "/dashboard/settings/integrations";
                             }}
                         >
                             <LinkIcon className="w-4 h-4 mr-1.5" />

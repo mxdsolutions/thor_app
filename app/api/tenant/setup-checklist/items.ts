@@ -25,19 +25,19 @@ export const SETUP_ITEMS: readonly SetupItem[] = [
         key: "company_info",
         label: "Complete your company info",
         description: "Address and contact details appear on every quote, invoice and report.",
-        href: `${ROUTES.SETTINGS_COMPANY}/details`,
+        href: ROUTES.SETTINGS_COMPANY_INFO,
     },
     {
         key: "logo",
         label: "Upload your logo",
         description: "Used on letterheads, quotes and reports.",
-        href: `${ROUTES.SETTINGS_COMPANY}/branding`,
+        href: ROUTES.SETTINGS_COMPANY_BRANDING,
     },
     {
         key: "prefix",
         label: "Set your invoice prefix",
         description: "Used as the prefix on every quote and invoice number.",
-        href: `${ROUTES.SETTINGS_COMPANY}/details`,
+        href: ROUTES.SETTINGS_COMPANY_INFO,
     },
     {
         key: "first_job",
@@ -55,13 +55,13 @@ export const SETUP_ITEMS: readonly SetupItem[] = [
         key: "xero_sync",
         label: "Connect Xero",
         description: "Sync contacts, quotes and invoices to your accounting system.",
-        href: ROUTES.SETTINGS_COMPANY_INTEGRATIONS,
+        href: ROUTES.SETTINGS_INTEGRATIONS,
     },
     {
         key: "report_cover",
         label: "Set your reporting cover",
         description: "The cover image used on generated PDF reports.",
-        href: `${ROUTES.SETTINGS_COMPANY}/reports`,
+        href: ROUTES.SETTINGS_REPORT_COVER,
     },
 ] as const;
 

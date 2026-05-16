@@ -102,10 +102,10 @@ export const POST = withAuth(async (request, { supabase, user, tenantId }) => {
 
     const successUrl = validation.data.from_signup
         ? `${appUrl}/dashboard?welcome=1&session_id={CHECKOUT_SESSION_ID}`
-        : `${appUrl}/dashboard/settings/company/subscription?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+        : `${appUrl}/dashboard/settings/account/plan?checkout=success&session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = validation.data.from_signup
         ? `${appUrl}/signup?step=plan&checkout=cancelled`
-        : `${appUrl}/dashboard/settings/company/subscription?checkout=cancelled`;
+        : `${appUrl}/dashboard/settings/account/plan?checkout=cancelled`;
 
     try {
         const session = await getStripe().checkout.sessions.create({

@@ -161,7 +161,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                                     <p className="text-muted-foreground mt-0.5">
                                         Pick a plan in{" "}
                                         <Link
-                                            href="/dashboard/settings/company/subscription"
+                                            href="/dashboard/settings/account/plan"
                                             className="underline underline-offset-4"
                                             onClick={onClose}
                                         >
@@ -175,7 +175,7 @@ export function UserInviteModal({ open, onClose }: { open: boolean; onClose: () 
                                     <p className="font-medium text-foreground">All seats are in use.</p>
                                     <p className="text-muted-foreground mt-0.5">
                                         <Link
-                                            href="/dashboard/settings/company/subscription"
+                                            href="/dashboard/settings/account/plan"
                                             className="underline underline-offset-4"
                                             onClick={onClose}
                                         >

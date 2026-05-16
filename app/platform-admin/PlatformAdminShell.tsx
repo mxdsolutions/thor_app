@@ -70,7 +70,7 @@ export function PlatformAdminShell({ children }: { children: React.ReactNode }) 
                         <ArrowLeftIcon className="w-[18px] h-[18px]" />
                         Back to Dashboard
                     </Link>
-                    <Link href="/dashboard/settings/settings" className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors", platformAdminNavHoverSurfaceClass)}>
+                    <Link href="/dashboard/settings/account" className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors", platformAdminNavHoverSurfaceClass)}>
                         <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                             <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                         </div>
@@ -143,7 +143,7 @@ export function PlatformAdminShell({ children }: { children: React.ReactNode }) 
                                     <ArrowLeftIcon className="w-[18px] h-[18px]" />
                                     Back to Dashboard
                                 </Link>
-                                <Link href="/dashboard/settings/settings" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer", platformAdminNavHoverSurfaceClass)}>
+                                <Link href="/dashboard/settings/account" onClick={() => setMobileMenuOpen(false)} className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors cursor-pointer", platformAdminNavHoverSurfaceClass)}>
                                     <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                                         <span className="text-xs font-bold text-foreground uppercase tracking-wide">{initials}</span>
                                     </div>

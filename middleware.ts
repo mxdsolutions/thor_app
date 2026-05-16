@@ -252,8 +252,12 @@ export async function middleware(request: NextRequest) {
         const isOnboarding = request.nextUrl.pathname.startsWith('/onboarding')
         const isPlatformAdmin = request.nextUrl.pathname.startsWith('/platform-admin')
         const isReport = request.nextUrl.pathname.startsWith('/report')
+        // The report-template builder lives at the root path so the editor
+        // can take over the full viewport without the dashboard shell.
+        // Still authenticated-only — anonymous traffic redirects to /login.
+        const isBuilder = request.nextUrl.pathname.startsWith('/builder')
 
-        if (!isAuthenticated && (isDashboard || isOnboarding || isPlatformAdmin || isReport)) {
+        if (!isAuthenticated && (isDashboard || isOnboarding || isPlatformAdmin || isReport || isBuilder)) {
             const url = request.nextUrl.clone()
             url.pathname = '/login'
             return NextResponse.redirect(url)
@@ -313,7 +317,7 @@ export async function middleware(request: NextRequest) {
             const locked = await getTenantLockState(supabase, tenantId);
             if (locked) {
                 const url = request.nextUrl.clone();
-                url.pathname = '/dashboard/settings/company/subscription';
+                url.pathname = '/dashboard/settings/account/plan';
                 url.search = '';
                 return NextResponse.redirect(url);
             }

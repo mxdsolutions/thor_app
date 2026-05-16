@@ -59,7 +59,7 @@ export const POST = withAuth(async (_request, { supabase, user, tenantId }) => {
     try {
         const session = await getStripe().billingPortal.sessions.create({
             customer: row.stripe_customer_id,
-            return_url: `${appUrl}/dashboard/settings/company/subscription`,
+            return_url: `${appUrl}/dashboard/settings/account/plan`,
         });
         return NextResponse.json({ url: session.url });
     } catch (err) {

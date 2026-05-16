@@ -36,7 +36,7 @@ function SubscriptionContent() {
         if (!checkout) return;
 
         // Strip the query param so a refresh / back-nav doesn't re-fire the toast.
-        router.replace("/dashboard/settings/company/subscription");
+        router.replace("/dashboard/settings/account/plan");
 
         if (checkout === "success") {
             toast.success("Subscription activated. It may take a few seconds to appear.");
