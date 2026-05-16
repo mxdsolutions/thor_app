@@ -376,7 +376,11 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
     );
 
     return (
-        <div className="h-screen flex flex-col bg-background">
+        // Outer frame is the dark "slate" — matches the dashboard sidebar
+        // colour (`bg-foreground`). The top bar sits flush on this surface;
+        // the content below uses a light bg with a 12px top radius so the
+        // dark frame shows through as a thin reveal at the seam.
+        <div className="h-screen flex flex-col bg-foreground">
             <BuilderTopBar
                 saving={saving}
                 hasChanges={hasChanges}
@@ -387,8 +391,13 @@ export function BuilderShell({ templateId, initialSchema, initialMeta, onSave }:
                 previewingPdf={previewingPdf}
             />
 
-            {/* Middle row: sidebar (edit mode only) + canvas */}
-            <div className="flex-1 flex min-h-0">
+            {/* Middle row: sidebar (edit mode only) + canvas. The light
+                surface starts here, masked by overflow-hidden so the inner
+                BuilderSidebar / BuilderCanvas square corners are clipped
+                to the rounded mask. Literal 12px radius is intentional —
+                outside the standard 8px token to give the seam a softer
+                inset feel against the dark frame. */}
+            <div className="flex-1 flex min-h-0 bg-background rounded-tl-[12px] rounded-tr-[12px] overflow-hidden">
                 {canvasMode === "edit" && (
                     <BuilderSidebar
                         templateId={templateId}

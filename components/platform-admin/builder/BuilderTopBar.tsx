@@ -37,13 +37,17 @@ export function BuilderTopBar({
     onPreviewPdf,
     previewingPdf,
 }: BuilderTopBarProps) {
+    // Top bar sits on the dark frame (`bg-foreground`) painted by the parent
+    // BuilderShell. No background of its own and no bottom border — the seam
+    // to the rounded light content area below is the visual divider.
+    // Text/buttons inverted to white-on-slate, mirroring DashboardShell.
     return (
-        <div className="h-14 border-b border-border bg-background flex items-center gap-3 px-4 shrink-0">
+        <div className="h-14 flex items-center gap-3 px-4 shrink-0">
             {/* Left */}
             <div className="flex items-center gap-3 shrink-0">
                 <Link
                     href="/platform-admin/report-templates"
-                    className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white transition-colors"
                 >
                     <ArrowLeftIcon className="w-3.5 h-3.5" />
                     Templates
@@ -66,7 +70,7 @@ export function BuilderTopBar({
                     type="button"
                     onClick={onPreviewPdf}
                     disabled={previewingPdf}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background hover:bg-secondary/60 transition-colors px-3 h-8 text-xs font-medium disabled:opacity-60"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors px-3 h-8 text-xs font-medium text-white disabled:opacity-60"
                 >
                     {previewingPdf ? (
                         <LoaderIcon className="w-3.5 h-3.5 animate-spin" />
@@ -75,7 +79,7 @@ export function BuilderTopBar({
                     )}
                     {previewingPdf ? "Generating…" : "Preview as PDF"}
                 </button>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-xs text-zinc-300">
                     <div
                         className={cn(
                             "w-1.5 h-1.5 rounded-full",
@@ -87,7 +91,10 @@ export function BuilderTopBar({
                 <Button
                     onClick={onSave}
                     disabled={saving || !hasChanges}
-                    className="px-5 h-8 text-xs"
+                    // Inverse of the default solid button so it reads as
+                    // primary against the dark frame: white surface, dark
+                    // text. Falls back to the muted look when disabled.
+                    className="px-5 h-8 text-xs bg-white text-foreground hover:bg-white/90 disabled:bg-white/20 disabled:text-white/50"
                 >
                     {saving ? "Saving..." : "Save"}
                 </Button>
