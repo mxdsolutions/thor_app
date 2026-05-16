@@ -153,17 +153,16 @@ export default function ReportsPage() {
                         </MobileFilters>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        {/* Subordinate link to the template-management surface. Lives in
-                            Settings → Reports → Templates; this is a discoverability
+                        {/* Subordinate outline button → template-management surface
+                            in Settings → Reports → Templates. Discoverability
                             shortcut for users thinking "I need a different template"
                             while looking at their reports. */}
-                        <Link
-                            href={ROUTES.SETTINGS_REPORT_TEMPLATES}
-                            className="hidden md:inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <SettingsIcon className="w-3.5 h-3.5" />
-                            Manage templates
-                        </Link>
+                        <Button asChild variant="outline" className="hidden md:inline-flex">
+                            <Link href={ROUTES.SETTINGS_REPORT_TEMPLATES}>
+                                <SettingsIcon className="w-4 h-4 mr-2" />
+                                Manage templates
+                            </Link>
+                        </Button>
                         {canWriteReports && (
                             <Button className="px-6 hidden md:inline-flex" onClick={() => setCreateOpen(true)}>
                                 <PlusIcon className="w-4 h-4 mr-2" />

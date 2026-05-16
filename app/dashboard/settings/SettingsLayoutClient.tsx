@@ -76,6 +76,12 @@ export default function SettingsLayoutClient({ children }: { children: React.Rea
     const activeTopTabId = getActiveTopTab(pathname);
     const activeTopTab = topTabs.find((t) => t.id === activeTopTabId) || topTabs[0];
 
+    // Most settings pages are forms and benefit from the 3xl reading-width
+    // cap. Table-heavy pages (e.g. the Templates list) need more horizontal
+    // room — they opt out by path here so we don't bake the constraint
+    // into every form page individually.
+    const isWidePage = pathname.startsWith("/dashboard/settings/reports/templates");
+
     return (
         <div className="px-4 md:px-6 lg:px-10">
             <div className="mb-4 md:mb-6 hidden md:block">
@@ -156,7 +162,7 @@ export default function SettingsLayoutClient({ children }: { children: React.Rea
                 </nav>
 
                 {/* Content */}
-                <div className="flex-1 max-w-3xl min-w-0">
+                <div className={cn("flex-1 min-w-0", !isWidePage && "max-w-3xl")}>
                     {children}
                 </div>
             </div>

@@ -6,8 +6,16 @@ import { reportTemplateTenantCreateSchema } from "@/lib/validation";
 import { insertTemplateWithUniqueSlug } from "@/lib/report-templates/slug";
 import { buildEmptyTemplateSchema } from "@/lib/report-templates/defaults";
 
-export const GET = withAuth(async (_request, { tenantId }) => {
+export const GET = withAuth(async (request, { tenantId }) => {
     const adminClient = await createAdminClient();
+
+    // `?status=` filters by `is_active`. Default is "active" so existing
+    // callers (the in-dashboard report-create modal) keep working unchanged.
+    // The Settings → Reports → Templates list page passes "all" / "inactive"
+    // to surface archived templates for management.
+    const statusParam = new URL(request.url).searchParams.get("status");
+    const statusFilter: "active" | "inactive" | "all" =
+        statusParam === "inactive" || statusParam === "all" ? statusParam : "active";
 
     // Templates assigned to this tenant, plus legacy / platform-shared templates
     // (tenant_id IS NULL). Once all templates are assigned, the second clause
@@ -20,13 +28,19 @@ export const GET = withAuth(async (_request, { tenantId }) => {
     // NOT extend this `.or()` with any value not subject to the same upstream
     // validation — PostgREST's `or()` is comma-separated and a malformed value
     // would allow filter smuggling.
-    const { data, error } = await adminClient
+    let query = adminClient
         .from("report_templates")
-        .select("id, name, slug, description, category, schema, version, report_cover_url, tenant_id")
-        .eq("is_active", true)
+        .select(
+            "id, name, slug, description, category, schema, version, report_cover_url, tenant_id, is_active, created_at, updated_at, created_by, creator:created_by(id, full_name, email)",
+        )
         .or(`tenant_id.eq.${tenantId},tenant_id.is.null`)
         .order("name", { ascending: true });
 
+    if (statusFilter === "active") query = query.eq("is_active", true);
+    else if (statusFilter === "inactive") query = query.eq("is_active", false);
+    // "all" → no filter
+
+    const { data, error } = await query;
     if (error) return serverError(error);
 
     return NextResponse.json({ items: data || [] });

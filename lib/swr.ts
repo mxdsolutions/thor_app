@@ -232,8 +232,18 @@ export function useReportShareTokens(reportId: string | null) {
 
 // --- Report Template Hooks ---
 
-export function useReportTemplates() {
-    return useSWR("/api/report-templates", fetcher, defaultConfig);
+/**
+ * Tenant-scoped templates list.
+ *
+ * `status` defaults to "active" — matches the API default and keeps the
+ * report-create flow unchanged. The Settings → Reports → Templates list
+ * passes "all" / "inactive" to surface archived templates.
+ */
+export function useReportTemplates(status: "active" | "inactive" | "all" = "active") {
+    const params = new URLSearchParams();
+    if (status !== "active") params.set("status", status);
+    const qs = params.toString();
+    return useSWR(`/api/report-templates${qs ? `?${qs}` : ""}`, fetcher, defaultConfig);
 }
 
 export function useReportTemplate(id: string | null) {
