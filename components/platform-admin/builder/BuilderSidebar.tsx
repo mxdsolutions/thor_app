@@ -53,6 +53,9 @@ export function BuilderSidebar({
     return (
         <aside className="w-72 shrink-0 border-r border-border bg-background overflow-y-auto hidden md:flex flex-col">
             <div className="p-5 space-y-5">
+                {/* Group header — scopes the metadata block. */}
+                <h2 className="text-base font-semibold text-foreground">Template Settings</h2>
+
                 <SidebarSection label="Template name">
                     <Input
                         value={meta.name}
