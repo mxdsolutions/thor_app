@@ -157,6 +157,9 @@ function ArmedPopover({
     const [open, setOpen] = React.useState(false);
     const openTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
     const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Refs feed the close-time ":hover" sanity check below.
+    const triggerRef = React.useRef<HTMLSpanElement | null>(null);
+    const contentRef = React.useRef<HTMLDivElement | null>(null);
 
     const clearTimers = React.useCallback(() => {
         if (openTimer.current) { clearTimeout(openTimer.current); openTimer.current = null; }
@@ -186,10 +189,29 @@ function ArmedPopover({
         openTimer.current = setTimeout(() => setOpen(true), OPEN_DELAY_MS);
     };
 
+    /**
+     * When the close timer elapses, double-check that the cursor really isn't
+     * over the trigger or content before committing to a close.
+     *
+     * Why: `mouseleave` can fire spuriously after the IdleTrigger → ArmedPopover
+     * swap. The fresh trigger span appears *under* the cursor (instead of the
+     * cursor entering it), so the browser never registered a paired `mouseenter`.
+     * The next small movement can produce an unbalanced `mouseleave` while the
+     * cursor is still genuinely over the trigger pixels. `element.matches(":hover")`
+     * reflects the browser's real-time hit-test state and is immune to that
+     * event-pairing edge case — if either ref is `:hover`, we keep the popover
+     * open and let the next genuine departure schedule another close.
+     */
     const scheduleClose = () => {
         if (!hoverCapable) return;
         clearTimers();
-        closeTimer.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+        closeTimer.current = setTimeout(() => {
+            const stillHovered =
+                triggerRef.current?.matches(":hover") ||
+                contentRef.current?.matches(":hover");
+            if (stillHovered) return;
+            setOpen(false);
+        }, CLOSE_DELAY_MS);
     };
 
     const stopRowClick = (e: React.SyntheticEvent) => e.stopPropagation();
@@ -205,6 +227,7 @@ function ArmedPopover({
         <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
             <PopoverPrimitive.Trigger asChild>
                 <span
+                    ref={triggerRef}
                     role="button"
                     tabIndex={0}
                     onMouseEnter={scheduleOpen}
@@ -224,6 +247,7 @@ function ArmedPopover({
             </PopoverPrimitive.Trigger>
             <PopoverPrimitive.Portal>
                 <PopoverPrimitive.Content
+                    ref={contentRef}
                     side={side}
                     align="start"
                     sideOffset={2}
