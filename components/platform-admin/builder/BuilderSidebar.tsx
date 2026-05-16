@@ -251,23 +251,12 @@ function SectionListItem({ section, index, isActive, onNavigate }: SectionListIt
             <div
                 onClick={() => onNavigate(index)}
                 className={cn(
-                    "group/section w-full flex items-center gap-2 pl-1.5 pr-2 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer select-none",
+                    "group/section w-full flex items-center gap-2 px-2 py-2 rounded-lg text-left text-xs transition-colors cursor-pointer select-none",
                     isActive
                         ? "bg-secondary font-medium text-foreground"
                         : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
                 )}
             >
-                <button
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                        controls.start(e);
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center justify-center w-4 h-5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover/section:opacity-100 transition-opacity touch-none"
-                    aria-label="Drag to reorder"
-                >
-                    <GripIcon className="w-3.5 h-3.5" />
-                </button>
                 <span
                     className={cn(
                         "w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0",
@@ -281,6 +270,17 @@ function SectionListItem({ section, index, isActive, onNavigate }: SectionListIt
                 <span className="flex-1 min-w-0 truncate">
                     {section.title || "Untitled section"}
                 </span>
+                <button
+                    onPointerDown={(e) => {
+                        e.stopPropagation();
+                        controls.start(e);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="shrink-0 flex items-center justify-center w-4 h-5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing opacity-0 group-hover/section:opacity-100 transition-opacity touch-none"
+                    aria-label="Drag to reorder"
+                >
+                    <GripIcon className="w-3.5 h-3.5" />
+                </button>
             </div>
         </Reorder.Item>
     );
