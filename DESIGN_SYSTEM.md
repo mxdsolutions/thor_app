@@ -161,7 +161,7 @@ Radius is intentionally collapsed to two values, regardless of which `rounded-*`
 | `rounded-lg` / `rounded-xl` / `rounded-2xl` / `rounded-3xl` | 8px | Surfaces and interactive controls — buttons, inputs, cards, modals |
 | `rounded-full` | full | Avatars, status dots, pill badges |
 
-Don't introduce arbitrary values like `rounded-[12px]` or `rounded-[6px]`. The one documented exception is `rounded-[2rem]` on the device-frame mockup in [`BuilderPreviewCanvas.tsx`](components/platform-admin/builder/BuilderPreviewCanvas.tsx) — it depicts a physical phone bezel, not a UI surface.
+Don't introduce arbitrary values like `rounded-[12px]` or `rounded-[6px]`. If a literal pixel radius is genuinely the right tool — e.g. depicting a physical phone bezel in a device-frame mockup, not a UI surface — leave a one-line comment in the file explaining why the token scale doesn't fit.
 
 ---
 

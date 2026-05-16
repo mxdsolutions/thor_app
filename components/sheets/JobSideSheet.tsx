@@ -25,7 +25,6 @@ export function JobSideSheet({ job, open, onOpenChange, onUpdate }: JobSideSheet
                     job={job}
                     mode="sheet"
                     onUpdate={onUpdate}
-                    onClose={() => onOpenChange(false)}
                 />
             </SheetContent>
         </Sheet>

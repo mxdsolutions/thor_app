@@ -221,17 +221,31 @@ export async function middleware(request: NextRequest) {
             tenantId = resolveTenantFromJWT(data.claims as Record<string, unknown>)
         }
 
-        // Inject tenant context headers (set on request so server components can read them)
+        // Inject tenant context headers (set on request so server components can read them).
+        //
+        // Always overwrite whatever the client sent — Next.js does not strip
+        // inbound `x-tenant-id` / `x-tenant-slug` headers before middleware
+        // runs, so a hostile client could otherwise smuggle a victim tenant's
+        // id through to `getTenantId()`. We either set the server-derived
+        // value or delete the header entirely so downstream code never sees
+        // an untrusted value. `getTenantId()` UUID-validates as a second
+        // layer of defense.
         if (tenantId) {
             request.headers.set('x-tenant-id', tenantId)
             if (tenantSlug) {
                 request.headers.set('x-tenant-slug', tenantSlug)
+            } else {
+                request.headers.delete('x-tenant-slug')
             }
-            // Recreate response with updated request headers
-            response = NextResponse.next({
-                request: { headers: request.headers },
-            })
+        } else {
+            request.headers.delete('x-tenant-id')
+            request.headers.delete('x-tenant-slug')
         }
+        // Recreate response with updated request headers (whether we set or
+        // deleted, the inbound copy must not survive to server handlers).
+        response = NextResponse.next({
+            request: { headers: request.headers },
+        })
 
         // --- Auth Routing ---
         const isDashboard = request.nextUrl.pathname.startsWith('/dashboard')

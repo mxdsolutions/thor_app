@@ -106,6 +106,30 @@ export function JobDetailHeader({
                             )}
                         </div>
                     </div>
+                    <Popover open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
+                        <PopoverTrigger asChild>
+                            <Button size="sm" className="shrink-0 hidden md:inline-flex">
+                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
+                                Create
+                                <ChevronDown className="w-3.5 h-3.5 ml-1 -mr-1" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent align="end" className="w-56 p-1">
+                            {createOptions.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setCreateMenuOpen(false);
+                                        opt.onClick();
+                                    }}
+                                    className="w-full flex items-center rounded-lg px-3 py-2 text-sm text-left transition-colors hover:bg-secondary text-foreground"
+                                >
+                                    <span>{opt.label}</span>
+                                </button>
+                            ))}
+                        </PopoverContent>
+                    </Popover>
                     <Popover open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
                         <PopoverTrigger asChild>
                             <Button size="sm" variant="outline" className="shrink-0 h-9 w-9 px-0" aria-label="More actions">
@@ -133,30 +157,6 @@ export function JobDetailHeader({
                                     </>
                                 )}
                             </button>
-                        </PopoverContent>
-                    </Popover>
-                    <Popover open={createMenuOpen} onOpenChange={setCreateMenuOpen}>
-                        <PopoverTrigger asChild>
-                            <Button size="sm" className="shrink-0 hidden md:inline-flex">
-                                <PlusIcon className="w-3.5 h-3.5 mr-1" />
-                                Create
-                                <ChevronDown className="w-3.5 h-3.5 ml-1 -mr-1" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent align="end" className="w-56 p-1">
-                            {createOptions.map((opt) => (
-                                <button
-                                    key={opt.id}
-                                    type="button"
-                                    onClick={() => {
-                                        setCreateMenuOpen(false);
-                                        opt.onClick();
-                                    }}
-                                    className="w-full flex items-center rounded-lg px-3 py-2 text-sm text-left transition-colors hover:bg-secondary text-foreground"
-                                >
-                                    <span>{opt.label}</span>
-                                </button>
-                            ))}
                         </PopoverContent>
                     </Popover>
                     {mode === "sheet" && onClose && (

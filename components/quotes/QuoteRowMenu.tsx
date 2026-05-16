@@ -85,13 +85,13 @@ export function QuoteRowMenu({
                 {canCreateInvoice && (
                     <button type="button" onClick={run(onCreateInvoice)} className={`${itemClass} text-foreground`}>
                         <FileText className="w-4 h-4" />
-                        Create Invoice from Quote
+                        Create Invoice
                     </button>
                 )}
                 {canCreatePo && (
                     <button type="button" onClick={run(onCreatePo)} className={`${itemClass} text-foreground`}>
                         <ShoppingCart className="w-4 h-4" />
-                        Create P.O from Quote
+                        Create PO
                     </button>
                 )}
                 {canViewPdf && (

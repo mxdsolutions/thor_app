@@ -153,10 +153,11 @@ export function ReportSideSheet({ report, open, onOpenChange, onUpdate }: Report
             const schema: TemplateSchema = tpl.schema && tpl.schema.version === 1
                 ? tpl.schema : { version: 1, sections: [] };
 
-            // Prefer the freshly-fetched cover URL over the React context value
-            // — the context is only refreshed on server re-render, so uploads
-            // in the current session would otherwise appear missing.
-            const coverUrl = freshTenant?.report_cover_url ?? tenant.report_cover_url ?? null;
+            // Cover precedence: template override → tenant default → none.
+            // The template's `report_cover_url` (if set) wins so per-template
+            // covers override the tenant-wide fallback.
+            const tenantCoverUrl = freshTenant?.report_cover_url ?? tenant.report_cover_url ?? null;
+            const coverUrl = tpl.report_cover_url ?? tenantCoverUrl;
             const coverIsPdf = coverUrl
                 ? coverUrl.split("?")[0].toLowerCase().endsWith(".pdf")
                 : false;

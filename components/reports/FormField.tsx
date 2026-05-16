@@ -1,10 +1,23 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { Image as PhotoIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import type { FieldDef, PhotoItem } from "@/lib/report-templates/types";
 import { PhotoUploadField } from "./PhotoUploadField";
 import { EntitySelectField } from "./EntitySelectField";
+
+export type FormFieldMode = "fill" | "preview" | "edit";
 
 interface FormFieldProps {
     field: FieldDef;
@@ -14,27 +27,58 @@ interface FormFieldProps {
     reportId?: string;
     sectionId?: string;
     tenantId?: string;
+    /**
+     * "fill" — interactive (default, used at /r/[token]).
+     * "preview" — read-only, no editing affordances. Used to show "what the tradie will see".
+     * "edit" — read-only inputs + inline-editable label + help text. Used by the builder canvas.
+     */
+    mode?: FormFieldMode;
+    /** Edit-mode: called when the user edits the label or help text. */
+    onFieldChange?: (updates: Partial<FieldDef>) => void;
+    /** Edit-mode: auto-focus the label input on mount (used for newly added questions). */
+    autoFocusLabel?: boolean;
 }
 
-export function FormField({ field, value, onChange, readOnly, reportId, sectionId, tenantId }: FormFieldProps) {
+export function FormField({
+    field,
+    value,
+    onChange,
+    readOnly,
+    reportId,
+    sectionId,
+    tenantId,
+    mode = "fill",
+    onFieldChange,
+    autoFocusLabel,
+}: FormFieldProps) {
+    const isEdit = mode === "edit";
+    const inputsReadOnly = readOnly || mode === "preview" || mode === "edit";
+
     if (field.type === "heading") {
         return (
             <div className="col-span-2 pt-2">
-                <h4 className="text-lg font-semibold text-foreground">{field.label}</h4>
-                {field.helpText && <p className="text-xs text-muted-foreground mt-0.5">{field.helpText}</p>}
+                <EditableTitleLine
+                    field={field}
+                    mode={mode}
+                    onFieldChange={onFieldChange}
+                    autoFocus={autoFocusLabel}
+                />
+                <EditableHelpText field={field} mode={mode} onFieldChange={onFieldChange} />
             </div>
         );
     }
 
     const fieldLabel = (
-        <label className="text-xs font-medium text-muted-foreground">
-            {field.label}
-            {field.required && <span className="text-red-500 ml-0.5">*</span>}
-        </label>
+        <EditableLabel
+            field={field}
+            mode={mode}
+            onFieldChange={onFieldChange}
+            autoFocus={autoFocusLabel}
+        />
     );
 
-    const helpText = field.helpText && (
-        <p className="text-[11px] text-muted-foreground mt-1">{field.helpText}</p>
+    const helpText = (
+        <EditableHelpText field={field} mode={mode} onFieldChange={onFieldChange} />
     );
 
     switch (field.type) {
@@ -47,7 +91,8 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         value={(value as string) || ""}
                         onChange={(e) => onChange(e.target.value)}
                         className="rounded-xl"
-                        readOnly={readOnly}
+                        readOnly={inputsReadOnly}
+                        tabIndex={isEdit ? -1 : undefined}
                     />
                     {helpText}
                 </div>
@@ -57,13 +102,14 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
             return (
                 <div className="space-y-1.5">
                     {fieldLabel}
-                    <textarea
+                    <Textarea
                         placeholder={field.placeholder}
                         value={(value as string) || ""}
                         onChange={(e) => onChange(e.target.value)}
                         rows={4}
-                        readOnly={readOnly}
-                        className="flex w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-y min-h-[80px]"
+                        readOnly={inputsReadOnly}
+                        tabIndex={isEdit ? -1 : undefined}
+                        className="rounded-xl resize-y"
                     />
                     {helpText}
                 </div>
@@ -79,7 +125,8 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         value={value !== undefined && value !== null ? String(value) : ""}
                         onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : null)}
                         className="rounded-xl"
-                        readOnly={readOnly}
+                        readOnly={inputsReadOnly}
+                        tabIndex={isEdit ? -1 : undefined}
                     />
                     {helpText}
                 </div>
@@ -98,7 +145,8 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                             value={value !== undefined && value !== null ? String(value) : ""}
                             onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : null)}
                             className="rounded-xl pl-7"
-                            readOnly={readOnly}
+                            readOnly={inputsReadOnly}
+                            tabIndex={isEdit ? -1 : undefined}
                         />
                     </div>
                     {helpText}
@@ -114,30 +162,58 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         value={(value as string) || ""}
                         onChange={(e) => onChange(e.target.value)}
                         className="rounded-xl"
-                        readOnly={readOnly}
+                        readOnly={inputsReadOnly}
+                        tabIndex={isEdit ? -1 : undefined}
                     />
                     {helpText}
                 </div>
             );
 
-        case "select":
+        case "select": {
+            const options = field.options || [];
+            const selectedLabel =
+                options.find((opt) => opt.value === value)?.label ?? null;
+            // Radix Select doesn't model `readOnly` — only `disabled`, which
+            // greys the trigger and disables interactions visually. For
+            // preview / edit modes we want the trigger to look identical to
+            // a live one (consistent with the wizard) but reject input. A
+            // static display matches the trigger's chrome via the same
+            // classes and side-steps Radix's disabled styling entirely.
             return (
                 <div className="space-y-1.5">
                     {fieldLabel}
-                    <select
-                        value={(value as string) || ""}
-                        onChange={(e) => onChange(e.target.value)}
-                        disabled={readOnly}
-                        className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                        <option value="">{field.placeholder || "Select..."}</option>
-                        {(field.options || []).map((opt) => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
+                    {inputsReadOnly ? (
+                        <div
+                            className="flex h-10 w-full items-center rounded-xl border border-border/50 bg-background px-3 text-base"
+                            aria-disabled="true"
+                        >
+                            {selectedLabel ?? (
+                                <span className="text-muted-foreground">
+                                    {field.placeholder || "Select..."}
+                                </span>
+                            )}
+                        </div>
+                    ) : (
+                        <Select
+                            value={(value as string) || undefined}
+                            onValueChange={(v) => onChange(v)}
+                        >
+                            <SelectTrigger className="rounded-xl">
+                                <SelectValue placeholder={field.placeholder || "Select..."} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {options.map((opt) => (
+                                    <SelectItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                     {helpText}
                 </div>
             );
+        }
 
         case "yes_no":
             return (
@@ -146,23 +222,29 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                     <div className="flex gap-2">
                         <button
                             type="button"
-                            onClick={() => !readOnly && onChange("yes")}
-                            className={`flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-colors ${
+                            onClick={() => !inputsReadOnly && onChange("yes")}
+                            tabIndex={isEdit ? -1 : undefined}
+                            className={cn(
+                                "flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-colors",
                                 value === "yes"
                                     ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700"
-                                    : "border-border hover:border-foreground/30 text-muted-foreground"
-                            }`}
+                                    : "border-border text-muted-foreground",
+                                !inputsReadOnly && "hover:border-foreground/30",
+                            )}
                         >
                             Yes
                         </button>
                         <button
                             type="button"
-                            onClick={() => !readOnly && onChange("no")}
-                            className={`flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-colors ${
+                            onClick={() => !inputsReadOnly && onChange("no")}
+                            tabIndex={isEdit ? -1 : undefined}
+                            className={cn(
+                                "flex-1 py-2 px-3 rounded-xl border text-sm font-medium transition-colors",
                                 value === "no"
                                     ? "bg-red-500/10 border-red-500/30 text-red-700"
-                                    : "border-border hover:border-foreground/30 text-muted-foreground"
-                            }`}
+                                    : "border-border text-muted-foreground",
+                                !inputsReadOnly && "hover:border-foreground/30",
+                            )}
                         >
                             No
                         </button>
@@ -177,29 +259,55 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                     <div className="flex items-center gap-2">
                         <Checkbox
                             checked={!!value}
-                            onCheckedChange={(checked) => !readOnly && onChange(!!checked)}
-                            disabled={readOnly}
+                            onCheckedChange={(checked) => !inputsReadOnly && onChange(!!checked)}
+                            disabled={inputsReadOnly}
                         />
-                        <label className="text-sm text-foreground cursor-pointer">{field.label}</label>
+                        {isEdit ? (
+                            <InlineEditableInput
+                                value={field.label}
+                                onChange={(v) => onFieldChange?.({ label: v })}
+                                placeholder="Question"
+                                autoFocus={autoFocusLabel}
+                                className="text-sm text-foreground"
+                            />
+                        ) : (
+                            <label className="text-sm text-foreground cursor-pointer">{field.label}</label>
+                        )}
                     </div>
                     {helpText}
                 </div>
             );
 
-        case "photo_upload":
+        case "photo_upload": {
+            const photos = (value as PhotoItem[]) || [];
+            const showPlaceholder = mode !== "fill" && photos.length === 0;
             return (
                 <div className="space-y-1.5">
                     {fieldLabel}
-                    <PhotoUploadField
-                        photos={(value as PhotoItem[]) || []}
-                        onChange={onChange}
-                        readOnly={readOnly}
-                        sectionId={sectionId}
-                        fieldId={field.id}
-                    />
+                    {showPlaceholder ? (
+                        <div className="grid grid-cols-3 gap-2 max-w-md">
+                            {[0, 1, 2].map((i) => (
+                                <div
+                                    key={i}
+                                    className="aspect-[4/3] rounded-md border border-dashed border-border/60 bg-secondary/20 flex items-center justify-center"
+                                >
+                                    <PhotoIcon className="w-4 h-4 text-muted-foreground/40" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <PhotoUploadField
+                            photos={photos}
+                            onChange={onChange}
+                            readOnly={inputsReadOnly}
+                            sectionId={sectionId}
+                            fieldId={field.id}
+                        />
+                    )}
                     {helpText}
                 </div>
             );
+        }
 
         case "entity_select":
             return (
@@ -210,7 +318,7 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
                         value={value as { id: string; label: string } | null}
                         onChange={onChange}
                         placeholder={field.placeholder}
-                        readOnly={readOnly}
+                        readOnly={inputsReadOnly}
                     />
                     {helpText}
                 </div>
@@ -219,4 +327,106 @@ export function FormField({ field, value, onChange, readOnly, reportId, sectionI
         default:
             return null;
     }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Internal helpers — editable label / help text / heading            */
+/* ------------------------------------------------------------------ */
+
+interface EditableLabelProps {
+    field: FieldDef;
+    mode: FormFieldMode;
+    onFieldChange?: (updates: Partial<FieldDef>) => void;
+    autoFocus?: boolean;
+}
+
+function EditableLabel({ field, mode, onFieldChange, autoFocus }: EditableLabelProps) {
+    if (mode === "edit") {
+        return (
+            <div className="flex items-baseline gap-1">
+                <InlineEditableInput
+                    value={field.label}
+                    onChange={(v) => onFieldChange?.({ label: v })}
+                    placeholder="Question"
+                    autoFocus={autoFocus}
+                    className="text-xs font-medium text-muted-foreground"
+                />
+                {field.required && <span className="text-red-500 text-xs shrink-0">*</span>}
+            </div>
+        );
+    }
+    return (
+        <label className="text-xs font-medium text-muted-foreground">
+            {field.label}
+            {field.required && <span className="text-red-500 ml-0.5">*</span>}
+        </label>
+    );
+}
+
+function EditableTitleLine({ field, mode, onFieldChange, autoFocus }: EditableLabelProps) {
+    if (mode === "edit") {
+        return (
+            <InlineEditableInput
+                value={field.label}
+                onChange={(v) => onFieldChange?.({ label: v })}
+                placeholder="Heading text"
+                autoFocus={autoFocus}
+                className="text-lg font-semibold text-foreground"
+            />
+        );
+    }
+    return <h4 className="text-lg font-semibold text-foreground">{field.label}</h4>;
+}
+
+interface EditableHelpTextProps {
+    field: FieldDef;
+    mode: FormFieldMode;
+    onFieldChange?: (updates: Partial<FieldDef>) => void;
+}
+
+function EditableHelpText({ field, mode, onFieldChange }: EditableHelpTextProps) {
+    if (mode === "edit") {
+        return (
+            <InlineEditableInput
+                value={field.helpText || ""}
+                onChange={(v) => onFieldChange?.({ helpText: v || undefined })}
+                placeholder="Add help text (optional)"
+                className="text-[11px] text-muted-foreground mt-1"
+            />
+        );
+    }
+    if (!field.helpText) return null;
+    return <p className="text-[11px] text-muted-foreground mt-1">{field.helpText}</p>;
+}
+
+interface InlineEditableInputProps {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+    autoFocus?: boolean;
+    className?: string;
+}
+
+function InlineEditableInput({ value, onChange, placeholder, autoFocus, className }: InlineEditableInputProps) {
+    const ref = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (autoFocus && ref.current) {
+            ref.current.focus();
+            ref.current.select();
+        }
+    }, [autoFocus]);
+
+    return (
+        <input
+            ref={ref}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={cn(
+                "w-full bg-transparent border-none focus:outline-none focus:ring-0 px-0 placeholder:text-muted-foreground/40",
+                className,
+            )}
+        />
+    );
 }

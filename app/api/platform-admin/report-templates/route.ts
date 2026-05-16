@@ -3,6 +3,8 @@ import { withPlatformAuth } from "@/app/api/_lib/handler";
 import { parsePagination } from "@/app/api/_lib/pagination";
 import { serverError, validationError } from "@/app/api/_lib/errors";
 import { reportTemplateCreateSchema } from "@/lib/validation";
+import { insertTemplateWithUniqueSlug } from "@/lib/report-templates/slug";
+import { buildEmptyTemplateSchema } from "@/lib/report-templates/defaults";
 
 export const GET = withPlatformAuth(async (request, { adminClient }) => {
     const { limit, offset, search } = parsePagination(request);
@@ -33,22 +35,13 @@ export const POST = withPlatformAuth(async (request, { adminClient, user }) => {
     const validation = reportTemplateCreateSchema.safeParse(body);
     if (!validation.success) return validationError(validation.error);
 
-    const { data, error } = await adminClient
-        .from("report_templates")
-        .insert({
-            ...validation.data,
-            schema: validation.data.schema || { version: 1, sections: [] },
-            created_by: user.id,
-        })
-        .select()
-        .single();
+    const { data, error } = await insertTemplateWithUniqueSlug(adminClient, {
+        ...validation.data,
+        schema: validation.data.schema || buildEmptyTemplateSchema(),
+        created_by: user.id,
+    });
 
-    if (error) {
-        if (error.code === "23505") {
-            return NextResponse.json({ error: "This slug is already taken" }, { status: 409 });
-        }
-        return serverError();
-    }
+    if (error) return serverError(error);
 
     return NextResponse.json({ item: data }, { status: 201 });
 });

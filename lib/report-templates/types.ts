@@ -68,6 +68,10 @@ export interface ReportTemplate {
     created_by: string | null;
     created_at: string;
     updated_at: string;
+    /** Tenant that owns this template. NULL for legacy / platform-shared templates. */
+    tenant_id: string | null;
+    /** Optional PDF cover override. When set, overrides tenant.report_cover_url at PDF render time. */
+    report_cover_url: string | null;
 }
 
 export type PhotoItem = {

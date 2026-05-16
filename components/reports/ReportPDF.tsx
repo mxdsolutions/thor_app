@@ -11,7 +11,7 @@ import {
 import type { TemplateSchema, SectionDef, FieldDef } from "@/lib/report-templates/types";
 import { PdfLetterhead, LETTERHEAD_PAGE_PADDING_TOP } from "@/components/pdf/PdfLetterhead";
 
-type TenantInfo = {
+export type ReportPDFTenantInfo = {
     company_name: string | null;
     name: string;
     logo_url: string | null;
@@ -23,7 +23,7 @@ type TenantInfo = {
     primary_color: string;
 };
 
-type ReportData = {
+export type ReportPDFReportData = {
     id: string;
     title: string;
     type: string;
@@ -36,10 +36,10 @@ type ReportData = {
     creator?: { id: string; full_name: string } | null;
 };
 
-interface ReportPDFProps {
-    report: ReportData;
+export interface ReportPDFProps {
+    report: ReportPDFReportData;
     template: { name: string; schema: TemplateSchema };
-    tenant: TenantInfo;
+    tenant: ReportPDFTenantInfo;
     /** Name shown under "Assessed by" on the generated cover. Falls back to report.creator. */
     assessorName?: string | null;
     /** Date shown on the generated cover. Falls back to report.created_at. */
@@ -293,8 +293,8 @@ function GeneratedCoverPage({
     assessorName,
     completedAt,
 }: {
-    tenant: TenantInfo;
-    report: ReportData;
+    tenant: ReportPDFTenantInfo;
+    report: ReportPDFReportData;
     assessorName?: string | null;
     completedAt?: string | null;
 }) {

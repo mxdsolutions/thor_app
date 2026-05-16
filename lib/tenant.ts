@@ -31,20 +31,35 @@ export type TenantMembership = {
     permissions: Record<string, { read?: boolean; write?: boolean; delete?: boolean }>;
 };
 
+// Postgres `uuid` shape — same regex as `pgUuid` in lib/validation.ts. Kept
+// inline here to avoid pulling the full Zod-dependent validation module into
+// every server component / action that calls getTenantId(). Update both if
+// the canonical shape ever changes.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
 /**
  * Get the current tenant ID from request headers (set by middleware).
- * Falls back to JWT app_metadata if header is not set.
+ * Falls back to JWT app_metadata if the header is missing or malformed.
+ *
+ * Header values are UUID-validated as a defense-in-depth layer: middleware
+ * always overwrites or deletes `x-tenant-id` (see middleware.ts), but if
+ * anything upstream regresses an attacker-supplied value here could be
+ * interpolated into PostgREST filters by downstream routes. Treat a malformed
+ * header as no header — fall through to the signed-JWT claim, which is
+ * trustworthy.
  */
 export async function getTenantId(): Promise<string> {
     const headersList = await headers();
-    const tenantId = headersList.get("x-tenant-id");
-    if (tenantId) return tenantId;
+    const fromHeader = headersList.get("x-tenant-id");
+    if (fromHeader && UUID_RE.test(fromHeader)) return fromHeader;
 
-    // Fallback: read from user's JWT claims
+    // Fallback: read from user's JWT claims. The claim is server-signed, so
+    // we don't re-validate the shape — but a malformed claim is still treated
+    // as "no tenant" rather than propagating garbage.
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     const fromJwt = user?.app_metadata?.active_tenant_id;
-    if (fromJwt) return fromJwt;
+    if (fromJwt && UUID_RE.test(fromJwt)) return fromJwt;
 
     throw new Error("No tenant context available");
 }

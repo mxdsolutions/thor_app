@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus as PlusIcon, Trash2 as TrashIcon } from "lucide-react";
+import { Plus as PlusIcon, Trash2 as TrashIcon, ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon } from "lucide-react";
 import type { FieldDef, FieldType, EntityType, AutoPopulateKey } from "@/lib/report-templates/types";
 import { FIELD_TYPE_LABELS, ENTITY_TYPE_LABELS, AUTO_POPULATE_KEYS } from "@/lib/report-templates/types";
 
@@ -27,6 +27,7 @@ function generateId(label: string): string {
 }
 
 export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorProps) {
+    const [showAdvanced, setShowAdvanced] = useState(false);
     const [form, setForm] = useState<FieldDef>({
         id: "",
         label: "",
@@ -57,6 +58,7 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                 autoPopulateKey: undefined,
             });
         }
+        setShowAdvanced(false);
     }, [field, open]);
 
     const isEditing = !!field;
@@ -132,60 +134,36 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{isEditing ? "Edit Field" : "Add Field"}</DialogTitle>
+                    <DialogTitle>{isEditing ? "Edit question" : "Add question"}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Label *</label>
-                            <Input
-                                autoFocus
-                                placeholder="e.g. Claim Number"
-                                value={form.label}
-                                onChange={(e) => handleLabelChange(e.target.value)}
-                                className="rounded-xl"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Field ID *</label>
-                            <Input
-                                placeholder="claim_number"
-                                value={form.id}
-                                onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
-                                className="rounded-xl font-mono text-xs"
-                            />
-                        </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-foreground">Question label *</label>
+                        <Input
+                            autoFocus
+                            placeholder="e.g. Claim Number"
+                            value={form.label}
+                            onChange={(e) => handleLabelChange(e.target.value)}
+                            className="rounded-xl"
+                        />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Type</label>
-                            <select
-                                value={form.type}
-                                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as FieldType }))}
-                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                {FIELD_TYPES.map(([value, label]) => (
-                                    <option key={value} value={value}>{label}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Width</label>
-                            <select
-                                value={form.width || "full"}
-                                onChange={(e) => setForm((f) => ({ ...f, width: e.target.value as "full" | "half" }))}
-                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <option value="full">Full Width</option>
-                                <option value="half">Half Width</option>
-                            </select>
-                        </div>
+                    <div className="space-y-1.5">
+                        <label className="text-xs font-medium text-foreground">Question type</label>
+                        <select
+                            value={form.type}
+                            onChange={(e) => setForm((f) => ({ ...f, type: e.target.value as FieldType }))}
+                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                            {FIELD_TYPES.map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {showEntityType && (
                         <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Entity Type *</label>
+                            <label className="text-xs font-medium text-foreground">Linked record type *</label>
                             <select
                                 value={form.entityType || ""}
                                 onChange={(e) => setForm((f) => ({ ...f, entityType: (e.target.value || undefined) as EntityType | undefined }))}
@@ -199,29 +177,10 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                         </div>
                     )}
 
-                    {showAutoPopulate && compatibleKeys.length > 0 && (
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-medium text-muted-foreground">Auto-Populate From Job</label>
-                            <select
-                                value={form.autoPopulateKey || ""}
-                                onChange={(e) => setForm((f) => ({ ...f, autoPopulateKey: (e.target.value || undefined) as AutoPopulateKey | undefined }))}
-                                className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                                <option value="">None</option>
-                                {compatibleKeys.map((k) => (
-                                    <option key={k.value} value={k.value}>{k.label}</option>
-                                ))}
-                            </select>
-                            <p className="text-[10px] text-muted-foreground/60">
-                                When a report is linked to a job, this field auto-fills with the selected value.
-                            </p>
-                        </div>
-                    )}
-
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Placeholder</label>
+                        <label className="text-xs font-medium text-foreground">Placeholder <span className="text-muted-foreground font-normal">(optional)</span></label>
                         <Input
-                            placeholder="Placeholder text..."
+                            placeholder="Hint shown inside the empty box"
                             value={form.placeholder || ""}
                             onChange={(e) => setForm((f) => ({ ...f, placeholder: e.target.value }))}
                             className="rounded-xl"
@@ -229,9 +188,9 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-muted-foreground">Help Text</label>
+                        <label className="text-xs font-medium text-foreground">Help text <span className="text-muted-foreground font-normal">(optional)</span></label>
                         <Input
-                            placeholder="Additional guidance for the user..."
+                            placeholder="Extra guidance shown under the question"
                             value={form.helpText || ""}
                             onChange={(e) => setForm((f) => ({ ...f, helpText: e.target.value }))}
                             className="rounded-xl"
@@ -244,34 +203,28 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                             checked={form.required || false}
                             onCheckedChange={(checked) => setForm((f) => ({ ...f, required: !!checked }))}
                         />
-                        <label htmlFor="field-required" className="text-sm text-muted-foreground cursor-pointer">
-                            Required field
+                        <label htmlFor="field-required" className="text-sm cursor-pointer">
+                            Required
                         </label>
                     </div>
 
                     {showOptions && (
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-xs font-medium text-muted-foreground">Options</label>
+                                <label className="text-xs font-medium text-foreground">Answer choices</label>
                                 <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={handleAddOption}>
                                     <PlusIcon className="w-3 h-3 mr-1" />
-                                    Add Option
+                                    Add choice
                                 </Button>
                             </div>
                             <div className="space-y-2">
                                 {(form.options || []).map((option, i) => (
                                     <div key={i} className="flex items-center gap-2">
                                         <Input
-                                            placeholder="Label"
+                                            placeholder="Choice shown to user"
                                             value={option.label}
                                             onChange={(e) => handleUpdateOption(i, "label", e.target.value)}
                                             className="rounded-xl flex-1"
-                                        />
-                                        <Input
-                                            placeholder="Value"
-                                            value={option.value}
-                                            onChange={(e) => handleUpdateOption(i, "value", e.target.value)}
-                                            className="rounded-xl flex-1 font-mono text-xs"
                                         />
                                         <Button
                                             type="button"
@@ -285,18 +238,75 @@ export function FieldEditor({ open, onOpenChange, field, onSave }: FieldEditorPr
                                     </div>
                                 ))}
                                 {(!form.options || form.options.length === 0) && (
-                                    <p className="text-xs text-muted-foreground py-2 text-center">No options yet. Add at least one.</p>
+                                    <p className="text-xs text-muted-foreground py-2 text-center">No choices yet. Add at least one.</p>
                                 )}
                             </div>
                         </div>
                     )}
+
+                    {/* Advanced */}
+                    <div className="border-t border-border pt-3">
+                        <button
+                            type="button"
+                            onClick={() => setShowAdvanced((v) => !v)}
+                            className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            {showAdvanced ? <ChevronDownIcon className="w-3.5 h-3.5" /> : <ChevronRightIcon className="w-3.5 h-3.5" />}
+                            Advanced
+                        </button>
+                        {showAdvanced && (
+                            <div className="space-y-3 mt-3">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-foreground">Field ID</label>
+                                    <Input
+                                        placeholder="claim_number"
+                                        value={form.id}
+                                        onChange={(e) => setForm((f) => ({ ...f, id: e.target.value }))}
+                                        className="rounded-xl font-mono text-xs"
+                                    />
+                                    <p className="text-[10px] text-muted-foreground/60">
+                                        Auto-generated from the label. Only change if you know what you&apos;re doing.
+                                    </p>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-foreground">Width</label>
+                                    <select
+                                        value={form.width || "full"}
+                                        onChange={(e) => setForm((f) => ({ ...f, width: e.target.value as "full" | "half" }))}
+                                        className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <option value="full">Full width</option>
+                                        <option value="half">Half width</option>
+                                    </select>
+                                </div>
+                                {showAutoPopulate && compatibleKeys.length > 0 && (
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium text-foreground">Auto-fill from job</label>
+                                        <select
+                                            value={form.autoPopulateKey || ""}
+                                            onChange={(e) => setForm((f) => ({ ...f, autoPopulateKey: (e.target.value || undefined) as AutoPopulateKey | undefined }))}
+                                            className="flex h-10 w-full rounded-xl border border-input bg-background px-3 py-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        >
+                                            <option value="">None</option>
+                                            {compatibleKeys.map((k) => (
+                                                <option key={k.value} value={k.value}>{k.label}</option>
+                                            ))}
+                                        </select>
+                                        <p className="text-[10px] text-muted-foreground/60">
+                                            When the report is linked to a job, this question fills in automatically.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={!form.label.trim() || !form.id.trim()}>
-                            {isEditing ? "Save Changes" : "Add Field"}
+                            {isEditing ? "Save changes" : "Add question"}
                         </Button>
                     </div>
                 </form>

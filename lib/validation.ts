@@ -284,10 +284,22 @@ const sectionDefSchema = z.object({
     addLabel: z.string().optional(),
 });
 
+// Schema version: must match `LATEST_SCHEMA_VERSION` in
+// lib/report-templates/defaults.ts. Hard-coded as a literal here to keep this
+// module Zod-only (no runtime imports beyond zod). Bump both when shipping v2.
 const templateSchemaObj = z.object({
     version: z.literal(1),
     sections: z.array(sectionDefSchema),
 });
+
+// Postgres `uuid` accepts any 8-4-4-4-12 hex shape — including the nil UUID
+// and seed ids like `00000000-0000-0000-0000-000000000001`. Zod's `.uuid()`
+// follows RFC 4122 strictly (version nibble must be 1–5), which would reject
+// those legitimate Postgres ids. Match the database's behaviour instead.
+const pgUuid = z.string().regex(
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    "Must be a valid UUID",
+);
 
 export const reportTemplateCreateSchema = z.object({
     name: z.string().min(1, "Template name is required").max(200),
@@ -298,6 +310,8 @@ export const reportTemplateCreateSchema = z.object({
     description: z.string().max(1000).optional().nullable(),
     category: z.string().min(1, "Category is required"),
     schema: templateSchemaObj.optional(),
+    tenant_id: pgUuid,
+    report_cover_url: z.string().url().optional().nullable(),
 });
 
 export const reportTemplateUpdateSchema = z.object({
@@ -307,9 +321,19 @@ export const reportTemplateUpdateSchema = z.object({
     category: z.string().optional().nullable(),
     schema: templateSchemaObj.optional(),
     is_active: z.boolean().optional(),
+    tenant_id: pgUuid.optional().nullable(),
+    report_cover_url: z.string().url().optional().nullable(),
 });
 
+/**
+ * Tenant-scoped create payload. The `tenant_id` is set server-side from the
+ * auth context (not the request body) so callers can't impersonate other
+ * tenants — defence in depth on top of `withAuth`'s tenant resolution.
+ */
+export const reportTemplateTenantCreateSchema = reportTemplateCreateSchema.omit({ tenant_id: true });
+
 export type ReportTemplateCreateInput = z.infer<typeof reportTemplateCreateSchema>;
+export type ReportTemplateTenantCreateInput = z.infer<typeof reportTemplateTenantCreateSchema>;
 export type ReportTemplateUpdateInput = z.infer<typeof reportTemplateUpdateSchema>;
 
 // --- Tenant Config Schemas ---
