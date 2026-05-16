@@ -10,7 +10,6 @@ import {
 } from "@/components/platform-admin/builder/BuilderShell";
 import type { TemplateSchema } from "@/lib/report-templates/types";
 import { LATEST_SCHEMA_VERSION } from "@/lib/report-templates/defaults";
-import { ROUTES } from "@/lib/routes";
 
 /**
  * In-dashboard report-template builder. Mirrors the platform-admin wrapper
@@ -131,8 +130,6 @@ export default function DashboardTemplateBuilderPage({
                 report_cover_url: template.report_cover_url ?? null,
             }}
             onSave={handleSave}
-            backHref={ROUTES.SETTINGS_REPORT_TEMPLATES}
-            backLabel="Templates"
             fetchTenantBranding={fetchTenantBranding}
         />
     );

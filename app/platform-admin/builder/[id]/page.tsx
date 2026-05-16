@@ -117,7 +117,6 @@ export default function TemplateBuilderPage({ params }: { params: Promise<{ id: 
                 report_cover_url: template.report_cover_url ?? null,
             }}
             onSave={handleSave}
-            backHref="/platform-admin/report-templates"
             fetchTenantBranding={fetchTenantBranding}
         />
     );

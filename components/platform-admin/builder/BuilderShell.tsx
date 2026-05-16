@@ -45,11 +45,6 @@ interface BuilderShellProps {
      * expected to fire its own "Template saved" toast inside this callback.
      */
     onSave: (schema: TemplateSchema, meta: BuilderTemplateMeta) => Promise<void>;
-    /** "Templates" back-link href — differs per host (platform-admin list vs
-     *  dashboard list). */
-    backHref: string;
-    /** Optional back-link label. Defaults to "Templates". */
-    backLabel?: string;
     /**
      * Fetch the tenant branding used by the "Preview as PDF" button. The
      * platform-admin host can edit any tenant's template so it passes a
@@ -108,8 +103,6 @@ export function BuilderShell({
     initialSchema,
     initialMeta,
     onSave,
-    backHref,
-    backLabel,
     fetchTenantBranding,
 }: BuilderShellProps) {
     const seededInitialSchema =
@@ -422,8 +415,6 @@ export function BuilderShell({
                 onCanvasModeChange={setCanvasMode}
                 onPreviewPdf={handlePreviewPdf}
                 previewingPdf={previewingPdf}
-                backHref={backHref}
-                backLabel={backLabel}
             />
 
             {/* Middle row: sidebar (edit mode only) + canvas. The light

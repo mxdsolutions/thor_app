@@ -1,10 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
-    ArrowLeft as ArrowLeftIcon,
     FileText as FileTextIcon,
     Loader2 as LoaderIcon,
 } from "lucide-react";
@@ -19,11 +17,6 @@ interface BuilderTopBarProps {
     onCanvasModeChange: (mode: CanvasMode) => void;
     onPreviewPdf: () => void;
     previewingPdf: boolean;
-    /** Where the "Templates" back link points. Set per host (platform-admin
-     *  list vs dashboard list) so the builder is reusable. */
-    backHref: string;
-    /** Label for the back link. Defaults to "Templates". */
-    backLabel?: string;
 }
 
 const MODE_OPTIONS = [
@@ -41,34 +34,34 @@ export function BuilderTopBar({
     onCanvasModeChange,
     onPreviewPdf,
     previewingPdf,
-    backHref,
-    backLabel = "Templates",
 }: BuilderTopBarProps) {
     // Top bar sits on the dark frame (`bg-foreground`) painted by the parent
     // BuilderShell. No background of its own and no bottom border — the seam
     // to the rounded light content area below is the visual divider.
     // Text/buttons inverted to white-on-slate, mirroring DashboardShell.
     return (
-        <div className="h-14 flex items-center gap-3 px-4 shrink-0">
-            {/* Left */}
-            <div className="flex items-center gap-3 shrink-0">
-                <Link
-                    href={backHref}
-                    className="flex items-center gap-1.5 text-xs text-zinc-300 hover:text-white transition-colors"
-                >
-                    <ArrowLeftIcon className="w-3.5 h-3.5" />
-                    {backLabel}
-                </Link>
+        <div className="relative h-14 flex items-center justify-between gap-3 px-4 shrink-0">
+            {/* Left — static label, not a link. The builder opens in a new
+                tab from two entry points (platform-admin list and dashboard
+                settings), so a "back" link would point to different places
+                for different users; closing the tab is the natural exit. */}
+            <div className="flex items-center shrink-0 text-sm font-medium text-zinc-300">
+                Report Template Builder
             </div>
 
-            {/* Centre — own flex slot so it stays centred without overlapping
-                the left/right clusters at narrow widths. */}
-            <div className="flex-1 flex justify-center min-w-0">
-                <SegmentedControl<CanvasMode>
-                    value={canvasMode}
-                    onChange={onCanvasModeChange}
-                    options={MODE_OPTIONS}
-                />
+            {/* Centre — absolutely positioned so it tracks the bar's geometric
+                midpoint, independent of left/right cluster widths. Using a
+                flex slot would centre within the leftover space (biased left
+                because the right cluster is wider). pointer-events stay on
+                the inner control so the rest of the bar remains clickable. */}
+            <div className="pointer-events-none absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center">
+                <div className="pointer-events-auto">
+                    <SegmentedControl<CanvasMode>
+                        value={canvasMode}
+                        onChange={onCanvasModeChange}
+                        options={MODE_OPTIONS}
+                    />
+                </div>
             </div>
 
             {/* Right */}
